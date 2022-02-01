@@ -2,7 +2,7 @@
 
 systick_csr systick_control = (systick_csr) &(systick_hw->csr);
 systick_rvr systick_reload  = (systick_rvr) &(systick_hw->rvr);
-systick_cvr systick_current = (systick_cvr) &(systick_hw->rvr);
+systick_cvr systick_current = (systick_cvr) &(systick_hw->cvr);
 uint32_t nanoSystick_timestampLast;
 
 int systick_setup(bool useInterrupts) {
@@ -26,15 +26,10 @@ int systick_start(bool wait, uint32_t ticks) {
 
 uint32_t systick_mark(bool stop) {
     uint32_t current = systick_current->current;
-    uint32_t delta = nanoSystick_timestampLast - current;
+    uint32_t delta = (nanoSystick_timestampLast - current)&0xFFFFFF;
     nanoSystick_timestampLast = current;
     if (stop) {
         systick_control->enable = 0; 
-    }
-
-    if (systick_control->countflag) {
-        //Countdown counter underflow
-        delta = 0;
     }
 
     return delta;
