@@ -17,7 +17,7 @@ int main() {
 
     while (true) {
         gpio_put(LED_PIN, 1);
-        printf("Vysnc=%ld, Hsync=%ld\n", rgbScannerGetVsyncNanoSec(), rgbScannerGetHsyncNanoSec());
+        printf("Vysnc=%ldnSec, %ldHz, Hsync=%dnSec, %dHz\n", rgbScannerGetVsyncNanoSec(), 1000000000 / rgbScannerGetVsyncNanoSec(), rgbScannerGetHsyncNanoSec(), 1000000000 / rgbScannerGetHsyncNanoSec());
         sleep_ms(1000);
         gpio_put(LED_PIN, 0);
         sleep_ms(1000);

@@ -5,6 +5,6 @@
 #define _RGB_SCANNER_H
 int rgbScannerSetup(uint VSYNC_GPIO, uint HSYNC_GPIO);
 unsigned long rgbScannerGetVsyncNanoSec();
-unsigned long rgbScannerGetHsyncNanoSec();
+unsigned int rgbScannerGetHsyncNanoSec();
 
 #endif//_RGB_SCANNER_H
