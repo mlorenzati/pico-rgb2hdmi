@@ -2,6 +2,7 @@
  */
 #include <stdio.h>
 #include "pico/stdlib.h"
+#include "dvi_serialiser.h"
 #include "common_configs.h"
 
 int main() {

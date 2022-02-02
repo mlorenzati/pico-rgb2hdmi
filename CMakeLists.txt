@@ -10,5 +10,9 @@ set(CMAKE_CXX_STANDARD 17)
 # Initialize the Pico SDK
 pico_sdk_init()
 
+#Include directory with setup config
+include_directories(config)
+
+#sources wiht libs and apps, tests separated
 add_subdirectory(src)
 add_subdirectory(test)
