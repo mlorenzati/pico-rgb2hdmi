@@ -1,28 +1,36 @@
-.program resistor_dac_5bit
+; Simple pio program to measure when the comparator flips against a ramp 
 
-; Drive one of the 5-bit resistor DACs on the VGA reference board. (this isn't
-; a good way to do VGA -- just want a nice sawtooth for the ADC example!)
+.program ramp_aquire
+.define ramp_count 31
+.wrap_target
+    set x, ramp_count
+ramp_loop:
+    mov y, x
+    mov pins, y
+    jmp pin compare_high
+    jmp x-- ramp_loop
+compare_high:
+    mov ISR, y
+    push block
+.wrap
 
-    out pins, 5
-    
-% c-sdk {
+ % c-sdk {
 #include "hardware/clocks.h"
-static inline void resistor_dac_5bit_program_init(PIO pio, uint sm, uint offset,
-        uint sample_rate_hz, uint pin_base) {
-
+static inline void ramp_aquire_program_init(PIO pio, uint sm, uint offset, uint frequency, uint pin_base, uint compare_pin) {
     pio_sm_set_pins_with_mask(pio, sm, 0, 0x1fu << pin_base);
     pio_sm_set_pindirs_with_mask(pio, sm, ~0u, 0x1fu << pin_base);
-    for (int i = 0; i < 5; ++i)
+    for (int i = 0; i < 5; ++i) {
         pio_gpio_init(pio, pin_base + i);
+    }
+    pio_gpio_init(pio, compare_pin);
 
-    pio_sm_config c = resistor_dac_5bit_program_get_default_config(offset);
+    pio_sm_config c = ramp_aquire_program_get_default_config(offset);
+
     sm_config_set_out_pins(&c, pin_base, 5);
-    // Shift to right, autopull threshold 5
-    sm_config_set_out_shift(&c, true, true, 5);
-    // Deeper FIFO as we're not doing any RX
-    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
-    float div = (float)clock_get_hz(clk_sys) / sample_rate_hz;
+    float div = (float)clock_get_hz(clk_sys) / frequency;
     sm_config_set_clkdiv(&c, div);
+    sm_config_set_jmp_pin(&c, compare_pin);
+    sm_config_set_set_pins(&c, pin_base, 5);
 
     pio_sm_init(pio, sm, offset, &c);
     pio_sm_set_enabled(pio, sm, true);

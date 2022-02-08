@@ -9,6 +9,11 @@
 #define FAST_DAC_PIN_BASE   16
 #define FAST_DAC_BITS       5
 
+//Comparator result pins
+#define ADC_COMPARATOR_RED      26
+#define ADC_COMPARATOR_GREEN    27
+#define ADC_COMPARATOR_BLUE     28
+
 #ifdef _DVI_SERIALISER_H
 	//DVI Config
 	#define DVI_DEFAULT_SERIAL_CONFIG 	picodvi_dvi_cfg

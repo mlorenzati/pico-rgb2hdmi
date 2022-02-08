@@ -4,14 +4,15 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
-#include "fastADC.h"
-#include "common_configs.h"
-
 #include "hardware/pio.h"
+#include "common_configs.h"
+#include "fastADC.h"
 
-#define OUTPUT_FREQ_KHZ 5
+#define TEST_ADC_SAMPLING_FREQ 5000000
 void core1_main();
 
+
+// A simple test to measure how the ADC works in ramp compare mode
 int main() {
     stdio_init_all();
 
@@ -28,15 +29,29 @@ int main() {
     }
 }
 
+struct repeating_timer timer;
+volatile uint32_t adc_value;
+volatile uint32_t adc_dispersion;
+volatile uint32_t adc_sps=0;
+
+bool repeating_timer_callback(struct repeating_timer *t) {
+    printf("Measured Value: %u with %u sps and %d dispersion\n", adc_value, adc_sps, adc_dispersion);
+    adc_sps = 0;
+    return true;
+}
+
 void core1_main() {
     PIO pio = pio0;
     uint sm = pio_claim_unused_sm(pio0, true);
-    uint offset = pio_add_program(pio0, &resistor_dac_5bit_program);
-    resistor_dac_5bit_program_init(pio0, sm, offset,
-        OUTPUT_FREQ_KHZ * 1000 * 2 * (1 << FAST_DAC_BITS), FAST_DAC_PIN_BASE);
+    int offset = pio_add_program(pio0, &ramp_aquire_program);
+    
+    ramp_aquire_program_init(pio0, sm, offset, TEST_ADC_SAMPLING_FREQ, FAST_DAC_PIN_BASE, ADC_COMPARATOR_RED);
+    add_repeating_timer_ms(1000, repeating_timer_callback, NULL, &timer);
+
     while (true) {
-        // Triangle wave
-        for (int i = 0; i < (1 << FAST_DAC_BITS); ++i)
-            pio_sm_put_blocking(pio, sm, i);
+        uint32_t value = pio_sm_get_blocking(pio, sm);
+        adc_dispersion = ((value > adc_value ? (value - adc_value) : adc_value - value) + adc_dispersion) / 2;
+        adc_value = value;
+        adc_sps++;
     }
 }
