@@ -9,8 +9,12 @@ ramp_loop:
     mov pins, y
     jmp pin compare_high
     jmp x-- ramp_loop
+    ; set x, 0
 compare_high:
     mov ISR, y
+; stall:
+;     mov pins, x
+;     jmp x-- stall
     push block
 .wrap
 
@@ -26,6 +30,58 @@ static inline void ramp_aquire_program_init(PIO pio, uint sm, uint offset, uint 
 
     pio_sm_config c = ramp_aquire_program_get_default_config(offset);
 
+    sm_config_set_out_pins(&c, pin_base, 5);
+    float div = (float)clock_get_hz(clk_sys) / frequency;
+    sm_config_set_clkdiv(&c, div);
+    sm_config_set_jmp_pin(&c, compare_pin);
+    sm_config_set_set_pins(&c, pin_base, 5);
+
+    pio_sm_init(pio, sm, offset, &c);
+    pio_sm_set_enabled(pio, sm, true);
+}
+%}
+
+;Simple pio program to measure when the comparator flips against a SAR
+
+.program sar_aquire
+.define  sar_count 4
+.define  sar_start 0b00010000
+.wrap_target
+    set pins, sar_start
+    set y, sar_count
+sar_loop:
+    set x, 1
+    jmp pin compare_high
+    set x, 0
+compare_high:
+    in x, 1
+    mov OSR, ISR
+
+    mov x, y
+    jmp skip_shift
+shift_one:
+    out NULL, 1
+skip_shift:
+    jmp x-- shift_one
+
+    mov pins, OSR
+    jmp y-- sar_loop
+    push block
+.wrap
+
+ % c-sdk {
+#include "hardware/clocks.h"
+static inline void sar_aquire_program_init(PIO pio, uint sm, uint offset, uint frequency, uint pin_base, uint compare_pin) {
+    pio_sm_set_pins_with_mask(pio, sm, 0, 0x1fu << pin_base);
+    pio_sm_set_pindirs_with_mask(pio, sm, ~0u, 0x1fu << pin_base);
+    for (int i = 0; i < 5; ++i) {
+        pio_gpio_init(pio, pin_base + i);
+    }
+    pio_gpio_init(pio, compare_pin);
+
+    pio_sm_config c = sar_aquire_program_get_default_config(offset);
+    sm_config_set_in_shift(&c, false, false, 32);
+    sm_config_set_out_shift(&c, false, false, 32);
     sm_config_set_out_pins(&c, pin_base, 5);
     float div = (float)clock_get_hz(clk_sys) / frequency;
     sm_config_set_clkdiv(&c, div);
