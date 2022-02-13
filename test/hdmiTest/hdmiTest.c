@@ -2,60 +2,104 @@
 #include <stdlib.h>
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
+#include "pico/sem.h"
 #include "hardware/clocks.h"
+#include "hardware/dma.h"
 #include "hardware/irq.h"
+#include "hardware/pll.h"
 #include "hardware/sync.h"
 #include "hardware/gpio.h"
+#include "hardware/structs/bus_ctrl.h"
+#include "hardware/structs/ssi.h"
 #include "hardware/vreg.h"
 
+#include "tmds_encode.h"
 #include "dvi.h"
 #include "dvi_serialiser.h"
 #include "common_configs.h"
+//#include "C64combo.h"
 
-#include "testcard_320x240_rgb565.h"
+// TMDS bit clock 252 MHz
+// DVDD 1.2V
+#define FRAME_WIDTH  640
+#define FRAME_HEIGHT 480
+#define IMAGE_SCANLINE_SIZE (FRAME_WIDTH * 2)
 
-// DVDD 1.2V (1.1V seems ok too)
-#define FRAME_WIDTH 320
-#define FRAME_HEIGHT 240
 #define VREG_VSEL VREG_VOLTAGE_1_20
 #define DVI_TIMING dvi_timing_640x480p_60hz
 
 struct dvi_inst dvi0;
+struct semaphore dvi_start_sem;
 
-void core1_main() {
-	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
-	while (queue_is_empty(&dvi0.q_colour_valid))
-		__wfe();
-	dvi_start(&dvi0);
-	dvi_scanbuf_main_16bpp(&dvi0);
+static inline void prepare_scanline(const uint32_t *colourbuf, uint32_t *tmdsbuf) {
+	const uint pixwidth = FRAME_WIDTH;
+	tmds_encode_data_channel_fullres_16bpp(colourbuf, tmdsbuf + 0 * pixwidth, pixwidth, 4, 0);
+	tmds_encode_data_channel_fullres_16bpp(colourbuf, tmdsbuf + 1 * pixwidth, pixwidth, 10, 5);
+	tmds_encode_data_channel_fullres_16bpp(colourbuf, tmdsbuf + 2 * pixwidth, pixwidth, 15, 11);
 }
 
-int main() {
+// Core 1 handles DMA IRQs and runs TMDS encode on scanline buffers it
+// receives through the mailbox FIFO
+void __not_in_flash("main") core1_main() {
+	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
+	sem_acquire_blocking(&dvi_start_sem);
+	dvi_start(&dvi0);
+
+	while (1) {
+		const uint32_t *colourbuf = (const uint32_t*)multicore_fifo_pop_blocking();
+		uint32_t *tmdsbuf = (uint32_t*)multicore_fifo_pop_blocking();
+		prepare_scanline(colourbuf, tmdsbuf);
+		multicore_fifo_push_blocking(0);
+	}
+	__builtin_unreachable();
+}
+
+uint16_t img_buf[FRAME_HEIGHT / 3][FRAME_WIDTH];
+
+int __not_in_flash("main") main() {
 	vreg_set_voltage(VREG_VSEL);
 	sleep_ms(10);
 	set_sys_clock_khz(DVI_TIMING.bit_clk_khz, true);
 
 	setup_default_uart();
 
+	printf("Configuring DVI\n");
+
 	dvi0.timing = &DVI_TIMING;
 	dvi0.ser_cfg = DVI_DEFAULT_SERIAL_CONFIG;
-	dvi_init(&dvi0, next_striped_spin_lock_num(), next_striped_spin_lock_num());
+	
+	printf("Copy Image pattern\n");
+	for (int y=0; y< FRAME_HEIGHT/3; y++) {
+		for (int x=0; x< FRAME_WIDTH; x++) {
+			int red = x * 32 / FRAME_WIDTH;
+			int green = y * 64 / (FRAME_HEIGHT/3);
+			int blue = 31 - (x * 32) / FRAME_WIDTH;
+			img_buf[y][x] = (x%8>0)&&(y%4>0) ? blue<<11 |green<<5 |red : 0xFFFF;
+		}
+	}
 
-	// Core 1 will wait until it sees the first colour buffer, then start up the
-	// DVI signalling.
+	dvi_init(&dvi0, next_striped_spin_lock_num(), next_striped_spin_lock_num());
+    
+	printf("Core 1 start\n");
+	sem_init(&dvi_start_sem, 0, 1);
+	hw_set_bits(&bus_ctrl_hw->priority, BUSCTRL_BUS_PRIORITY_PROC1_BITS);
 	multicore_launch_core1(core1_main);
 
-	// Pass out pointers into our preprepared image, discard the pointers when
-	// returned to us. Use frame_ctr to scroll the image
-	uint frame_ctr = 0;
-	while (true) {
-		for (uint y = 0; y < FRAME_HEIGHT; ++y) {
-			uint y_scroll = (y + frame_ctr) % FRAME_HEIGHT;
-			const uint16_t *scanline = &((const uint16_t*)testcard_320x240)[y_scroll * FRAME_WIDTH];
-			queue_add_blocking_u32(&dvi0.q_colour_valid, &scanline);
-			while (queue_try_remove_u32(&dvi0.q_colour_free, &scanline))
-				;
+	sem_release(&dvi_start_sem);
+	while (1) {
+		for (int y = 0; y < FRAME_HEIGHT; y+=2) {
+			uint32_t *our_tmds_buf, *their_tmds_buf;
+			queue_remove_blocking_u32(&dvi0.q_tmds_free, &their_tmds_buf);
+			multicore_fifo_push_blocking((uint32_t)img_buf[y/3]);
+			multicore_fifo_push_blocking((uint32_t)their_tmds_buf);
+	
+			queue_remove_blocking_u32(&dvi0.q_tmds_free, &our_tmds_buf);
+			prepare_scanline((const uint32_t*)(img_buf[(y+1)/3]), our_tmds_buf);
+			
+			multicore_fifo_pop_blocking();
+			queue_add_blocking_u32(&dvi0.q_tmds_valid, &their_tmds_buf);
+			queue_add_blocking_u32(&dvi0.q_tmds_valid, &our_tmds_buf);
 		}
-		++frame_ctr;
 	}
+	__builtin_unreachable();
 }
