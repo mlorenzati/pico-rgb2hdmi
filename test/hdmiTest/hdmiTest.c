@@ -23,7 +23,6 @@
 // DVDD 1.2V
 #define FRAME_WIDTH  640
 #define FRAME_HEIGHT 480
-#define IMAGE_SCANLINE_SIZE (FRAME_WIDTH * 2)
 
 #define VREG_VSEL VREG_VOLTAGE_1_20
 #define DVI_TIMING dvi_timing_640x480p_60hz

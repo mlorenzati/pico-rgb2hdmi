@@ -5,12 +5,6 @@
 
 #include "hardware/structs/systick.h"
 // Systick Info: https://developer.arm.com/documentation/dui0497/a/cortex-m0-peripherals/optional-system-timer--systick/systick-control-and-status-register
-//typedef struct {
-//    io_rw_32 csr;   // Control and status register
-//    io_rw_32 rvr;   // Reload Value Register
-//    io_rw_32 cvr;   // Current Value register
-//    io_ro_32 calib; // Calibration value register
-//} systick_hw_t;
 
 typedef struct {
     io_rw_32 enable:1;      // Enable SysTick counter
