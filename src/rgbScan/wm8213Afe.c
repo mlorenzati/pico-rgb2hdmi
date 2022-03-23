@@ -3,6 +3,7 @@
 
 static uint afe_cs = -1;
 static spi_inst_t *afe_spi;
+static bool spi_write_only_mode = true;
 
 int wm8213_enable_cs(bool val) {
     asm volatile("nop \n nop \n nop");
@@ -46,8 +47,10 @@ int wm8213_afe_setup(const wm8213_afe_config_t* config)
     // Configure pins
     gpio_set_function(config->pins.sck, GPIO_FUNC_SPI);
     gpio_set_function(config->pins.sdi, GPIO_FUNC_SPI);
-    gpio_set_function(config->pins.sdo, GPIO_FUNC_SPI);
-
+    spi_write_only_mode = (config->pins.sdo >= NUM_BANK0_GPIOS) || config->setups.setup2.opd;
+    if (!spi_write_only_mode) {
+        gpio_set_function(config->pins.sdo, GPIO_FUNC_SPI);
+    }
     // Configure and disable CS
     afe_cs = config->pins.cs;
     gpio_init(afe_cs);
@@ -62,15 +65,14 @@ int wm8213_afe_setup(const wm8213_afe_config_t* config)
     // Send each setup
     uint8_t setup_regs[6] = { WM8213_REG_SETUP1, WM8213_REG_SETUP2, WM8213_REG_SETUP3, WM8213_REG_SETUP4, WM8213_REG_SETUP5 ,WM8213_REG_SETUP6 };
     uint8_t *setup_vals = (uint8_t *) &(config->setups.setup1);
+    //No verification is possible if opd is in true o there is no SDO pin connected
+    assert(config->verify_retries == 0 || !spi_write_only_mode);
     for (char cnt=0; cnt < 6; cnt++) {
         if (wm8213_afe_write(setup_regs[cnt], setup_vals[cnt]) > 0) {
             return 2;
         }
-    }
-
-    //Check data
-    uint8_t readData;
-    for (char cnt=0; cnt < 6; cnt++) {
+        //Check data
+        uint8_t readData;
         for (char retries = 0; retries < config->verify_retries; retries++) {
             if (wm8213_afe_read(setup_regs[cnt], &readData) > 0) {
                 return 3;
@@ -79,7 +81,7 @@ int wm8213_afe_setup(const wm8213_afe_config_t* config)
                 break;
             }
         }
-        if (readData != setup_vals[cnt]) {
+        if ((config->verify_retries > 0) && (readData != setup_vals[cnt])) {
             return 4;
         }
     }

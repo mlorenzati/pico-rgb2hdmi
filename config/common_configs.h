@@ -2,16 +2,16 @@
 #define _COMMON_CONFIGS_H
 
 //SYNC edge triggered Pins
-#define RGB_SCAN_VSYNC_PIN  4
-#define RGB_SCAN_HSYNC_PIN  6
+#define RGB_SCAN_VSYNC_PIN  0
+#define RGB_SCAN_HSYNC_PIN  2
 
 //AFE (Analog Front End) Specific Config
 #ifdef _WM8213_AFE_H
-	//AFE Pins 
-	#define AFE_SCK	2
-	#define AFE_SDI	3
-	#define AFE_SDO	4
-	#define AFE_CS	5
+	//AFE Pins
+	#define AFE_SDO	16
+	#define AFE_CS	17
+	#define AFE_SCK	18
+	#define AFE_SDI	19
 
 	static const wm8213_afe_config_t afec_cfg = {
 		.spi = spi0,
@@ -74,8 +74,8 @@
 	static const struct dvi_serialiser_cfg picodvi_dvi_cfg = {
 		.pio = DVI_DEFAULT_PIO_INST,
 		.sm_tmds = {0, 1, 2},
-		.pins_tmds = {10, 12, 14},
-		.pins_clk = 8,
+		.pins_tmds = {3, 5, 7},
+		.pins_clk = 31,
 		.invert_diffpairs = true
 	};
 #endif
