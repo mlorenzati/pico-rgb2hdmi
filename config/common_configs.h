@@ -2,8 +2,10 @@
 #define _COMMON_CONFIGS_H
 
 //SYNC edge triggered Pins
-#define RGB_SCAN_VSYNC_PIN  0
-#define RGB_SCAN_HSYNC_PIN  2
+#ifdef _RGB_SCANNER_H
+	#define RGB_SCAN_VSYNC_PIN  26
+	#define RGB_SCAN_HSYNC_PIN  27
+#endif 
 
 //AFE (Analog Front End) Specific Config
 #ifdef _WM8213_AFE_H
@@ -75,7 +77,7 @@
 		.pio = DVI_DEFAULT_PIO_INST,
 		.sm_tmds = {0, 1, 2},
 		.pins_tmds = {3, 5, 7},
-		.pins_clk = 31,
+		.pins_clk = 1,
 		.invert_diffpairs = true
 	};
 #endif

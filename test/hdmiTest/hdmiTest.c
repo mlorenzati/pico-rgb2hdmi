@@ -17,7 +17,6 @@
 #include "dvi.h"
 #include "dvi_serialiser.h"
 #include "common_configs.h"
-//#include "C64combo.h"
 
 // TMDS bit clock 252 MHz
 // DVDD 1.2V
