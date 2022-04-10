@@ -9,16 +9,29 @@
 
 //AFE (Analog Front End) Specific Config
 #ifdef _WM8213_AFE_H
-	//AFE Pins
-	#define AFE_SDO	16
-	#define AFE_CS	17
-	#define AFE_SCK	18
-	#define AFE_SDI	19
+	//AFE SPI Pins
+	#define AFE_SDO  16
+	#define AFE_CS   17
+	#define AFE_SCK  18
+	#define AFE_SDI  19
+
+	//AFE Paralel port pins
+	#define AFE_OP		9  //Takes 8 pins starting from the beforementioned number
+	#define AFE_VSMP	20 //Video Sample timing pulse
+	#define AFE_RSMP	21 //Reset sample timing pulse
+	#define AFE_MCLK	22 //Master ADC Clock
+
+    //VSMP ___________________|‾|___________________________|‾|____________
+	//RSMP ____|‾|___________________________|‾|___________________________
+	//MCLK ____|‾‾‾‾|____|‾‾‾‾|____|‾‾‾‾|____|‾‾‾‾|____|‾‾‾‾|____|‾‾‾‾|____
+	//OP   ===>.<===R===>.<===G===>.<===B===>.<===R===>.<===G===>.<===B===>
+
+	#define AFE_SAMPLING_RATE 320*256*50
 
 	static const wm8213_afe_config_t afec_cfg = {
 		.spi = spi0,
 		.baudrate = 1 * MHZ,
-		.pins = {AFE_SCK, AFE_SDI, AFE_SDO, AFE_CS},
+		.pins_spi = {AFE_SCK, AFE_SDI, AFE_SDO, AFE_CS},
 		.setups = {
 			.setup1 = {
 				.enable = 1,
@@ -63,7 +76,12 @@
 				.clamp_ctrl = 0
 			}
 		},
-		.verify_retries = 3
+		.verify_retries = 3,
+		.pio = pio1,
+		.sm_afe_cp = 0,
+		.pin_base_afe_op = AFE_OP,
+		.pin_base_afe_ctrl = AFE_VSMP,
+		.sampling_rate_afe = AFE_SAMPLING_RATE
 	};
 #endif
 
@@ -74,7 +92,7 @@
 	#define DVI_DEFAULT_PIO_INST 		pio0
 
 	static const struct dvi_serialiser_cfg picodvi_dvi_cfg = {
-		.pio = DVI_DEFAULT_PIO_INST,
+		.pio = pio0,
 		.sm_tmds = {0, 1, 2},
 		.pins_tmds = {3, 5, 7},
 		.pins_clk = 1,

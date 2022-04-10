@@ -30,7 +30,8 @@
         "string": "c",
         "string_view": "c",
         "ranges": "c",
-        "rgbscan.h": "c"
+        "rgbscan.h": "c",
+        "random": "c"
     },
     "cortex-debug.variableUseNaturalFormat": false
 }

@@ -6,6 +6,13 @@
 
 #include "hardware/spi.h"
 #include "hardware/clocks.h"
+#include "hardware/pio.h"
+
+//Video Sampling in 8 bits parallel mode
+//VSMP ___________________|‾|___________________________|‾|____________
+//RSMP ____|‾|___________________________|‾|___________________________
+//MCLK ____|‾‾‾‾|____|‾‾‾‾|____|‾‾‾‾|____|‾‾‾‾|____|‾‾‾‾|____|‾‾‾‾|____
+//OP   ===>.<===R===>.<===G===>.<===B===>.<===R===>.<===G===>.<===B===>
 
 /* Wolfson AFE WM8213 Registers */
 // Setup registers
@@ -39,6 +46,10 @@
 // Read Mode Mask
 #define WM8213_ADDR_READ(x)           0x10|x
 #define WM8213_ADDR_WRITE(x)          0xEF&x
+
+// Amount of AFE data and control pins
+#define AFE_OP_BITS   8
+#define AFE_CTRL_BITS 3
 
 typedef struct wm8213_afe_setup_1 {
     io_rw_8  enable:1;
@@ -108,11 +119,21 @@ typedef struct wm8213_afe_pins {
 typedef struct wm8213_afe_config {
     spi_inst_t         *spi;
     uint                baudrate;
-    wm8213_afe_pins_t   pins;
+    wm8213_afe_pins_t   pins_spi;
     wm8213_afe_setups_t setups;
     char                verify_retries;
+    PIO                 pio;
+	uint                sm_afe_cp;
+    uint                pin_base_afe_op;
+    uint                pin_base_afe_ctrl;
+    uint                sampling_rate_afe;
+
 } wm8213_afe_config_t;
 
-int wm8213_afe_setup(const wm8213_afe_config_t* config);
+int  wm8213_afe_setup(const wm8213_afe_config_t* config);
+void wm8213_afe_capture_set_buffer(uintptr_t buffer, uint size);
+void wm8213_afe_capture_run();
+void wm8213_afe_capture_wait();
+void wm8213_afe_capture_update_sampling_rate(uint sampling_rate);
 
 #endif

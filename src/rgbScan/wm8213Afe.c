@@ -1,10 +1,19 @@
 #include "wm8213Afe.h"
 #include "hardware/gpio.h"
+#include "hardware/dma.h"
+#include "wm8213Afe.pio.h"
 
 static uint afe_cs = -1;
 static spi_inst_t *afe_spi;
 static bool spi_write_only_mode = true;
+PIO  afe_capture_565_pio;
+uint afe_capture_565_sm;
+uint afe_capture_565_sampling_rate;
+uint afe_capture_565_op_pins;
+uint afe_capture_565_control_pins;
+uint afe_dma_channel;
 
+// AFE SPI Related
 int wm8213_enable_cs(bool val) {
     asm volatile("nop \n nop \n nop");
     gpio_put(afe_cs, val);
@@ -38,21 +47,20 @@ int wm8213_afe_read(uint8_t address, uint8_t *data) {
     return read_len != 1;
 }
 
-int wm8213_afe_setup(const wm8213_afe_config_t* config)
-{
-    // Configure SPI head and the baudrate
+int wm8213_afe_spi_setup(const wm8213_afe_config_t* config) {
+// Configure SPI head and the baudrate
     afe_spi = config->spi;
     spi_init(afe_spi, config->baudrate);
 
     // Configure pins
-    gpio_set_function(config->pins.sck, GPIO_FUNC_SPI);
-    gpio_set_function(config->pins.sdi, GPIO_FUNC_SPI);
-    spi_write_only_mode = (config->pins.sdo >= NUM_BANK0_GPIOS) || config->setups.setup2.opd;
+    gpio_set_function(config->pins_spi.sck, GPIO_FUNC_SPI);
+    gpio_set_function(config->pins_spi.sdi, GPIO_FUNC_SPI);
+    spi_write_only_mode = (config->pins_spi.sdo >= NUM_BANK0_GPIOS) || config->setups.setup2.opd;
     if (!spi_write_only_mode) {
-        gpio_set_function(config->pins.sdo, GPIO_FUNC_SPI);
+        gpio_set_function(config->pins_spi.sdo, GPIO_FUNC_SPI);
     }
     // Configure and disable CS
-    afe_cs = config->pins.cs;
+    afe_cs = config->pins_spi.cs;
     gpio_init(afe_cs);
     wm8213_enable_cs(false);
     gpio_set_dir(afe_cs, GPIO_OUT);
@@ -85,6 +93,75 @@ int wm8213_afe_setup(const wm8213_afe_config_t* config)
             return 4;
         }
     }
+}
 
-    return 0;
+// AFE Pio Capture Related
+void wm8213_afe_capture_setup(PIO pio, uint sm, uint sampling_rate, uint op_pins, uint control_pins) {
+    //Setup OP and sample ports on PIO
+    afe_capture_565_pio = pio;
+    afe_capture_565_sm =  sm;
+    afe_capture_565_sampling_rate = sampling_rate;
+    afe_capture_565_op_pins = op_pins;
+    afe_capture_565_control_pins = control_pins;
+    uint offset = pio_add_program(afe_capture_565_pio, &afe_capture_565_program);
+    afe_capture_565_program_init(afe_capture_565_pio, afe_capture_565_sm, offset, afe_capture_565_sampling_rate, op_pins, control_pins);
+}
+
+void wm8213_afe_capture_update_sampling_rate(uint sampling_rate) {
+    wm8213_afe_capture_setup(afe_capture_565_pio, afe_capture_565_sm, sampling_rate, afe_capture_565_op_pins, afe_capture_565_control_pins);
+}
+
+// AFE DMA related
+void afe_dma_prepare(PIO pio, uint sm) {
+    uint dma_channel = dma_claim_unused_channel(true);
+
+    dma_channel_config dma_channel_cfg = dma_channel_get_default_config(dma_channel);
+    channel_config_set_transfer_data_size(&dma_channel_cfg, DMA_SIZE_32);   //Transfer 2-16bits words that are shifted by pio
+    channel_config_set_dreq(&dma_channel_cfg, pio_get_dreq(pio, sm, false)); // Pace transfers based on PIO samples availabilty
+    channel_config_set_read_increment(&dma_channel_cfg, false);
+    channel_config_set_write_increment(&dma_channel_cfg, true);
+
+    dma_channel_configure(dma_channel,
+        &dma_channel_cfg,
+        NULL,           // Destination: will be set later
+        &pio->rxf[sm],  // Source
+        0,              // Size: will be set later (2^N) / 2 
+        false
+    );
+    afe_dma_channel = dma_channel;
+}
+
+void afe_capture_rx_fifo_drain() {
+    while (!pio_sm_is_rx_fifo_empty(afe_capture_565_pio, afe_capture_565_sm)) {
+        (void) pio_sm_get(afe_capture_565_pio, afe_capture_565_sm);
+    }
+}
+
+//AFE Main calls
+int wm8213_afe_setup(const wm8213_afe_config_t* config)
+{
+    int res = wm8213_afe_spi_setup(config);
+
+    if (res > 0) { return res; }
+
+    wm8213_afe_capture_setup(config->pio, config->sm_afe_cp, config->sampling_rate_afe, config->pin_base_afe_op, config->pin_base_afe_ctrl);
+    afe_dma_prepare(config->pio, config->sm_afe_cp);
+
+    return res;
+}
+
+void wm8213_afe_capture_set_buffer(uintptr_t buffer, uint size) {
+    dma_channel_hw_addr(afe_dma_channel)->al1_write_addr = buffer;
+    dma_channel_hw_addr(afe_dma_channel)->transfer_count = size >> 1;
+}
+
+void wm8213_afe_capture_wait() {
+    dma_channel_wait_for_finish_blocking(afe_dma_channel);
+}
+
+void wm8213_afe_capture_run() {
+    //Purge fifo and start capture
+    afe_capture_rx_fifo_drain();
+    dma_channel_start(afe_dma_channel);
+    pio_sm_set_enabled(afe_capture_565_pio, afe_capture_565_sm, true);
 }

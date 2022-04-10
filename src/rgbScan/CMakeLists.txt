@@ -13,8 +13,8 @@ target_link_libraries(rgbScan INTERFACE
     pico_base_headers
 	pico_util
     hardware_spi
-    # hardware_dma
-    # hardware_pio
+    hardware_dma
+    hardware_pio
 )
 
-# pico_generate_pio_header(rgbScan ${CMAKE_CURRENT_LIST_DIR}/fastADC.pio)
+pico_generate_pio_header(rgbScan ${CMAKE_CURRENT_LIST_DIR}/wm8213Afe.pio)

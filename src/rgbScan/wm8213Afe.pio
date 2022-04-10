@@ -1,0 +1,63 @@
+; PIO program requires to perform a 3 bytes capture in 3 clocking sequences
+; Data is captured in falling edge of the clock
+; VSMP _1_________________|‾|___________________________|‾|____________
+; RSMP _2__|‾|___________________________|‾|___________________________
+; MCLK _4__|‾‾‾‾|____|‾‾‾‾|____|‾‾‾‾|____|‾‾‾‾|____|‾‾‾‾|____|‾‾‾‾|____
+; OP   ===>.<===R===>.<===G===>.<===B===>.<===R===>.<===G===>.<===B===>
+;          1    2    3    4    5    6
+;                    C         C         C
+.program  afe_capture_565
+.side_set 3
+public start:
+    nop        side 0 
+    nop        side 0
+    nop        side 6 ; Rsmp, R Data from first cycle is N-1 has to be thrown
+    nop        side 0 ; Clock low
+    nop        side 4 ; G Data from first cycle is N-1 has to be thrown
+    nop        side 1 ; VSample + clock low
+    nop        side 4 ; B Data from first cycle is N-1 has to be thrown
+    nop        side 0 ; Clock low
+.wrap_target          ; 6 Clocks per pixel
+    in pins, 5 side 6
+    nop        side 0
+    in pins, 6 side 4
+    nop        side 1
+    in pins, 5 side 4
+    nop        side 0  
+.wrap
+
+ % c-sdk {
+#include "hardware/clocks.h"
+#define AFE_OP_BITS   8
+#define AFE_CTRL_BITS 3
+static inline void afe_capture_565_program_init(PIO pio, uint sm, uint offset, uint sampling_rate, uint op_pins, uint control_pins) {
+    //OP pins are just for reading the AFE 8bits output
+    pio_sm_set_consecutive_pindirs(pio, sm, op_pins, AFE_OP_BITS, false);
+
+    //Control pins are just outputs to control the AFE reset and capture & clocking
+    pio_sm_set_consecutive_pindirs(pio, sm, control_pins, AFE_CTRL_BITS,  true);
+    
+    for (uint i = op_pins; i < op_pins + AFE_OP_BITS; ++i) {
+        pio_gpio_init(pio, i);
+    }
+
+    for (uint i = control_pins; i < control_pins + AFE_CTRL_BITS; ++i) {
+        pio_gpio_init(pio, i);
+    }
+
+    pio_sm_config c = afe_capture_565_program_get_default_config(offset);
+    
+    sm_config_set_in_shift(&c, true, true, 0); //The shifting is just done by the number of bits being fed (8)
+
+    // We only receive, so disable the TX FIFO to make the RX FIFO deeper.
+    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
+
+    sm_config_set_in_pins(&c, op_pins);
+    sm_config_set_sideset_pins(&c, control_pins);
+
+    float div = (float)(clock_get_hz(clk_sys) * 6) / sampling_rate;
+    sm_config_set_clkdiv(&c, div);
+
+    pio_sm_init(pio, sm, offset, &c);
+}
+%}
