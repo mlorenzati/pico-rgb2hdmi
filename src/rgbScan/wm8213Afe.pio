@@ -47,7 +47,7 @@ static inline void afe_capture_565_program_init(PIO pio, uint sm, uint offset, u
 
     pio_sm_config c = afe_capture_565_program_get_default_config(offset);
     
-    sm_config_set_in_shift(&c, true, true, 0); //The shifting is just done by the number of bits being fed (8)
+    sm_config_set_in_shift(&c, false, true, 16); //The shifting is just done by the number of bits being fed until 16 bits
 
     // We only receive, so disable the TX FIFO to make the RX FIFO deeper.
     sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
@@ -55,7 +55,7 @@ static inline void afe_capture_565_program_init(PIO pio, uint sm, uint offset, u
     sm_config_set_in_pins(&c, op_pins);
     sm_config_set_sideset_pins(&c, control_pins);
 
-    float div = (float)(clock_get_hz(clk_sys) * 6) / sampling_rate;
+    float div = (float)(clock_get_hz(clk_sys) / (6 * sampling_rate));
     sm_config_set_clkdiv(&c, div);
 
     pio_sm_init(pio, sm, offset, &c);

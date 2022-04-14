@@ -116,7 +116,7 @@ void afe_dma_prepare(PIO pio, uint sm) {
     uint dma_channel = dma_claim_unused_channel(true);
 
     dma_channel_config dma_channel_cfg = dma_channel_get_default_config(dma_channel);
-    channel_config_set_transfer_data_size(&dma_channel_cfg, DMA_SIZE_32);   //Transfer 2-16bits words that are shifted by pio
+    channel_config_set_transfer_data_size(&dma_channel_cfg, DMA_SIZE_16);   //Transfer 16bits words that are shifted by pio
     channel_config_set_dreq(&dma_channel_cfg, pio_get_dreq(pio, sm, false)); // Pace transfers based on PIO samples availabilty
     channel_config_set_read_increment(&dma_channel_cfg, false);
     channel_config_set_write_increment(&dma_channel_cfg, true);
@@ -125,7 +125,7 @@ void afe_dma_prepare(PIO pio, uint sm) {
         &dma_channel_cfg,
         NULL,           // Destination: will be set later
         &pio->rxf[sm],  // Source
-        0,              // Size: will be set later (2^N) / 2 
+        0,              // Size: will be set later
         false
     );
     afe_dma_channel = dma_channel;
@@ -152,7 +152,7 @@ int wm8213_afe_setup(const wm8213_afe_config_t* config)
 
 void wm8213_afe_capture_set_buffer(uintptr_t buffer, uint size) {
     dma_channel_hw_addr(afe_dma_channel)->al1_write_addr = buffer;
-    dma_channel_hw_addr(afe_dma_channel)->transfer_count = size >> 1;
+    dma_channel_hw_addr(afe_dma_channel)->transfer_count = size;
 }
 
 void wm8213_afe_capture_wait() {
