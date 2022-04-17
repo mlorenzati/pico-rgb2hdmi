@@ -12,6 +12,8 @@ unsigned int  timeHsync;
 unsigned int  hsyncCounter;
 unsigned int  nanoSecPerTick;
 
+scanlineCallback rgbScannerScanlineCallback = NULL;
+unsigned int     rgbScannerScanlineTrigger = 10000;   
 
 void rgbScannerIrqCallback(uint gpio, uint32_t events) {
     if (gpio == _vsyncGPIO) {
@@ -21,11 +23,18 @@ void rgbScannerIrqCallback(uint gpio, uint32_t events) {
         } 
         hsyncCounter = 0;
     } else if (gpio == _hsyncGPIO) {
-        hsyncCounter++;
+        if (hsyncCounter++ == rgbScannerScanlineTrigger) {
+            rgbScannerScanlineCallback();
+        };
     }   
 }
 
-int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO) {
+int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint scanlineTrigger, scanlineCallback callback) {
+    if (callback == NULL) {
+        return 1;
+    }
+    rgbScannerScanlineCallback = callback;
+    rgbScannerScanlineTrigger = scanlineTrigger;
     _vsyncGPIO = vsyncGPIO;
     _hsyncGPIO = hsyncGPIO;
     gpio_set_irq_enabled_with_callback(_vsyncGPIO,  GPIO_IRQ_EDGE_FALL, true, &rgbScannerIrqCallback);
