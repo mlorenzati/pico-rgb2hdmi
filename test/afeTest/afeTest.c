@@ -14,7 +14,7 @@ uint16_t test_buf[32];
 // A simple test the AFE (Analog Front End)
 int main() {
     wm8213_afe_config_t afec_cfg_2 = afec_cfg;
-    afec_cfg_2.sampling_rate_afe = 1000;
+    afec_cfg_2.sampling_rate_afe = 1000000;
     
     stdio_init_all();
     printf("AFE initial test \n");
@@ -41,12 +41,12 @@ int main() {
         wm8213_afe_capture_set_buffer((uintptr_t)test_buf, 32);
         wm8213_afe_capture_run();
         wm8213_afe_capture_wait();
-        printf("Registers:\n");
+        printf("RED\tGREEN\tBLUE\n");
         for (int cnt = 0; cnt < 32; cnt++) {
             int b = test_buf[cnt] & 0x1F; 
             int g = (test_buf[cnt]>>5) & 0x3F;
             int r = (test_buf[cnt]>>11) & 0x1F;
-            printf("%d-%d-%d, ",r,g,b);
+            printf("%f\t%f\t%f\n",(float)r*3.3/31, (float)g*3.3/63, (float)b*3.3/31);
         }
         printf("\n");
     }

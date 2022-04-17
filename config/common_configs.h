@@ -16,7 +16,7 @@
 	#define AFE_SDI  19
 
 	//AFE Paralel port pins
-	#define AFE_OP		9  //Takes 8 pins starting from the beforementioned number
+	#define AFE_OP		12 //Takes 5 pins starting from the beforementioned number
 	#define AFE_VSMP	20 //Video Sample timing pulse
 	#define AFE_RSMP	21 //Reset sample timing pulse
 	#define AFE_MCLK	22 //Master ADC Clock
@@ -27,6 +27,7 @@
 	//OP   ===>.<===R===>.<===G===>.<===B===>.<===R===>.<===G===>.<===B===>
 
 	#define AFE_SAMPLING_RATE 320*256*50
+	#define AFE_PGA_GAIN_RGB  9
 
 	static const wm8213_afe_config_t afec_cfg = {
 		.spi = spi0,
@@ -51,7 +52,7 @@
 				.del = 0
 			},
 			.setup3 = {
-				.rlc_dac = 3,
+				.rlc_dac = 0,
 				.cds_ref = 0,
 				.chan = 0
 			},
@@ -74,6 +75,25 @@
 				.posn_neg = 0,
 				.rlc_en = 0,
 				.clamp_ctrl = 0
+			},
+			.offset_dac = {
+				.red = 0,
+				.green = 0,
+				.blue = 0
+			},
+			.pga_gain = {
+				.red = {
+					.lsb =  AFE_PGA_GAIN_RGB & 0x01,
+					.msb = (AFE_PGA_GAIN_RGB >> 1) & 0xFF
+				},
+				.green = {
+					.lsb =  AFE_PGA_GAIN_RGB & 0x01,
+					.msb = (AFE_PGA_GAIN_RGB >> 1) & 0xFF
+				},
+				.blue = {
+					.lsb =  AFE_PGA_GAIN_RGB & 0x01,
+					.msb = (AFE_PGA_GAIN_RGB >> 1) & 0xFF
+				}
 			}
 		},
 		.verify_retries = 3,

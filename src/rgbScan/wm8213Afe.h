@@ -15,6 +15,8 @@
 //OP   ===>.<===R===>.<===G===>.<===B===>.<===R===>.<===G===>.<===B===>
 
 /* Wolfson AFE WM8213 Registers */
+#define WM8213_REG_SETUP_TOTAL       15      //Number of registers to setup on AFE 
+
 // Setup registers
 #define WM8213_REG_SETUP1            0x01
 #define WM8213_REG_SETUP2            0x02
@@ -27,11 +29,11 @@
 #define WM8213_REG_SWRESET           0x04
 #define WM8213_REG_AUTO_RESET        0x05
 
-// Dac registers
-#define WM8213_REG_DAC_RED           0x20
-#define WM8213_REG_DAC_GRN           0x21
-#define WM8213_REG_DAC_BLU           0x22
-#define WM8213_REG_DAC_RGB           0x23
+// Offset Dac registers
+#define WM8213_REG_OFFSET_DAC_RED   0x20
+#define WM8213_REG_OFFSET_DAC_GRN   0x21
+#define WM8213_REG_OFFSET_DAC_BLU   0x22
+#define WM8213_REG_OFFSET_DAC_RGB   0x23
 
 // Gain register per color
 #define WM8213_REG_PGA_GAIN_LSB_RED  0x24
@@ -47,16 +49,12 @@
 #define WM8213_ADDR_READ(x)           0x10|x
 #define WM8213_ADDR_WRITE(x)          0xEF&x
 
-// Amount of AFE data and control pins
-#define AFE_OP_BITS   8
-#define AFE_CTRL_BITS 3
-
 typedef struct wm8213_afe_setup_1 {
     io_rw_8  enable:1;
     io_rw_8  cds:1; //Correlated Double Sampler
     io_rw_8  mono:1;
     io_rw_8  two_chan:1;
-    io_rw_8  pgafs:2;
+    io_rw_8  pgafs:2; // Black Level Adjust (3= positive signals)
     io_rw_8  mode_4_legacy:1;
     io_rw_8  legacy:1;
 } wm8213_afe_setup_1_t;
@@ -71,7 +69,7 @@ typedef struct wm8213_afe_setup_2 {
 } wm8213_afe_setup_2_t;
 
 typedef struct wm8213_afe_setup_3 {
-    io_rw_8  rlc_dac:4;
+    io_rw_8  rlc_dac:4; //VRLC substracting DAC on input reference (VRLCSTEP*RLCDAC[0:3]+VRLCBOT)
     io_rw_8  cds_ref:2;
     io_rw_8  chan:2;
 } wm8213_afe_setup_3_t;
@@ -88,7 +86,7 @@ typedef struct wm8213_afe_setup_5 {
     io_rw_8  green_pd:1;
     io_rw_8  blue_pd:1;
     io_rw_8  adc_pd:1;
-    io_rw_8  vrlc_dac_pd:1;
+    io_rw_8  vrlc_dac_pd:1; //0: VRLC defined by internal RLC DAC
     io_rw_8  adc_ref_pd:1;
     io_rw_8  vrx_pd:1;
     io_rw_8  reserved:1;  
@@ -103,6 +101,24 @@ typedef struct wm8213_afe_setup_6 {
     io_rw_8  reserved:1;  
 } wm8213_afe_setup_6_t;
 
+typedef struct wm8213_afe_offset_dac {
+    io_rw_8      red;    //Offset added to the RED V1 input
+    io_rw_8      green;  //Offset added to the RED V1 input
+    io_rw_8      blue;   //Offset added to the RED V1 input
+} wm8213_afe_offset_dac_t;
+
+typedef struct wm8213_afe_pga_gain {
+    io_rw_8      lsb:1;  // LSB Gain on the final V3
+    io_rw_8      reserved:7;
+    io_rw_8      msb;    // MSB Gain on the final V3
+} wm8213_afe_pga_gain_t;
+
+typedef struct wm8213_afe_pga_gain_rgb {
+    wm8213_afe_pga_gain_t red;
+    wm8213_afe_pga_gain_t green;
+    wm8213_afe_pga_gain_t blue;
+} wm8213_afe_pga_gain_rgb_t;
+
 typedef struct wm8213_afe_setups {
     wm8213_afe_setup_1_t setup1;
     wm8213_afe_setup_2_t setup2;
@@ -110,6 +126,8 @@ typedef struct wm8213_afe_setups {
     wm8213_afe_setup_4_t setup4;
     wm8213_afe_setup_5_t setup5;
     wm8213_afe_setup_6_t setup6;
+    wm8213_afe_offset_dac_t   offset_dac;
+    wm8213_afe_pga_gain_rgb_t pga_gain;
 } wm8213_afe_setups_t;
 
 typedef struct wm8213_afe_pins { 
