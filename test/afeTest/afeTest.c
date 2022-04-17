@@ -14,7 +14,7 @@ uint16_t test_buf[32];
 // A simple test the AFE (Analog Front End)
 int main() {
     wm8213_afe_config_t afec_cfg_2 = afec_cfg;
-    afec_cfg_2.sampling_rate_afe = 1000000;
+    afec_cfg_2.sampling_rate_afe = 20000000;
     
     stdio_init_all();
     printf("AFE initial test \n");

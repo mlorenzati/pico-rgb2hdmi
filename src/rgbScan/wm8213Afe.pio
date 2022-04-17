@@ -19,9 +19,9 @@ public start:
 .wrap_target          ; 6 Clocks per pixel
     nop         side 6 
     in pins, 5  side 0 ; RED
-    nop         side 4 ; dummy Green LSB
+    nop         side 4 
     in pins, 5  side 1 ; GREEN
-    in x, 1     side 4
+    in x, 1     side 4 ; dummy Green LSB
     in pins, 5  side 0 ; BLUE
 .wrap
 

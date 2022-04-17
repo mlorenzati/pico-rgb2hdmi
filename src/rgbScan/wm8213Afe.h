@@ -151,6 +151,7 @@ typedef struct wm8213_afe_config {
 int  wm8213_afe_setup(const wm8213_afe_config_t* config);
 void wm8213_afe_capture_set_buffer(uintptr_t buffer, uint size);
 void wm8213_afe_capture_run();
+void wm8213_afe_capture_stop();
 void wm8213_afe_capture_wait();
 void wm8213_afe_capture_update_sampling_rate(uint sampling_rate);
 

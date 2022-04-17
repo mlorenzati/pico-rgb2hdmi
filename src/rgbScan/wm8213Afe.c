@@ -163,7 +163,12 @@ void wm8213_afe_capture_wait() {
 
 void wm8213_afe_capture_run() {
     //Purge fifo and start capture
+    pio_sm_set_enabled(afe_capture_565_pio, afe_capture_565_sm, false);
     afe_capture_rx_fifo_drain();
     dma_channel_start(afe_dma_channel);
     pio_sm_set_enabled(afe_capture_565_pio, afe_capture_565_sm, true);
+}
+
+void wm8213_afe_capture_stop() {
+    pio_sm_set_enabled(afe_capture_565_pio, afe_capture_565_sm, false);
 }
