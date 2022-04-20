@@ -13,7 +13,8 @@ unsigned int  hsyncCounter;
 unsigned int  nanoSecPerTick;
 
 scanlineCallback rgbScannerScanlineCallback = NULL;
-unsigned int     rgbScannerScanlineTrigger = 10000;   
+unsigned int     rgbScannerScanlineTriggerFrontPorch = 10000;   
+unsigned int     rgbScannerScanlineTriggerBackPorch = 10000; 
 
 void rgbScannerIrqCallback(uint gpio, uint32_t events) {
     if (gpio == _vsyncGPIO) {
@@ -23,20 +24,29 @@ void rgbScannerIrqCallback(uint gpio, uint32_t events) {
         } 
         hsyncCounter = 0;
     } else if (gpio == _hsyncGPIO) {
-        if (hsyncCounter++ == rgbScannerScanlineTrigger) {
-            rgbScannerScanlineCallback();
+        hsyncCounter++;
+        if (hsyncCounter >= rgbScannerScanlineTriggerFrontPorch && hsyncCounter <= rgbScannerScanlineTriggerBackPorch) {
+            rgbScannerScanlineCallback(hsyncCounter);
         };
     }   
 }
 
-int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint scanlineTrigger, scanlineCallback callback) {
+int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint backPorch, scanlineCallback callback) {
     if (callback == NULL) {
         return 1;
     }
     rgbScannerScanlineCallback = callback;
-    rgbScannerScanlineTrigger = scanlineTrigger;
+    rgbScannerScanlineTriggerFrontPorch = frontPorch;
+    rgbScannerScanlineTriggerBackPorch = backPorch;
     _vsyncGPIO = vsyncGPIO;
     _hsyncGPIO = hsyncGPIO;
+    gpio_init(_vsyncGPIO);
+    gpio_set_dir(_vsyncGPIO, GPIO_IN);
+    gpio_disable_pulls(_vsyncGPIO);
+    gpio_init(hsyncGPIO);
+    gpio_set_dir(hsyncGPIO, GPIO_IN);
+    gpio_disable_pulls(hsyncGPIO);
+
     gpio_set_irq_enabled_with_callback(_vsyncGPIO,  GPIO_IRQ_EDGE_FALL, true, &rgbScannerIrqCallback);
     gpio_set_irq_enabled_with_callback(_hsyncGPIO,  GPIO_IRQ_EDGE_FALL, true, &rgbScannerIrqCallback);
     nanoSecPerTick = 1000000000 / clock_get_hz(clk_sys);
