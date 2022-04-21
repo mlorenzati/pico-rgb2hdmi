@@ -95,6 +95,8 @@ int wm8213_afe_spi_setup(const wm8213_afe_config_t* config) {
             return 4;
         }
     }
+
+    return 0;
 }
 
 // AFE Pio Capture Related
