@@ -12,6 +12,8 @@ uint afe_capture_565_sampling_rate;
 uint afe_capture_565_op_pins;
 uint afe_capture_565_control_pins;
 uint afe_dma_channel;
+uint front_porch_dma_channel;
+uint16_t dummy_dma_read;
 
 // AFE SPI Related
 int wm8213_enable_cs(bool val) {
@@ -117,22 +119,37 @@ void wm8213_afe_capture_update_sampling_rate(uint sampling_rate) {
 
 // AFE DMA related
 void afe_dma_prepare(PIO pio, uint sm) {
-    uint dma_channel = dma_claim_unused_channel(true);
+    afe_dma_channel = dma_claim_unused_channel(true);
+    front_porch_dma_channel = dma_claim_unused_channel(true);
 
-    dma_channel_config dma_channel_cfg = dma_channel_get_default_config(dma_channel);
-    channel_config_set_transfer_data_size(&dma_channel_cfg, DMA_SIZE_16);   //Transfer 16bits words that are shifted by pio
-    channel_config_set_dreq(&dma_channel_cfg, pio_get_dreq(pio, sm, false)); // Pace transfers based on PIO samples availabilty
-    channel_config_set_read_increment(&dma_channel_cfg, false);
-    channel_config_set_write_increment(&dma_channel_cfg, true);
+    dma_channel_config front_porch_dma_channel_cfg = dma_channel_get_default_config(front_porch_dma_channel);
+    channel_config_set_transfer_data_size(&front_porch_dma_channel_cfg, DMA_SIZE_16);   //Transfer 16bits words that are shifted by pio
+    channel_config_set_dreq(&front_porch_dma_channel_cfg, pio_get_dreq(pio, sm, false)); // Pace transfers based on PIO samples availabilty
+    channel_config_set_read_increment(&front_porch_dma_channel_cfg, false);
+    channel_config_set_write_increment(&front_porch_dma_channel_cfg, false);
+    channel_config_set_chain_to(&front_porch_dma_channel_cfg, afe_dma_channel);
 
-    dma_channel_configure(dma_channel,
-        &dma_channel_cfg,
+    dma_channel_configure(front_porch_dma_channel,
+        &front_porch_dma_channel_cfg,
+        &dummy_dma_read, // Destination: dummy
+        &pio->rxf[sm],  // Source
+        0,              // Size: will be set later
+        false
+    );
+
+    dma_channel_config afe_dma_channel_cfg = dma_channel_get_default_config(afe_dma_channel);
+    channel_config_set_transfer_data_size(&afe_dma_channel_cfg, DMA_SIZE_16);   //Transfer 16bits words that are shifted by pio
+    channel_config_set_dreq(&afe_dma_channel_cfg, pio_get_dreq(pio, sm, false)); // Pace transfers based on PIO samples availabilty
+    channel_config_set_read_increment(&afe_dma_channel_cfg, false);
+    channel_config_set_write_increment(&afe_dma_channel_cfg, true);
+    
+    dma_channel_configure(afe_dma_channel,
+        &afe_dma_channel_cfg,
         NULL,           // Destination: will be set later
         &pio->rxf[sm],  // Source
         0,              // Size: will be set later
         false
     );
-    afe_dma_channel = dma_channel;
 }
 
 void afe_capture_rx_fifo_drain() {
@@ -163,11 +180,11 @@ void wm8213_afe_capture_wait() {
     dma_channel_wait_for_finish_blocking(afe_dma_channel);
 }
 
-void wm8213_afe_capture_run() {
+void wm8213_afe_capture_run(uint hFrontPorch) {
     //Purge fifo and start capture
     pio_sm_set_enabled(afe_capture_565_pio, afe_capture_565_sm, false);
     afe_capture_rx_fifo_drain();
-    dma_channel_start(afe_dma_channel);
+    dma_channel_hw_addr(front_porch_dma_channel)->al1_transfer_count_trig = hFrontPorch;
     pio_sm_set_enabled(afe_capture_565_pio, afe_capture_565_sm, true);
 }
 

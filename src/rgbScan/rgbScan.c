@@ -42,10 +42,10 @@ int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint backPo
     _hsyncGPIO = hsyncGPIO;
     gpio_init(_vsyncGPIO);
     gpio_set_dir(_vsyncGPIO, GPIO_IN);
-    gpio_disable_pulls(_vsyncGPIO);
+    gpio_is_pulled_up(_vsyncGPIO);
     gpio_init(hsyncGPIO);
     gpio_set_dir(hsyncGPIO, GPIO_IN);
-    gpio_disable_pulls(hsyncGPIO);
+    gpio_is_pulled_up(hsyncGPIO);
 
     gpio_set_irq_enabled_with_callback(_vsyncGPIO,  GPIO_IRQ_EDGE_FALL, true, &rgbScannerIrqCallback);
     gpio_set_irq_enabled_with_callback(_hsyncGPIO,  GPIO_IRQ_EDGE_FALL, true, &rgbScannerIrqCallback);

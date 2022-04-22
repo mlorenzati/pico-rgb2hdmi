@@ -10,12 +10,6 @@
 .side_set 3
 public start:
     set x, 1   side 0
-    nop        side 6 ; Rsmp, R Data from first cycle is N-1 has to be thrown
-    nop        side 0 ; Clock low
-    nop        side 4 ; G Data from first cycle is N-1 has to be thrown
-    nop        side 1 ; VSample + clock low
-    nop        side 4 ; B Data from first cycle is N-1 has to be thrown
-    nop        side 0 ; Clock low
 .wrap_target          ; 6 Clocks per pixel
     nop         side 6 
     in pins, 5  side 0 ; RED

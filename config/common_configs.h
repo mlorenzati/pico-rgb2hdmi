@@ -26,8 +26,8 @@
 	//MCLK ____|‾‾‾‾|____|‾‾‾‾|____|‾‾‾‾|____|‾‾‾‾|____|‾‾‾‾|____|‾‾‾‾|____
 	//OP   ===>.<===R===>.<===G===>.<===B===>.<===R===>.<===G===>.<===B===>
 
-	#define AFE_SAMPLING_RATE 320*256*50
-	#define AFE_PGA_GAIN_RGB  9
+	#define AFE_SAMPLING_RATE (320+25+25)*(240+35+35)*50
+	#define AFE_PGA_GAIN_RGB  50
 
 	static const wm8213_afe_config_t afec_cfg = {
 		.spi = spi0,

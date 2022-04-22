@@ -23,8 +23,9 @@
 #define VREG_VSEL VREG_VOLTAGE_1_20
 #define DVI_TIMING dvi_timing_640x480p_60hz
 
-int frontPorch = 100;
-int backPorch = 228;
+int vFrontPorch = 25;
+int vBackPorch = 239 + 25;
+int hFrontPorch = 40;
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
 
@@ -52,8 +53,8 @@ static inline void core1_scanline_callback() {
 }
 
 static inline void scanLineTriggered(unsigned int scanlineNumber) {
-	wm8213_afe_capture_set_buffer((uintptr_t)&framebuf[FRAME_WIDTH * (scanlineNumber-frontPorch)], 128);
-    wm8213_afe_capture_run();
+	wm8213_afe_capture_set_buffer((uintptr_t)&framebuf[FRAME_WIDTH * (scanlineNumber - vFrontPorch)], 320);
+    wm8213_afe_capture_run(hFrontPorch);
 	gpio_put(LED_PIN, blink);
     blink = !blink;
 }
@@ -68,7 +69,7 @@ void __not_in_flash("main") main() {
 	gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
 
-	afec_cfg_2.sampling_rate_afe = 380*240*50;
+	afec_cfg_2.sampling_rate_afe =(320+40+40)*(240+25+25)*50;
 
 	if (wm8213_afe_setup(&afec_cfg_2) > 0) {
          printf("AFE initialize failed \n");
@@ -78,7 +79,7 @@ void __not_in_flash("main") main() {
 		 gpio_put(LED_PIN, true);
     }
 
-	int error = rgbScannerSetup(RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, frontPorch, backPorch, scanLineTriggered);
+	int error = rgbScannerSetup(RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, vFrontPorch, vBackPorch, scanLineTriggered);
 	if (error > 0) {
         printf("rgbScannerSetup failed with code %d\n", error);
 		 gpio_put(LED_PIN, false);
