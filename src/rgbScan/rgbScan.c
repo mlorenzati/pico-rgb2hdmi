@@ -16,7 +16,7 @@ scanlineCallback rgbScannerScanlineCallback = NULL;
 unsigned int     rgbScannerScanlineTriggerFrontPorch = 10000;   
 unsigned int     rgbScannerScanlineTriggerBackPorch = 10000; 
 
-static inline void rgbScannerIrqCallback(uint gpio, uint32_t events) {
+void __isr rgbScannerIrqCallback(uint gpio, uint32_t events) {
     if (gpio == _vsyncGPIO) {
         timeVsync = systick_mark(false) * nanoSecPerTick;
         if (hsyncCounter > 0) {

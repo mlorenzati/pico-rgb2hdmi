@@ -153,9 +153,13 @@ void afe_dma_prepare(PIO pio, uint sm) {
 }
 
 void afe_capture_rx_fifo_drain() {
-    while (!pio_sm_is_rx_fifo_empty(afe_capture_565_pio, afe_capture_565_sm)) {
-        (void) pio_sm_get(afe_capture_565_pio, afe_capture_565_sm);
-    }
+    // while (!pio_sm_is_rx_fifo_empty(afe_capture_565_pio, afe_capture_565_sm)) {
+    //     (void) pio_sm_get(afe_capture_565_pio, afe_capture_565_sm);
+    // }
+    pio_sm_get(afe_capture_565_pio, afe_capture_565_sm);
+    pio_sm_get(afe_capture_565_pio, afe_capture_565_sm);
+    pio_sm_get(afe_capture_565_pio, afe_capture_565_sm);
+    pio_sm_get(afe_capture_565_pio, afe_capture_565_sm);
 }
 
 //AFE Main calls
@@ -184,8 +188,9 @@ void wm8213_afe_capture_run(uint hFrontPorch) {
     //Purge fifo and start capture
     pio_sm_set_enabled(afe_capture_565_pio, afe_capture_565_sm, false);
     afe_capture_rx_fifo_drain();
-    dma_channel_hw_addr(front_porch_dma_channel)->al1_transfer_count_trig = hFrontPorch;
     pio_sm_set_enabled(afe_capture_565_pio, afe_capture_565_sm, true);
+    dma_channel_hw_addr(front_porch_dma_channel)->al1_transfer_count_trig = hFrontPorch;
+    
 }
 
 void wm8213_afe_capture_stop() {

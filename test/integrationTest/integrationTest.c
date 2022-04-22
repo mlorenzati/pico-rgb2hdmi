@@ -25,7 +25,7 @@
 
 int vFrontPorch = 25;
 int vBackPorch = 239 + 25;
-int hFrontPorch = 40;
+int hFrontPorch = 43;
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
 
