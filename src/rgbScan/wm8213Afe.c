@@ -16,7 +16,7 @@ uint front_porch_dma_channel;
 uint16_t dummy_dma_read;
 
 // AFE SPI Related
-int wm8213_enable_cs(bool val) {
+void wm8213_enable_cs(bool val) {
     asm volatile("nop \n nop \n nop");
     gpio_put(afe_cs, val);
     asm volatile("nop \n nop \n nop");
@@ -109,7 +109,8 @@ void wm8213_afe_capture_setup(PIO pio, uint sm, uint sampling_rate, uint op_pins
     afe_capture_565_sampling_rate = sampling_rate;
     afe_capture_565_op_pins = op_pins;
     afe_capture_565_control_pins = control_pins;
-    uint offset = pio_add_program(afe_capture_565_pio, &afe_capture_565_program);
+    uint offset =  pio_add_program(afe_capture_565_pio, 
+        sampling_rate > AFE_SAMPLING_LIMIT ?  &afe_capture_565_inverted_program : &afe_capture_565_program);
     afe_capture_565_program_init(afe_capture_565_pio, afe_capture_565_sm, offset, afe_capture_565_sampling_rate, op_pins, control_pins);
 }
 

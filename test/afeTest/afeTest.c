@@ -39,7 +39,7 @@ int main() {
         gpio_put(LED_PIN, 0);
         sleep_ms(500);
         wm8213_afe_capture_set_buffer((uintptr_t)test_buf, 32);
-        wm8213_afe_capture_run();
+        wm8213_afe_capture_run(1);
         wm8213_afe_capture_wait();
         printf("RED\tGREEN\tBLUE\n");
         for (int cnt = 0; cnt < 32; cnt++) {

@@ -49,6 +49,8 @@
 #define WM8213_ADDR_READ(x)           0x10|x
 #define WM8213_ADDR_WRITE(x)          0xEF&x
 
+#define AFE_SAMPLING_LIMIT            7600000 //Should be 8MSPS but proben to be less, After this value RSMP / VSMP has to be flipped
+
 typedef struct wm8213_afe_setup_1 {
     io_rw_8  enable:1;
     io_rw_8  cds:1; //Correlated Double Sampler

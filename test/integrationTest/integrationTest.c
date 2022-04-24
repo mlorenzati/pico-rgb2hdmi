@@ -23,16 +23,16 @@
 #define VREG_VSEL VREG_VOLTAGE_1_20
 #define DVI_TIMING dvi_timing_640x480p_60hz
 
-int vFrontPorch = 25;
+int vFrontPorch = 24;
 int vBackPorch = 239 + 25;
-int hFrontPorch = 43;
+int hFrontPorch = 60;
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
 
 struct dvi_inst dvi0;
 uint16_t framebuf[FRAME_WIDTH * FRAME_HEIGHT];
 wm8213_afe_config_t afec_cfg_2 = afec_cfg;
-    
+int samplingRate = (FRAME_WIDTH+50+50)*(FRAME_HEIGHT+30+30)*50;    
 
 void __not_in_flash("core1_main")  core1_main() {
 	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
@@ -69,7 +69,7 @@ void __not_in_flash("main") main() {
 	gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
 
-	afec_cfg_2.sampling_rate_afe =(320+40+40)*(240+25+25)*50;
+	afec_cfg_2.sampling_rate_afe = samplingRate;
 
 	if (wm8213_afe_setup(&afec_cfg_2) > 0) {
          printf("AFE initialize failed \n");
