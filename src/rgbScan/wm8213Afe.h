@@ -7,6 +7,7 @@
 #include "hardware/spi.h"
 #include "hardware/clocks.h"
 #include "hardware/pio.h"
+#include "hardware/dma.h"
 
 //Video Sampling in 8 bits parallel mode
 //VSMP ___________________|‾|___________________________|‾|____________
@@ -150,9 +151,45 @@ typedef struct wm8213_afe_config {
 
 } wm8213_afe_config_t;
 
+typedef struct wm8213_afe_capture {
+    PIO  pio;
+    uint sm;
+    uint capture_dma;
+    uint front_porch_dma;
+    uint sampling_rate;
+    uint op_pins, control_pins;
+} wm8213_afe_capture_t;
+
+extern wm8213_afe_capture_t wm8213_afe_capture_global;
+
 int  wm8213_afe_setup(const wm8213_afe_config_t* config);
-void wm8213_afe_capture_set_buffer(uintptr_t buffer, uint size);
-void wm8213_afe_capture_run(uint hFrontPorch);
+static inline void afe_capture_rx_fifo_drain(PIO  pio, uint sm) {
+    // while (!pio_sm_is_rx_fifo_empty(afe_capture_565_pio, afe_capture_565_sm)) {
+    //     (void) pio_sm_get(afe_capture_565_pio, afe_capture_565_sm);
+    // }
+    pio_sm_get(pio, sm);
+    pio_sm_get(pio, sm);
+    pio_sm_get(pio, sm);
+    pio_sm_get(pio, sm);
+}
+
+static inline void wm8213_afe_capture_run(uint hFrontPorch, uintptr_t buffer, uint size) {
+     //Don't interrupt running DMAs!
+    uint capture_dma = wm8213_afe_capture_global.capture_dma;
+    if (dma_channel_is_busy(capture_dma)) {
+        return;
+    }
+    dma_channel_hw_addr(capture_dma)->al1_write_addr = buffer;
+    dma_channel_hw_addr(capture_dma)->transfer_count = size;
+
+    PIO pio = wm8213_afe_capture_global.pio;
+    uint sm = wm8213_afe_capture_global.sm;
+    pio_sm_set_enabled(pio, sm, false);
+    afe_capture_rx_fifo_drain(pio, sm);
+    pio_sm_set_enabled(pio, sm, true);
+    dma_channel_hw_addr(wm8213_afe_capture_global.front_porch_dma)->al1_transfer_count_trig = hFrontPorch;
+}
+
 void wm8213_afe_capture_stop();
 void wm8213_afe_capture_wait();
 void wm8213_afe_capture_update_sampling_rate(uint sampling_rate);

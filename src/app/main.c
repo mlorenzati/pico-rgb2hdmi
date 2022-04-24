@@ -48,8 +48,7 @@ static inline void prepare_scanline(const uint32_t *colourbuf, uint32_t *tmdsbuf
 }
 
 static inline void scanLineTriggered(unsigned int scanlineNumber) {
-	wm8213_afe_capture_set_buffer((uintptr_t)&framebuf[2*(scanlineNumber - vFrontPorch)/3], 640);
-    wm8213_afe_capture_run(hFrontPorch);
+    wm8213_afe_capture_run(hFrontPorch, (uintptr_t)&framebuf[2*(scanlineNumber - vFrontPorch)/3], 640);
 	gpio_put(LED_PIN, blink);
     blink = !blink;
 }
@@ -78,7 +77,8 @@ void __not_in_flash("main") core1_main() {
     }
 
 	while (1) {
-		sleep_ms(100);
+		printf("Current Clock=%ldhz, Vysnc=%ldnSec, %ldHz, Hsync=%dnSec, %dHz\n", clock_get_hz(clk_sys), rgbScannerGetVsyncNanoSec(), 1000000000 / rgbScannerGetVsyncNanoSec(), rgbScannerGetHsyncNanoSec(), 1000000000 / rgbScannerGetHsyncNanoSec());
+		sleep_ms(1000);
 	}
 	__builtin_unreachable();
 }
@@ -88,7 +88,7 @@ int __not_in_flash("main") main() {
 	sleep_ms(10);
 	set_sys_clock_khz(DVI_TIMING.bit_clk_khz, true);
 
-	//stdio_init_all();
+	stdio_init_all();
     setup_default_uart();
 	gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);

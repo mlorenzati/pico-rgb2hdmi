@@ -5,6 +5,8 @@
 #include "pico/stdlib.h"
 #include "rgbScan.h"
 #include "common_configs.h"
+#include "hardware/vreg.h"
+#include "hardware/clocks.h"
 
 int frontPorch = 20;
 int backPorch = 30;
@@ -17,6 +19,10 @@ void scanLineTriggered(unsigned int scanlineNumber) {
 }
 
 int main() {
+    vreg_set_voltage(VREG_VOLTAGE_1_20);
+	sleep_ms(10);
+	set_sys_clock_khz(250000, true);
+
     stdio_init_all();
 
     gpio_init(LED_PIN);
@@ -27,7 +33,7 @@ int main() {
     }
 
     while (true) {
-        printf("Vysnc=%ldnSec, %ldHz, Hsync=%dnSec, %dHz\n", rgbScannerGetVsyncNanoSec(), 1000000000 / rgbScannerGetVsyncNanoSec(), rgbScannerGetHsyncNanoSec(), 1000000000 / rgbScannerGetHsyncNanoSec());
+        printf("Current Clock=%ldhz, Vysnc=%ldnSec, %ldHz, Hsync=%dnSec, %dHz\n", clock_get_hz(clk_sys), rgbScannerGetVsyncNanoSec(), 1000000000 / rgbScannerGetVsyncNanoSec(), rgbScannerGetHsyncNanoSec(), 1000000000 / rgbScannerGetHsyncNanoSec());
         sleep_ms(1000);
     }
 }

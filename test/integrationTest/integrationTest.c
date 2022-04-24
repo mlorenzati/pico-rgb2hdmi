@@ -53,8 +53,7 @@ static inline void core1_scanline_callback() {
 }
 
 static inline void scanLineTriggered(unsigned int scanlineNumber) {
-	wm8213_afe_capture_set_buffer((uintptr_t)&framebuf[FRAME_WIDTH * (scanlineNumber - vFrontPorch)], 320);
-    wm8213_afe_capture_run(hFrontPorch);
+    wm8213_afe_capture_run(hFrontPorch, (uintptr_t)&framebuf[FRAME_WIDTH * (scanlineNumber - vFrontPorch)], 320);
 	gpio_put(LED_PIN, blink);
     blink = !blink;
 }
