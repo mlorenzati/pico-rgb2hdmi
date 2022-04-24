@@ -38,7 +38,7 @@ uint16_t framebuf[FRAME_HEIGHT / 3][FRAME_WIDTH];
 int vFrontPorch = 25;
 int vBackPorch = 239 + 25;
 int hFrontPorch = 43;
-int samplingRate = (FRAME_WIDTH+40+40)*(240+25+25)*50;
+int samplingRate = (320+40+40)*(240+25+25)*50;
 
 static inline void prepare_scanline(const uint32_t *colourbuf, uint32_t *tmdsbuf) {
 	const uint pixwidth = FRAME_WIDTH;
@@ -48,7 +48,7 @@ static inline void prepare_scanline(const uint32_t *colourbuf, uint32_t *tmdsbuf
 }
 
 static inline void scanLineTriggered(unsigned int scanlineNumber) {
-	wm8213_afe_capture_set_buffer((uintptr_t)&framebuf[2*(scanlineNumber - vFrontPorch)/3], 639);
+	wm8213_afe_capture_set_buffer((uintptr_t)&framebuf[2*(scanlineNumber - vFrontPorch)/3], 320);
     wm8213_afe_capture_run(hFrontPorch);
 	gpio_put(LED_PIN, blink);
     blink = !blink;
@@ -61,21 +61,7 @@ void __not_in_flash("main") core1_main() {
 	sem_acquire_blocking(&dvi_start_sem);
 	dvi_start(&dvi0);
 
-	while (1) {
-		const uint32_t *colourbuf = (const uint32_t*)multicore_fifo_pop_blocking();
-		uint32_t *tmdsbuf = (uint32_t*)multicore_fifo_pop_blocking();
-		prepare_scanline(colourbuf, tmdsbuf);
-		multicore_fifo_push_blocking(0);
-	}
-	__builtin_unreachable();
-}
-
-int __not_in_flash("main") main() {
-	vreg_set_voltage(VREG_VSEL);
-	sleep_ms(10);
-	set_sys_clock_khz(DVI_TIMING.bit_clk_khz, true);
-
-    afec_cfg_2.sampling_rate_afe = samplingRate;
+ 	afec_cfg_2.sampling_rate_afe = samplingRate;
 
 	if (wm8213_afe_setup(&afec_cfg_2) > 0) {
          printf("AFE initialize failed \n");
@@ -90,6 +76,17 @@ int __not_in_flash("main") main() {
         printf("rgbScannerSetup failed with code %d\n", error);
 		gpio_put(LED_PIN, false);
     }
+
+	while (1) {
+		sleep_ms(100);
+	}
+	__builtin_unreachable();
+}
+
+int __not_in_flash("main") main() {
+	vreg_set_voltage(VREG_VSEL);
+	sleep_ms(10);
+	set_sys_clock_khz(DVI_TIMING.bit_clk_khz, true);
 
 	//stdio_init_all();
     setup_default_uart();
@@ -121,17 +118,11 @@ int __not_in_flash("main") main() {
 	sem_release(&dvi_start_sem);
 	while (1) {
 		for (int y = 0; y < FRAME_HEIGHT; y+=2) {
-			uint32_t *our_tmds_buf, *their_tmds_buf;
-			queue_remove_blocking_u32(&dvi0.q_tmds_free, &their_tmds_buf);
-			multicore_fifo_push_blocking((uint32_t)framebuf[y/3]);
-			multicore_fifo_push_blocking((uint32_t)their_tmds_buf);
+			uint32_t *tmds_buf;
 	
-			queue_remove_blocking_u32(&dvi0.q_tmds_free, &our_tmds_buf);
-			prepare_scanline((const uint32_t*)(framebuf[(y+1)/3]), our_tmds_buf);
-			
-			multicore_fifo_pop_blocking();
-			queue_add_blocking_u32(&dvi0.q_tmds_valid, &their_tmds_buf);
-			queue_add_blocking_u32(&dvi0.q_tmds_valid, &our_tmds_buf);
+			queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmds_buf);
+			prepare_scanline((const uint32_t*)(framebuf[y/3]), tmds_buf);
+			queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmds_buf);
 		}
 	}
 	__builtin_unreachable();

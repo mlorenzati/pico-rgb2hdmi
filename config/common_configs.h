@@ -27,8 +27,8 @@
 	//OP   ===>.<===R===>.<===G===>.<===B===>.<===R===>.<===G===>.<===B===>
 
 	#define AFE_SAMPLING_RATE (320+25+25)*(240+35+35)*50
-    #define AFE_PGA_GAIN_RGB  150
-	#define AFE_RLC_DAC_NEG   2
+    #define AFE_PGA_GAIN_RGB  60
+	#define AFE_RLC_DAC_NEG   1
 
 	static const wm8213_afe_config_t afec_cfg = {
 		.spi = spi0,

@@ -7,8 +7,7 @@ if (TARGET tinyusb_device)
     target_compile_options(pico_rgb2hdmi_app PRIVATE -Wall)
 
     target_compile_definitions(pico_rgb2hdmi_app PRIVATE
-        DVI_VERTICAL_REPEAT=1
-        DVI_N_TMDS_BUFFERS=5
+        DVI_VERTICAL_REPEAT=2
         DVI_SYMBOLS_PER_WORD=1
         )
 
