@@ -35,10 +35,10 @@ struct semaphore dvi_start_sem;
 wm8213_afe_config_t afec_cfg_2 = afec_cfg;
 uint16_t framebuf[FRAME_HEIGHT / 3][FRAME_WIDTH];
 
-int vFrontPorch = 30;
-int vBackPorch = 239 + 30;
+int vFrontPorch =  20;
+int vBackPorch = 239 + 20;
 int hFrontPorch = 50;
-int samplingRate = (FRAME_WIDTH+40+40)*((FRAME_HEIGHT/2)+30+30)*50;
+int samplingRate = (FRAME_WIDTH+55+55)*((FRAME_HEIGHT/2)+45+45)*50;
 
 static inline void prepare_scanline(const uint32_t *colourbuf, uint32_t *tmdsbuf) {
 	const uint pixwidth = FRAME_WIDTH;
@@ -48,7 +48,7 @@ static inline void prepare_scanline(const uint32_t *colourbuf, uint32_t *tmdsbuf
 }
 
 static inline void scanLineTriggered(unsigned int scanlineNumber) {
-	wm8213_afe_capture_set_buffer((uintptr_t)&framebuf[2*(scanlineNumber - vFrontPorch)/3], 600);
+	wm8213_afe_capture_set_buffer((uintptr_t)&framebuf[2*(scanlineNumber - vFrontPorch)/3], 640);
     wm8213_afe_capture_run(hFrontPorch);
 	gpio_put(LED_PIN, blink);
     blink = !blink;

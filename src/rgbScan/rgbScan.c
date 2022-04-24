@@ -48,7 +48,7 @@ int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint backPo
     gpio_is_pulled_up(hsyncGPIO);
 
     gpio_set_irq_enabled_with_callback(_vsyncGPIO,  GPIO_IRQ_EDGE_FALL, true, &rgbScannerIrqCallback);
-    gpio_set_irq_enabled_with_callback(_hsyncGPIO,  GPIO_IRQ_EDGE_FALL, true, &rgbScannerIrqCallback);
+    gpio_set_irq_enabled_with_callback(_hsyncGPIO,  GPIO_IRQ_EDGE_RISE, true, &rgbScannerIrqCallback);
     nanoSecPerTick = 1000000000 / clock_get_hz(clk_sys);
     systick_setup(false);
     systick_start(false, 0xFFFFFF);
