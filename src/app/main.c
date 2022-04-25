@@ -35,10 +35,10 @@ struct semaphore dvi_start_sem;
 wm8213_afe_config_t afec_cfg_2 = afec_cfg;
 uint16_t framebuf[FRAME_HEIGHT / 3][FRAME_WIDTH];
 
-int vFrontPorch =  20;
-int vBackPorch = 239 + 20;
+int vFrontPorch =  28;
+int vBackPorch = 239 + 28;
 int hFrontPorch = 50;
-int samplingRate = (FRAME_WIDTH+55+55)*((FRAME_HEIGHT/2)+45+45)*50;
+int samplingRate = (FRAME_WIDTH+56+56)*((FRAME_HEIGHT)+48+48)*50;
 
 static inline void prepare_scanline(const uint32_t *colourbuf, uint32_t *tmdsbuf) {
 	const uint pixwidth = FRAME_WIDTH;

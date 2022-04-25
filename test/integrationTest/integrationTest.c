@@ -25,7 +25,7 @@
 
 int vFrontPorch = 24;
 int vBackPorch = 239 + 25;
-int hFrontPorch = 60;
+int hFrontPorch = 30;
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
 
@@ -118,6 +118,7 @@ void __not_in_flash("main") main() {
 	}
 	while (1)
 	{
+		printf("Current Clock=%ldhz, Vysnc=%ldnSec, %ldHz, Hsync=%dnSec, %dHz\n", clock_get_hz(clk_sys), rgbScannerGetVsyncNanoSec(), 1000000000 / rgbScannerGetVsyncNanoSec(), rgbScannerGetHsyncNanoSec(), 1000000000 / rgbScannerGetHsyncNanoSec());
 		sleep_ms(1000);
 	}
 }
