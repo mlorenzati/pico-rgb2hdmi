@@ -8,7 +8,9 @@ target_sources(rgbScan INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/wm8213Afe.c
     ${CMAKE_CURRENT_LIST_DIR}/wm8213Afe.h
 )
+
 target_include_directories(rgbScan INTERFACE ${CMAKE_CURRENT_LIST_DIR})
+
 target_link_libraries(rgbScan INTERFACE
     pico_base_headers
 	pico_util

@@ -4,7 +4,6 @@ if (TARGET tinyusb_device)
         dacTest.c
         )
 
-    target_include_directories(rgbScan INTERFACE ${CMAKE_CURRENT_LIST_DIR})
     target_link_libraries(dacTest PRIVATE
         rgbScan
         pico_multicore

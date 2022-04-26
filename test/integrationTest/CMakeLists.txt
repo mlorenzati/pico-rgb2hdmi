@@ -5,9 +5,6 @@ if (TARGET tinyusb_device)
         )
 
     target_compile_options(integrationTest PRIVATE -Wall)
-    
-    target_include_directories(libdvi INTERFACE ${CMAKE_CURRENT_LIST_DIR})
-    target_include_directories(rgbScan INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 
     target_link_libraries(integrationTest PRIVATE
         pico_stdlib
@@ -15,6 +12,8 @@ if (TARGET tinyusb_device)
         pico_util
         libdvi
         rgbScan
+        overlay
+        securemodule
         )
 
     pico_enable_stdio_usb(integrationTest 1)

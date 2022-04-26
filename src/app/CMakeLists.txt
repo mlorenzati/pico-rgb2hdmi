@@ -11,7 +11,6 @@ if (TARGET tinyusb_device)
         DVI_SYMBOLS_PER_WORD=1
         )
 
-    target_include_directories(libdvi INTERFACE ${CMAKE_CURRENT_LIST_DIR})
     target_link_libraries(pico_rgb2hdmi_app PRIVATE
         pico_stdlib
         pico_multicore

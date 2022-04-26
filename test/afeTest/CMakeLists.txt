@@ -4,7 +4,6 @@ if (TARGET tinyusb_device)
         afeTest.c
     )
 
-    target_include_directories(rgbScan INTERFACE ${CMAKE_CURRENT_LIST_DIR})
     target_link_libraries(afeTest PRIVATE
         rgbScan
         pico_multicore
