@@ -26,7 +26,7 @@ void __isr rgbScannerIrqCallback(uint gpio, uint32_t events) {
     } else if (gpio == _hsyncGPIO) {
         hsyncCounter++;
         if (hsyncCounter >= rgbScannerScanlineTriggerFrontPorch && hsyncCounter <= rgbScannerScanlineTriggerBackPorch) {
-            rgbScannerScanlineCallback(hsyncCounter);
+            rgbScannerScanlineCallback(hsyncCounter - rgbScannerScanlineTriggerFrontPorch);
         };
     }   
 }

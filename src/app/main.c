@@ -47,8 +47,8 @@ static inline void prepare_scanline(const uint32_t *colourbuf, uint32_t *tmdsbuf
 	tmds_encode_data_channel_fullres_16bpp(colourbuf, tmdsbuf + 2 * pixwidth, pixwidth, 15, 11);
 }
 
-static inline void scanLineTriggered(unsigned int scanlineNumber) {
-    wm8213_afe_capture_run(hFrontPorch, (uintptr_t)&framebuf[2*(scanlineNumber - vFrontPorch)/3], 640);
+static inline void scanLineTriggered(unsigned int render_line_number) {
+    wm8213_afe_capture_run(hFrontPorch, (uintptr_t)&framebuf[2*render_line_number/3], 640);
 	gpio_put(LED_PIN, blink);
     blink = !blink;
 }

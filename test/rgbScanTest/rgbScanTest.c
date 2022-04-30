@@ -13,7 +13,7 @@ int backPorch = 30;
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
 
-void scanLineTriggered(unsigned int scanlineNumber) {
+void scanLineTriggered(unsigned int render_line_number) {
      gpio_put(LED_PIN, blink);
      blink = !blink;
 }

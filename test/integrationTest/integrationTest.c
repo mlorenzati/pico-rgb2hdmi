@@ -1,40 +1,49 @@
+//System defined includes
 #include <stdio.h>
 #include <stdlib.h>
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
+#include "pico/sem.h"
 #include "hardware/clocks.h"
 #include "hardware/gpio.h"
 #include "hardware/irq.h"
 #include "hardware/sync.h"
 #include "hardware/vreg.h"
-#include "pico/sem.h"
 
+//Library related includes
 #include "dvi.h"
 #include "dvi_serialiser.h"
 #include "rgbScan.h"
 #include "wm8213Afe.h"
+#include "videoAdjust.h"
+#include "overlay.h"
 
+//HW Configuration includes
 #include "common_configs.h"
 
+
+// System config definitions
 // TMDS bit clock 252 MHz
 // DVDD 1.2V (1.1V seems ok too)
 #define FRAME_WIDTH 320
 #define FRAME_HEIGHT 240
+#define REFRESH_RATE 50
+
 #define VREG_VSEL VREG_VOLTAGE_1_20
 #define DVI_TIMING dvi_timing_640x480p_60hz
 
-int vFrontPorch = 24;
-int vBackPorch = 239 + 25;
-int hFrontPorch = 30;
+// --------- Global register start --------- 
+struct dvi_inst dvi0;
+
+wm8213_afe_config_t afec_cfg_2 = afec_cfg;
+
+uint16_t framebuf[FRAME_WIDTH * FRAME_HEIGHT];
+
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
+// --------- Global register end --------- 
 
-struct dvi_inst dvi0;
-uint16_t framebuf[FRAME_WIDTH * FRAME_HEIGHT];
-wm8213_afe_config_t afec_cfg_2 = afec_cfg;
-int samplingRate = (FRAME_WIDTH+50+50)*(FRAME_HEIGHT+30+30)*50;    
-
-void __not_in_flash("core1_main")  core1_main() {
+void __not_in_flash_func(core1_main)() {
 	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
 	dvi_start(&dvi0);
 	dvi_scanbuf_main_16bpp(&dvi0);
@@ -42,25 +51,25 @@ void __not_in_flash("core1_main")  core1_main() {
 }
 
 static inline void core1_scanline_callback() {
-	// Discard any scanline pointers passed back
 	uint16_t *bufptr;
 	while (queue_try_remove_u32(&dvi0.q_colour_free, &bufptr));
-	// // Note first two scanlines are pushed before DVI start
 	static uint scanline = 2;
 	bufptr = &framebuf[FRAME_WIDTH * scanline];
 	queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
 	scanline = (scanline + 1) % FRAME_HEIGHT;
 }
 
-static inline void scanLineTriggered(unsigned int scanlineNumber) {
-    wm8213_afe_capture_run(hFrontPorch, (uintptr_t)&framebuf[FRAME_WIDTH * (scanlineNumber - vFrontPorch)], 320);
+static inline void scanLineTriggered(unsigned int render_line_number) {
+    wm8213_afe_capture_run(VIDEO_OVERLAY_GET_COMPUTED_FRONT_PORCH(), (uintptr_t)&framebuf[FRAME_WIDTH * render_line_number + VIDEO_OVERLAY_GET_COMPUTED_OFFSET()] , VIDEO_OVERLAY_GET_COMPUTED_WIDTH());
+	video_overlay_scanline_prepare(render_line_number);
 	gpio_put(LED_PIN, blink);
     blink = !blink;
 }
 
-void __not_in_flash("main") main() {
+int __not_in_flash_func(main)() {
 	vreg_set_voltage(VREG_VSEL);
 	sleep_ms(10);
+
 	// Run system at TMDS bit clock
 	set_sys_clock_khz(DVI_TIMING.bit_clk_khz, true);
 
@@ -68,7 +77,12 @@ void __not_in_flash("main") main() {
 	gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
 
-	afec_cfg_2.sampling_rate_afe = samplingRate;
+	//Configure video properties
+	set_video_props(24, 76, 30, 30, FRAME_WIDTH, FRAME_HEIGHT, REFRESH_RATE);	
+	afec_cfg_2.sampling_rate_afe = GET_VIDEO_PROPS().sampling_rate;
+
+	//Prepare video Overlay
+	set_video_overlay(-100,-100, true);
 
 	if (wm8213_afe_setup(&afec_cfg_2) > 0) {
          printf("AFE initialize failed \n");
@@ -78,7 +92,8 @@ void __not_in_flash("main") main() {
 		 gpio_put(LED_PIN, true);
     }
 
-	int error = rgbScannerSetup(RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, vFrontPorch, vBackPorch, scanLineTriggered);
+	int error = rgbScannerSetup(
+		RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, GET_VIDEO_PROPS().vertical_front_porch, GET_VIDEO_PROPS().vertical_front_porch + GET_VIDEO_PROPS().height, scanLineTriggered);
 	if (error > 0) {
         printf("rgbScannerSetup failed with code %d\n", error);
 		 gpio_put(LED_PIN, false);
@@ -121,5 +136,6 @@ void __not_in_flash("main") main() {
 		printf("Current Clock=%ldhz, Vysnc=%ldnSec, %ldHz, Hsync=%dnSec, %dHz\n", clock_get_hz(clk_sys), rgbScannerGetVsyncNanoSec(), 1000000000 / rgbScannerGetVsyncNanoSec(), rgbScannerGetHsyncNanoSec(), 1000000000 / rgbScannerGetHsyncNanoSec());
 		sleep_ms(1000);
 	}
+	__builtin_unreachable();
 }
 
