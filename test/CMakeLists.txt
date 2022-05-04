@@ -1,4 +1,5 @@
 add_subdirectory(rgbScanTest)
 add_subdirectory(hdmiTest)
 add_subdirectory(afeTest)
+add_subdirectory(keyboardTest)
 add_subdirectory(integrationTest)

@@ -1,6 +1,15 @@
 #ifndef _COMMON_CONFIGS_H
 #define _COMMON_CONFIGS_H
 
+//Keyboard
+#ifdef _KEYBOARD_H
+	#define KEYBOARD_PIN_UP 		 9
+	#define KEYBOARD_PIN_DOWN 		 10
+	#define KEYBOARD_PIN_ACTION		 11
+	#define KEYBOARD_REFRESH_RATE_MS 25
+	#define KEYBOARD_REPEAT_RATE_MS  2000
+#endif 
+
 //SYNC edge triggered Pins
 #ifdef _RGB_SCANNER_H
 	#define RGB_SCAN_VSYNC_PIN  26
