@@ -13,6 +13,7 @@ if (TARGET tinyusb_device)
         libdvi
         rgbScan
         overlay
+        keyboard
         securemodule
         )
 

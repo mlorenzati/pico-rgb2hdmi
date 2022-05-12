@@ -17,10 +17,10 @@
 #include "wm8213Afe.h"
 #include "videoAdjust.h"
 #include "overlay.h"
+#include "keyboard.h"
 
 //HW Configuration includes
 #include "common_configs.h"
-
 
 // System config definitions
 // TMDS bit clock 252 MHz
@@ -34,11 +34,9 @@
 
 // --------- Global register start --------- 
 struct dvi_inst dvi0;
-
 wm8213_afe_config_t afec_cfg_2 = afec_cfg;
-
 uint16_t framebuf[FRAME_WIDTH * FRAME_HEIGHT];
-
+uint gpio_pins[3] = { KEYBOARD_PIN_UP, KEYBOARD_PIN_DOWN, KEYBOARD_PIN_ACTION };
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
 // --------- Global register end --------- 
@@ -64,6 +62,10 @@ static inline void scanLineTriggered(unsigned int render_line_number) {
 	video_overlay_scanline_prepare(render_line_number);
 	gpio_put(LED_PIN, blink);
     blink = !blink;
+}
+
+void on_keyboard_event(keyboard_status_t keys) {
+    printf("Keyboard event received \n");
 }
 
 int __not_in_flash_func(main)() {
@@ -98,6 +100,10 @@ int __not_in_flash_func(main)() {
         printf("rgbScannerSetup failed with code %d\n", error);
 		 gpio_put(LED_PIN, false);
     }
+
+
+	printf("Initializing keyboard\n");
+	keyboard_initialize(gpio_pins, 3, KEYBOARD_REFRESH_RATE_MS, KEYBOARD_REPEAT_RATE_MS, on_keyboard_event);
 
 	printf("Configuring DVI\n");
 
