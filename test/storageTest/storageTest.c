@@ -16,7 +16,7 @@ uint8_t buffer[TEST_BUFFER_SIZE];
 const void *settings_in_flash;
 
 int main() {
-    //stdio_init_all();
+    stdio_init_all();
 
     gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
@@ -27,6 +27,12 @@ int main() {
         buffer[i] = rand() >> 16;
     }
 
+    printf("Waiting user to be ready listening\n");
+    for (int i = 10; i > 0; i--) {
+        printf("Starting in %d\n", i);
+        sleep_ms(1000);
+    }
+    
     while (true) {
         flash_capacity = storage_get_flash_capacity();
         
@@ -51,4 +57,5 @@ int main() {
 
         sleep_ms(2000);
     }
+    __builtin_unreachable();
 }

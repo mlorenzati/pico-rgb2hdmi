@@ -2,6 +2,7 @@
 
 #include "pico/stdlib.h"
 #include "hardware/flash.h"
+#include "hardware/sync.h"
 #include <string.h>
 
 #define STORAGE_CMD_DUMMY_BYTES 1
@@ -32,7 +33,11 @@ int storage_flash(uint32_t offset, size_t size, const void *settings) {
     for (int idx = 0; idx < size; idx+=FLASH_PAGE_SIZE) {
 
         memcpy(idx == 0 ? buffer + 1 : buffer, idx == 0 ? settings : settings + idx - 1, idx == 0 ? FLASH_PAGE_SIZE - 1 : FLASH_PAGE_SIZE);
+        
+        //Disable interrupts prior saving
+        uint32_t status = save_and_disable_interrupts();
         flash_range_program(offset+idx, buffer, FLASH_PAGE_SIZE);
+        restore_interrupts(status);
     }
 } 
 
@@ -53,11 +58,8 @@ int storage_initialize(const void *initial_settings, const void **updated_settin
     
      // First byte is the canary, if unitialized requires to be flashed
     if (canary != 0) {
-        // Erase full range
-        flash_range_erase(global_storage_offset, global_storage_erase_size);
-
-        // Update just the page related size
-        storage_flash(global_storage_offset, global_storage_write_size, initial_settings);
+        // Flash data
+        storage_update(initial_settings);
 
         return -1;
     }
@@ -66,8 +68,10 @@ int storage_initialize(const void *initial_settings, const void **updated_settin
 }
 
 int storage_update(const void *settings) {
-    // Erase full range
+    // Erase full range, disable IRQs to avoid XIP errors
+    uint32_t status = save_and_disable_interrupts();
     flash_range_erase(global_storage_offset, global_storage_erase_size);
+    restore_interrupts(status);
 
     // Update pages
     storage_flash(global_storage_offset, global_storage_write_size, settings);
