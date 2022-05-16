@@ -14,7 +14,7 @@ if (TARGET tinyusb_device)
         rgbScan
         overlay
         keyboard
-        securemodule
+        security
         )
 
     pico_enable_stdio_usb(integrationTest 1)

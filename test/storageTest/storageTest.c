@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include "pico/stdlib.h"
 #include "storage.h"
-#include "common_configs.h"
 
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
