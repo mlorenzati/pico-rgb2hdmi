@@ -104,29 +104,31 @@ int __not_in_flash_func(main)() {
 	multicore_launch_core1(core1_main);
 
 	printf("Start rendering\n");
-
-	// for (int y = 0; y < FRAME_HEIGHT; ++y) {
-	// 	for (int x = 0; x < FRAME_WIDTH; ++x) {
-	// 		int red = x * 32 / FRAME_WIDTH;
-	// 		int green = y * 64 / FRAME_HEIGHT;
-	// 		int blue = 31 - (x * 32) / FRAME_WIDTH;
-	// 		framebuf[y * FRAME_WIDTH + x] = (x%8>0)&&(y%8>0) ? blue<<11 |green<<5 | red : 0xFFFF;
-	// 	}
-	// }
 	uint x, y, a;
 	uint sizex = 160;
 	uint sizey = 120;
-	uint color1 = 0b0000011111100000;
-	uint color2 = 0b1111100000011111;
+	uint color1 = 0b1111100000000000;
+	uint color2 = 0b0000011111100000;
+	uint color3 = 0b0000000000011111;
+	uint color4 = 0b1111111111111111;
 
 	for (a = 0; a < 16; a++) {
 		x = sizex + sizex/2 * sin(2*M_PI*a/16);
 		y = sizey + sizey/2 * cos(2*M_PI*a/16);
 		draw_circle(&graphic_ctx, x, y, 16, color1);
 	}
+	
 	x = 159;
 	y = 119;
+	
 	fill_rect(&graphic_ctx, x - 16, y - 16, x + 16, y + 16, color2);
+	
+	draw_line(&graphic_ctx, 0, 0, 319, 239, color3);
+	draw_line(&graphic_ctx, 319, 0, 0, 239, color3);
+
+	draw_rect(&graphic_ctx, 20, 20, 299, 219, color2);
+
+	draw_textf(&graphic_ctx, 58, 196, color4, color4, "This is a test of LorenTek\nRGB2HDMI %d", 2022);
 
 	while (1)
 	{
