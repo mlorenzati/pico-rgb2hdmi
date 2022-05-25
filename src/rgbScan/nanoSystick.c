@@ -34,3 +34,7 @@ uint32_t systick_mark(bool stop) {
 
     return delta;
 }
+
+uint32_t systick_get_current() {
+    return systick_current->current;
+}

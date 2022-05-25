@@ -179,6 +179,7 @@ static inline bool wm8213_afe_capture_run(uint hFrontPorch, uintptr_t buffer, ui
     if (dma_channel_is_busy(capture_dma)) {
         return false;
     }
+    
     dma_channel_hw_addr(capture_dma)->al1_write_addr = buffer;
     dma_channel_hw_addr(capture_dma)->transfer_count = size;
 

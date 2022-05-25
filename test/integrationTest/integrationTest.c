@@ -57,12 +57,12 @@ static inline void core1_scanline_callback() {
 	scanline = (scanline + 1) % FRAME_HEIGHT;
 }
 
-static inline void scanLineTriggered(unsigned int render_line_number) {
+static void __not_in_flash_func(scanLineTriggered)(unsigned int render_line_number) {
     if (wm8213_afe_capture_run(VIDEO_OVERLAY_GET_COMPUTED_FRONT_PORCH(), (uintptr_t)&framebuf[FRAME_WIDTH * render_line_number + VIDEO_OVERLAY_GET_COMPUTED_OFFSET()] , VIDEO_OVERLAY_GET_COMPUTED_WIDTH())) {
-		video_overlay_scanline_prepare(render_line_number);
 		gpio_put(LED_PIN, blink);
     	blink = !blink;
 	}
+	video_overlay_scanline_prepare(render_line_number);
 }
 
 void on_keyboard_event(keyboard_status_t keys) {
@@ -81,7 +81,7 @@ int __not_in_flash_func(main)() {
     gpio_set_dir(LED_PIN, GPIO_OUT);
 
 	//Configure video properties
-	set_video_props(24, 76, 30, 30, FRAME_WIDTH, FRAME_HEIGHT, REFRESH_RATE);	
+	set_video_props(44, 56, 30, 30, FRAME_WIDTH, FRAME_HEIGHT, REFRESH_RATE);	
 	afec_cfg_2.sampling_rate_afe = GET_VIDEO_PROPS().sampling_rate;
 
 	//Prepare video Overlay

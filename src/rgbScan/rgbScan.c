@@ -16,19 +16,19 @@ scanlineCallback rgbScannerScanlineCallback = NULL;
 unsigned int     rgbScannerScanlineTriggerFrontPorch = 10000;   
 unsigned int     rgbScannerScanlineTriggerBackPorch = 10000; 
 
-void __isr rgbScannerIrqCallback(uint gpio, uint32_t events) {
-    if (gpio == _vsyncGPIO) {
+void __isr __not_in_flash_func(rgbScannerIrqCallback)(uint gpio, uint32_t events) {
+     if (gpio == _hsyncGPIO) {
+        hsyncCounter++;
+        if (hsyncCounter >= rgbScannerScanlineTriggerFrontPorch && hsyncCounter <= rgbScannerScanlineTriggerBackPorch) {
+            rgbScannerScanlineCallback(hsyncCounter - rgbScannerScanlineTriggerFrontPorch);
+        };
+    } else if (gpio == _vsyncGPIO) {
         tickVsync = systick_mark(false);
         if (hsyncCounter > 0) {
             tickHsync = (unsigned int)(tickVsync / hsyncCounter);
         } 
         hsyncCounter = 0;
-    } else if (gpio == _hsyncGPIO) {
-        hsyncCounter++;
-        if (hsyncCounter >= rgbScannerScanlineTriggerFrontPorch && hsyncCounter <= rgbScannerScanlineTriggerBackPorch) {
-            rgbScannerScanlineCallback(hsyncCounter - rgbScannerScanlineTriggerFrontPorch);
-        };
-    }   
+    }
 }
 
 int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint backPorch, scanlineCallback callback) {
@@ -47,8 +47,7 @@ int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint backPo
     gpio_set_dir(hsyncGPIO, GPIO_IN);
     gpio_pull_up(hsyncGPIO);
 
-    gpio_set_irq_enabled_with_callback(_vsyncGPIO,  GPIO_IRQ_EDGE_FALL, true, &rgbScannerIrqCallback);
-    gpio_set_irq_enabled_with_callback(_hsyncGPIO,  GPIO_IRQ_EDGE_RISE, true, &rgbScannerIrqCallback);
+    rgbScannerEnable(true);
     nanoSecPerTick = 1000000000.0f / (float)clock_get_hz(clk_sys);
     systick_setup(false);
     systick_start(false, 0xFFFFFF);
@@ -61,4 +60,9 @@ unsigned long rgbScannerGetVsyncNanoSec() {
 
 unsigned int rgbScannerGetHsyncNanoSec() {
     return tickHsync * nanoSecPerTick;
+}
+
+void rgbScannerEnable(bool value) {
+    gpio_set_irq_enabled_with_callback(_vsyncGPIO,  GPIO_IRQ_EDGE_FALL, value, &rgbScannerIrqCallback);
+    gpio_set_irq_enabled_with_callback(_hsyncGPIO,  GPIO_IRQ_EDGE_RISE, value, &rgbScannerIrqCallback);
 }

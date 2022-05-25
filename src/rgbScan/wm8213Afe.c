@@ -70,7 +70,7 @@ int wm8213_afe_spi_setup(const wm8213_afe_config_t* config) {
     }
 
     // Send each setup
-    uint8_t setup_regs[WM8213_REG_SETUP_TOTAL] = { WM8213_REG_SETUP1, WM8213_REG_SETUP2, WM8213_REG_SETUP3, WM8213_REG_SETUP4, WM8213_REG_SETUP5 ,WM8213_REG_SETUP6,
+    const uint8_t setup_regs[WM8213_REG_SETUP_TOTAL] = { WM8213_REG_SETUP1, WM8213_REG_SETUP2, WM8213_REG_SETUP3, WM8213_REG_SETUP4, WM8213_REG_SETUP5 ,WM8213_REG_SETUP6,
         WM8213_REG_OFFSET_DAC_RED, WM8213_REG_OFFSET_DAC_GRN, WM8213_REG_OFFSET_DAC_BLU, WM8213_REG_PGA_GAIN_LSB_RED, WM8213_REG_PGA_GAIN_MSB_RED,
         WM8213_REG_PGA_GAIN_LSB_GRN, WM8213_REG_PGA_GAIN_MSB_GRN, WM8213_REG_PGA_GAIN_LSB_BLU, WM8213_REG_PGA_GAIN_MSB_BLU };
     uint8_t *setup_vals = (uint8_t *) &(config->setups.setup1);
@@ -129,7 +129,7 @@ void afe_dma_prepare(PIO pio, uint sm) {
 
     dma_channel_configure(wm8213_afe_capture_global.front_porch_dma,
         &front_porch_dma_channel_cfg,
-        &dummy_dma_read, // Destination: dummy
+        &dummy_dma_read,// Destination: dummy
         &pio->rxf[sm],  // Source
         0,              // Size: will be set later
         false

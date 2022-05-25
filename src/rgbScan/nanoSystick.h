@@ -32,5 +32,6 @@ typedef struct {
 int systick_setup(bool useInterrupts);
 int systick_start(bool wait, uint32_t ticks);
 uint32_t systick_mark(bool stop);
+uint32_t systick_get_current();
 
 #endif//_NANO_SYSTICK_H
