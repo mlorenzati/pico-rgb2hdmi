@@ -7,10 +7,10 @@
 #include "hardware/clocks.h"
 
 uint _vsyncGPIO, _hsyncGPIO;
-unsigned long timeVsync;
-unsigned int  timeHsync;
+unsigned long tickVsync;
+unsigned int  tickHsync;
 unsigned int  hsyncCounter;
-unsigned int  nanoSecPerTick;
+float         nanoSecPerTick;
 
 scanlineCallback rgbScannerScanlineCallback = NULL;
 unsigned int     rgbScannerScanlineTriggerFrontPorch = 10000;   
@@ -18,9 +18,9 @@ unsigned int     rgbScannerScanlineTriggerBackPorch = 10000;
 
 void __isr rgbScannerIrqCallback(uint gpio, uint32_t events) {
     if (gpio == _vsyncGPIO) {
-        timeVsync = systick_mark(false) * nanoSecPerTick;
+        tickVsync = systick_mark(false);
         if (hsyncCounter > 0) {
-            timeHsync = (unsigned int)(timeVsync / hsyncCounter);
+            tickHsync = (unsigned int)(tickVsync / hsyncCounter);
         } 
         hsyncCounter = 0;
     } else if (gpio == _hsyncGPIO) {
@@ -49,16 +49,16 @@ int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint backPo
 
     gpio_set_irq_enabled_with_callback(_vsyncGPIO,  GPIO_IRQ_EDGE_FALL, true, &rgbScannerIrqCallback);
     gpio_set_irq_enabled_with_callback(_hsyncGPIO,  GPIO_IRQ_EDGE_RISE, true, &rgbScannerIrqCallback);
-    nanoSecPerTick = 1000000000 / clock_get_hz(clk_sys);
+    nanoSecPerTick = 1000000000.0f / (float)clock_get_hz(clk_sys);
     systick_setup(false);
     systick_start(false, 0xFFFFFF);
     return 0;
 }
 
 unsigned long rgbScannerGetVsyncNanoSec() {
-    return timeVsync;
+    return tickVsync * nanoSecPerTick;
 }
 
 unsigned int rgbScannerGetHsyncNanoSec() {
-    return timeHsync;
+    return tickHsync * nanoSecPerTick;
 }

@@ -45,4 +45,8 @@ inline void video_overlay_scanline_prepare(unsigned int render_line_number) {
     }
 }
 
+inline void video_overlay_enable(bool value) {
+    video_overlay.enabled = value;
+}
+
 #endif

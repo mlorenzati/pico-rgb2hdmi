@@ -3,9 +3,9 @@
 
 //Keyboard
 #ifdef _KEYBOARD_H
-	#define KEYBOARD_PIN_UP 		 9
-	#define KEYBOARD_PIN_DOWN 		 10
-	#define KEYBOARD_PIN_ACTION		 11
+	#define KEYBOARD_PIN_UP 		 0
+	#define KEYBOARD_PIN_DOWN 		 1
+	#define KEYBOARD_PIN_ACTION		 2
 	#define KEYBOARD_REFRESH_RATE_MS 25
 	#define KEYBOARD_REPEAT_RATE_MS  2000
 #endif 
@@ -124,8 +124,8 @@
 	static const struct dvi_serialiser_cfg picodvi_dvi_cfg = {
 		.pio = pio0,
 		.sm_tmds = {0, 1, 2},
-		.pins_tmds = {3, 5, 7},
-		.pins_clk = 1,
+		.pins_tmds = {5, 7, 9},
+		.pins_clk = 3,
 		.invert_diffpairs = true
 	};
 #endif
