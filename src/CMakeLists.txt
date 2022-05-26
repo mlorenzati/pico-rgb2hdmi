@@ -5,5 +5,6 @@ add_subdirectory(security)
 add_subdirectory(keyboard)
 add_subdirectory(storage)
 add_subdirectory(graphics)
+add_subdirectory(menu)
 add_subdirectory(app)
 

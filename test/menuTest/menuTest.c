@@ -15,6 +15,7 @@
 #include "dvi_serialiser.h"
 #include "keyboard.h"
 #include "graphics.h"
+#include "menu.h"
 
 //HW Configuration includes
 #include "common_configs.h"
@@ -91,7 +92,7 @@ int __not_in_flash_func(main)() {
 	// Once we've given core 1 the framebuffer, it will just keep on displaying
 	// it without any intervention from core 0
 	for (int n=0; n < FRAME_WIDTH * FRAME_HEIGHT; n++) {
-		framebuf[n] = 0x0000;
+		framebuf[n] = 0xAAAA;
 	}
 
 	//Prepare for the first time the two initial lines
@@ -105,39 +106,20 @@ int __not_in_flash_func(main)() {
 
 	printf("Start rendering\n");
 
-	uint x, y, a;
-	uint sizex = 160;
-	uint sizey = 120;
 	uint color1 = 0b1111100000000000;
 	uint color2 = 0b0000011111100000;
 	uint color3 = 0b0000000000011111;
 	uint color4 = 0b1111111111111111;
-	uint rad = 18;
+
+	menu_object_t window = menu_create_window(&graphic_ctx, 0, 0, 32, 32);
+	(window.draw)(&(window.base));
+
+	menu_object_t button = menu_create_button(&graphic_ctx, 0, 40, 64, 16, "Info");
+	(button.draw)(&(button.base));
 
 	while (1)
 	{
-		while (scanline < (190)) {};
-		fill_rect(&graphic_ctx, 32, 32, 287, 198, 0);
-		for (a = 0; a < 16; a++) {
-			x = sizex + sizex/2 * sin(2*M_PI*a/16);
-			y = sizey + sizey/2 * cos(2*M_PI*a/16);
-			draw_circle(&graphic_ctx, x, y, rad, color1);
-			rad = ((rad - 1) % 16 ) + 2;
-		}
-		rad = ((rad - 1) % 16 ) + 2;
-		
-		x = 159;
-		y = 119;
-		
-		fill_rect(&graphic_ctx, x - 16, y - 16, x + 16, y + 16, color2);
-		
-		draw_line(&graphic_ctx, 0, 0, 319, 239, color3);
-		draw_line(&graphic_ctx, 319, 0, 0, 239, color3);
-
-		draw_rect(&graphic_ctx, 20, 20, 299, 219, color2);
-
-		draw_textf(&graphic_ctx, 58, 196, color4, color4, "This is a test of LorenTek\nRGB2HDMI %d", 2022);
-		sleep_ms(50);
+		sleep_ms(100);
 	}
 	__builtin_unreachable();
 }

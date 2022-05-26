@@ -12,6 +12,7 @@ if (TARGET tinyusb_device)
         pico_util
         libdvi
         graphics
+        menu
         keyboard
         )
 

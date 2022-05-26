@@ -121,12 +121,12 @@ int __not_in_flash_func(main)() {
 	x = 159;
 	y = 119;
 	
-	fill_rect(&graphic_ctx, x - 16, y - 16, x + 16, y + 16, color2);
+	fill_rect(&graphic_ctx, x - 16, y - 16, 32, 32, color2);
 	
 	draw_line(&graphic_ctx, 0, 0, 319, 239, color3);
 	draw_line(&graphic_ctx, 319, 0, 0, 239, color3);
 
-	draw_rect(&graphic_ctx, 20, 20, 299, 219, color2);
+	draw_rect(&graphic_ctx, 20, 20, 279, 199, color2);
 
 	draw_textf(&graphic_ctx, 58, 196, color4, color4, "This is a test of LorenTek\nRGB2HDMI %d", 2022);
 

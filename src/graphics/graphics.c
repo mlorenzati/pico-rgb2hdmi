@@ -61,15 +61,18 @@ void draw_line(const graphic_ctx_t *ctx, uint x0, uint y0, uint x1, uint y1, uin
     if (e2 <= dx) { err += dx; y0 += sy; } /* e_xy+e_y < 0 */
   }
 }
-
-void draw_rect(const graphic_ctx_t *ctx, uint x0, uint y0, uint x1, uint y1, uint color) {
+void draw_rect(const graphic_ctx_t *ctx, uint x0, uint y0, uint width, uint height, uint color) {
+    uint x1 = x0 + width;
+    uint y1 = y0 + height;
     draw_line(ctx, x0, y0, x1, y0, color);
     draw_line(ctx, x0, y0, x0, y1, color);
     draw_line(ctx, x0, y1, x1, y1, color);
     draw_line(ctx, x1, y0, x1, y1, color);
 }
 
-void fill_rect(const graphic_ctx_t *ctx, uint x0, uint y0, uint x1, uint y1, uint color) {
+void fill_rect(const graphic_ctx_t *ctx, uint x0, uint y0, uint width, uint height, uint color) {
+    uint x1 = x0 + width;
+    uint y1 = y0 + height;
 	for (uint x = x0; x <= x1; ++x)
 		for (uint y = y0; y <= y1; ++y)
 			put_pixel(ctx, x, y, color);
