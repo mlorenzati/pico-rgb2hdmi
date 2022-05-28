@@ -5,6 +5,9 @@
 #include "rgbScan.h"
 #include "nanoSystick.h"
 #include "hardware/clocks.h"
+#include "hardware/irq.h"
+#include "hardware/structs/iobank0.h"
+#include "hardware/sync.h"
 
 uint _vsyncGPIO, _hsyncGPIO;
 unsigned long tickVsync;
@@ -16,19 +19,30 @@ scanlineCallback rgbScannerScanlineCallback = NULL;
 unsigned int     rgbScannerScanlineTriggerFrontPorch = 10000;   
 unsigned int     rgbScannerScanlineTriggerBackPorch = 10000; 
 
-void __isr __not_in_flash_func(rgbScannerIrqCallback)(uint gpio, uint32_t events) {
-     if (gpio == _hsyncGPIO) {
+static void __not_in_flash_func(rgb_scanner_gpio_irq_handler)(void) {
+    io_irq_ctrl_hw_t *irq_ctrl_base = get_core_num() ? &iobank0_hw->proc1_irq_ctrl : &iobank0_hw->proc0_irq_ctrl;
+
+    io_ro_32 *status_reg_hsync = &irq_ctrl_base->ints[_hsyncGPIO / 8];
+    uint events_hsync = (*status_reg_hsync >> 4 * (_hsyncGPIO % 8)) & 0xf;
+    if (events_hsync) {
+        gpio_acknowledge_irq(_hsyncGPIO, events_hsync);
+
         hsyncCounter++;
         if (hsyncCounter >= rgbScannerScanlineTriggerFrontPorch && hsyncCounter <= rgbScannerScanlineTriggerBackPorch) {
             rgbScannerScanlineCallback(hsyncCounter - rgbScannerScanlineTriggerFrontPorch);
         };
-    } else if (gpio == _vsyncGPIO) {
+    }
+    io_ro_32 *status_reg_vsync = &irq_ctrl_base->ints[_vsyncGPIO / 8];
+    uint events_vsync = (*status_reg_vsync >> 4 * (_vsyncGPIO % 8)) & 0xf;
+    if (events_vsync) {
+        gpio_acknowledge_irq(_vsyncGPIO, events_vsync);
+
         tickVsync = systick_mark(false);
         if (hsyncCounter > 0) {
             tickHsync = (unsigned int)(tickVsync / hsyncCounter);
         } 
         hsyncCounter = 0;
-    }
+    }    
 }
 
 int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint backPorch, scanlineCallback callback) {
@@ -48,9 +62,15 @@ int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint backPo
     gpio_pull_up(hsyncGPIO);
 
     rgbScannerEnable(true);
+    irq_set_exclusive_handler(IO_IRQ_BANK0, rgb_scanner_gpio_irq_handler);
+    irq_set_enabled(IO_IRQ_BANK0, true);
     nanoSecPerTick = 1000000000.0f / (float)clock_get_hz(clk_sys);
     systick_setup(false);
     systick_start(false, 0xFFFFFF);
+
+    //Set the highest priority to the GPIO
+    irq_set_priority(IO_IRQ_BANK0, 0);
+    
     return 0;
 }
 
@@ -63,6 +83,6 @@ unsigned int rgbScannerGetHsyncNanoSec() {
 }
 
 void rgbScannerEnable(bool value) {
-    gpio_set_irq_enabled_with_callback(_vsyncGPIO,  GPIO_IRQ_EDGE_FALL, value, &rgbScannerIrqCallback);
-    gpio_set_irq_enabled_with_callback(_hsyncGPIO,  GPIO_IRQ_EDGE_RISE, value, &rgbScannerIrqCallback);
+    gpio_set_irq_enabled(_vsyncGPIO,  GPIO_IRQ_EDGE_FALL, value);
+    gpio_set_irq_enabled(_hsyncGPIO,  GPIO_IRQ_EDGE_RISE, value);
 }

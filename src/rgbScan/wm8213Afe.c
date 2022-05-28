@@ -1,7 +1,7 @@
 #include "wm8213Afe.h"
 #include "hardware/gpio.h"
 #include "wm8213Afe.pio.h"
-
+//#include "hardware/structs/bus_ctrl.h"
 
 //Local registers
 static uint        afe_cs = -1;
@@ -109,6 +109,9 @@ void wm8213_afe_capture_setup(PIO pio, uint sm, uint sampling_rate, uint op_pins
     uint offset =  pio_add_program(wm8213_afe_capture_global.pio, 
         sampling_rate > AFE_SAMPLING_LIMIT ?  &afe_capture_565_inverted_program : &afe_capture_565_program);
     afe_capture_565_program_init(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm, offset, wm8213_afe_capture_global.sampling_rate, op_pins, control_pins);
+    
+    //Give DMA R/W priority over the Bus
+    //bus_ctrl_hw->priority = BUSCTRL_BUS_PRIORITY_DMA_W_BITS | BUSCTRL_BUS_PRIORITY_DMA_R_BITS;
 }
 
 void wm8213_afe_capture_update_sampling_rate(uint sampling_rate) {

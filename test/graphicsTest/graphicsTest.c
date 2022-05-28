@@ -67,7 +67,7 @@ void on_keyboard_event(keyboard_status_t keys) {
     printf("Keyboard event received \n");
 }
 
-int __not_in_flash_func(main)() {
+int main() {
 	vreg_set_voltage(VREG_VSEL);
 	sleep_ms(10);
 

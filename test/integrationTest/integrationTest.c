@@ -58,30 +58,32 @@ static inline void core1_scanline_callback() {
 }
 
 static void __not_in_flash_func(scanLineTriggered)(unsigned int render_line_number) {
-    if (wm8213_afe_capture_run(VIDEO_OVERLAY_GET_COMPUTED_FRONT_PORCH(), (uintptr_t)&framebuf[FRAME_WIDTH * render_line_number + VIDEO_OVERLAY_GET_COMPUTED_OFFSET()] , VIDEO_OVERLAY_GET_COMPUTED_WIDTH())) {
-		gpio_put(LED_PIN, blink);
-    	blink = !blink;
+	gpio_put(LED_PIN, true);
+    if (wm8213_afe_capture_run(VIDEO_OVERLAY_GET_COMPUTED_FRONT_PORCH(), (uintptr_t)&framebuf[FRAME_WIDTH * render_line_number + VIDEO_OVERLAY_GET_COMPUTED_OFFSET()], VIDEO_OVERLAY_GET_COMPUTED_WIDTH())) {
+
 	}
 	video_overlay_scanline_prepare(render_line_number);
+	gpio_put(LED_PIN, false);
 }
 
 void on_keyboard_event(keyboard_status_t keys) {
     printf("Keyboard event received \n");
 }
 
-int __not_in_flash_func(main)() {
+int main() {
 	vreg_set_voltage(VREG_VSEL);
 	sleep_ms(10);
 
 	// Run system at TMDS bit clock
 	set_sys_clock_khz(DVI_TIMING.bit_clk_khz, true);
 
-    stdio_init_all();
+	stdio_init_all();
+
 	gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
 
 	//Configure video properties
-	set_video_props(44, 56, 30, 30, FRAME_WIDTH, FRAME_HEIGHT, REFRESH_RATE);	
+	set_video_props(44, 56, 50, 20, FRAME_WIDTH, FRAME_HEIGHT, REFRESH_RATE);
 	afec_cfg_2.sampling_rate_afe = GET_VIDEO_PROPS().sampling_rate;
 
 	//Prepare video Overlay
@@ -138,7 +140,7 @@ int __not_in_flash_func(main)() {
 			framebuf[y * FRAME_WIDTH + x] = (x%8>0)&&(y%8>0) ? blue<<11 |green<<5 | red : 0xFFFF;
 		}
 	}
-	int count = 20;
+	int count = 5;
 	while (1)
 	{
 		printf("Current Clock=%ldhz, Vysnc=%ldnSec, %ldHz, Hsync=%dnSec, %dHz\n", clock_get_hz(clk_sys), rgbScannerGetVsyncNanoSec(), 1000000000 / rgbScannerGetVsyncNanoSec(), rgbScannerGetHsyncNanoSec(), 1000000000 / rgbScannerGetHsyncNanoSec());
