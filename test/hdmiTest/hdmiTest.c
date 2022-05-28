@@ -16,6 +16,9 @@
 #include "tmds_encode.h"
 #include "dvi.h"
 #include "dvi_serialiser.h"
+
+//System configuration includes
+#include "version.h"
 #include "common_configs.h"
 
 // TMDS bit clock 252 MHz
@@ -84,6 +87,8 @@ int __not_in_flash("main") main() {
 	multicore_launch_core1(core1_main);
 
 	sem_release(&dvi_start_sem);
+	printf("%s version - HDMI Test %s started!\n", PROJECT_NAME, PROJECT_VER);
+
 	while (1) {
 		for (int y = 0; y < FRAME_HEIGHT; y+=2) {
 			uint32_t *our_tmds_buf, *their_tmds_buf;

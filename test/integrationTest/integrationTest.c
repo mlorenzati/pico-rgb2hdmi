@@ -19,7 +19,8 @@
 #include "overlay.h"
 #include "keyboard.h"
 
-//HW Configuration includes
+//System configuration includes
+#include "version.h"
 #include "common_configs.h"
 
 // System config definitions
@@ -140,7 +141,9 @@ int main() {
 			framebuf[y * FRAME_WIDTH + x] = (x%8>0)&&(y%8>0) ? blue<<11 |green<<5 | red : 0xFFFF;
 		}
 	}
+	
 	int count = 5;
+	printf("%s version - IntegrationTest %s started!\n", PROJECT_NAME, PROJECT_VER);
 	while (1)
 	{
 		printf("Current Clock=%ldhz, Vysnc=%ldnSec, %ldHz, Hsync=%dnSec, %dHz\n", clock_get_hz(clk_sys), rgbScannerGetVsyncNanoSec(), 1000000000 / rgbScannerGetVsyncNanoSec(), rgbScannerGetHsyncNanoSec(), 1000000000 / rgbScannerGetHsyncNanoSec());

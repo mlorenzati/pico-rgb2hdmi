@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "keyboard.h"
+
+//System configuration includes
+#include "version.h"
 #include "common_configs.h"
 
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
@@ -41,6 +44,8 @@ int main() {
     gpio_set_dir(LED_PIN, GPIO_OUT);
     keyboard_initialize(gpio_pins, 3, KEYBOARD_REFRESH_RATE_MS, KEYBOARD_REPEAT_RATE_MS, on_keyboard_event);
 
+	printf("%s version - HDMI Test %s started!\n", PROJECT_NAME, PROJECT_VER);
+    
     while (true) {
         printf("Current polled value is key 1=%d, key2=%d, key3=%d\n", 
             keyboard_get_current_value(0), keyboard_get_current_value(1), keyboard_get_current_value(2));

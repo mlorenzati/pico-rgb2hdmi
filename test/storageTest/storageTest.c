@@ -7,6 +7,9 @@
 #include "pico/stdlib.h"
 #include "storage.h"
 
+//System configuration includes
+#include "version.h"
+
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
 
@@ -32,6 +35,8 @@ int main() {
         sleep_ms(1000);
     }
     
+    printf("%s version - Storage Test %s started!\n", PROJECT_NAME, PROJECT_VER);
+
     while (true) {
         flash_capacity = storage_get_flash_capacity();
         

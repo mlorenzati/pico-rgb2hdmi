@@ -5,6 +5,9 @@
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
 #include "wm8213Afe.h"
+
+//System configuration includes
+#include "version.h"
 #include "common_configs.h"
 
 void core1_main();
@@ -32,6 +35,8 @@ int main() {
     gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
     multicore_launch_core1(core1_main);
+
+    printf("%s version - AFE Test %s started!\n", PROJECT_NAME, PROJECT_VER);
 
     while (true) {
         gpio_put(LED_PIN, 1);

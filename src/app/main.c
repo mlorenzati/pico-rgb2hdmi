@@ -18,6 +18,9 @@
 #include "dvi_serialiser.h"
 #include "rgbScan.h"
 #include "wm8213Afe.h"
+
+//System configuration includes
+#include "version.h"
 #include "common_configs.h"
 
 // TMDS bit clock 252 MHz
@@ -75,6 +78,8 @@ void __not_in_flash("main") core1_main() {
         printf("rgbScannerSetup failed with code %d\n", error);
 		gpio_put(LED_PIN, false);
     }
+
+	printf("%s version - App %s started!\n", PROJECT_NAME, PROJECT_VER);
 
 	while (1) {
 		printf("Current Clock=%ldhz, Vysnc=%ldnSec, %ldHz, Hsync=%dnSec, %dHz\n", clock_get_hz(clk_sys), rgbScannerGetVsyncNanoSec(), 1000000000 / rgbScannerGetVsyncNanoSec(), rgbScannerGetHsyncNanoSec(), 1000000000 / rgbScannerGetHsyncNanoSec());

@@ -17,7 +17,8 @@
 #include "graphics.h"
 #include "menu.h"
 
-//HW Configuration includes
+//System configuration includes
+#include "version.h"
 #include "common_configs.h"
 #include "math.h"
 
@@ -103,6 +104,8 @@ int main() {
 
 	printf("Core 1 start\n");
 	multicore_launch_core1(core1_main);
+
+	printf("%s version - Menu Test %s started!\n", PROJECT_NAME, PROJECT_VER);
 
 	printf("Start rendering\n");
 

@@ -7,6 +7,9 @@
 #include "pico/stdlib.h"
 #include "security.h"
 
+//System configuration includes
+#include "version.h"
+
 //We are including sha1 header for the sake of the test
 #include "sha1.h"
 
@@ -34,7 +37,7 @@ int main() {
     bad_key[SHA1HashSize>>1] = 0xFF;
     int res;
     while (true) {
-        printf("Security module test\n");
+        printf("%s version - Security module Test %s started!\n", PROJECT_NAME, PROJECT_VER);
         const char *unique_id = security_get_uid();
         printf("The unique Id of this device is %s\n", unique_id);
 
