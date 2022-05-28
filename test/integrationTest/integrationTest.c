@@ -48,13 +48,14 @@ void __not_in_flash_func(core1_main)() {
 	__builtin_unreachable();
 }
 
+static uint hdmi_scanline = 2;
 static inline void core1_scanline_callback() {
 	uint16_t *bufptr;
 	while (queue_try_remove_u32(&dvi0.q_colour_free, &bufptr));
-	static uint scanline = 2;
-	bufptr = &framebuf[FRAME_WIDTH * scanline];
+	
+	bufptr = &framebuf[FRAME_WIDTH * hdmi_scanline];
 	queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
-	scanline = (scanline + 1) % FRAME_HEIGHT;
+	hdmi_scanline = (hdmi_scanline + 1) % FRAME_HEIGHT;
 }
 
 static void __not_in_flash_func(scanLineTriggered)(unsigned int render_line_number) {
@@ -103,7 +104,6 @@ int main() {
         printf("rgbScannerSetup failed with code %d\n", error);
 		 gpio_put(LED_PIN, false);
     }
-
 
 	printf("Initializing keyboard\n");
 	keyboard_initialize(gpio_pins, 3, KEYBOARD_REFRESH_RATE_MS, KEYBOARD_REPEAT_RATE_MS, on_keyboard_event);

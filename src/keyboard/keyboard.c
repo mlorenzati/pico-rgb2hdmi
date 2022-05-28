@@ -99,6 +99,8 @@ int keyboard_initialize(uint *pins, uint8_t count, uint refresh_rate_ms, uint re
         // No more timer slots available
         return 1;
     }
+
+    return 0;
 }
 
 bool keyboard_get_current_value(uint8_t index) {

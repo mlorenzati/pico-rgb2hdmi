@@ -76,7 +76,7 @@ int wm8213_afe_spi_setup(const wm8213_afe_config_t* config) {
     uint8_t *setup_vals = (uint8_t *) &(config->setups.setup1);
     //No verification is possible if opd is in true o there is no SDO pin connected
     assert(config->verify_retries == 0 || !spi_write_only_mode);
-    for (char cnt=0; cnt < WM8213_REG_SETUP_TOTAL; cnt++) {
+    for (unsigned char cnt=0; cnt < WM8213_REG_SETUP_TOTAL; cnt++) {
         if (wm8213_afe_write(setup_regs[cnt], setup_vals[cnt]) > 0) {
             return 2;
         }

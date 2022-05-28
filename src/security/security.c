@@ -2,6 +2,7 @@
 #include "sha1.h"
 #include "pico/unique_id.h"
 #include <stdio.h>
+#include "string.h"
 
 const char* security_get_uid() {
     static char uid[2*PICO_UNIQUE_BOARD_ID_SIZE_BYTES + 1] = {0};
@@ -30,15 +31,15 @@ int security_key_is_valid(const char *key, int token) {
     }
 
     if (digest[0] != key[0]) {
-        char message[SECURITY_MESSAGE_SIZE + 1];
+        uint8_t message[SECURITY_MESSAGE_SIZE + 1];
         SHA1Context sha;
         SHA1Reset(&sha);
-        sprintf(message, "%s%s", SECURITY_SALT, security_get_uid());
+        sprintf((char *)message, "%s%s", SECURITY_SALT, security_get_uid());
         SHA1Input(&sha, message, SECURITY_MESSAGE_SIZE);
         SHA1Result(&sha, digest);
     }
 
-    if (strncmp(key, digest, SHA1HashSize) != 0) {
+    if (strncmp(key, (char *)digest, SHA1HashSize) != 0) {
         return 2;
     }
 

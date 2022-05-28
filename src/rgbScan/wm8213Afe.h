@@ -47,10 +47,11 @@
 #define WM8213_REG_PGA_GAIN_MSB_RGB  0x2b
 
 // Read Mode Mask
-#define WM8213_ADDR_READ(x)           0x10|x
-#define WM8213_ADDR_WRITE(x)          0xEF&x
+#define WM8213_ADDR_READ(x)          0x10|x
+#define WM8213_ADDR_WRITE(x)         0xEF&x
 
-#define AFE_SAMPLING_LIMIT            7600000 //Should be 8MSPS but proben to be less, After this value RSMP / VSMP has to be flipped
+#define AFE_SAMPLING_LIMIT           7600000 //Should be 8MSPS but proben to be less, After this value RSMP / VSMP has to be flipped
+#define AFE_PIO_FIFO_FORCE_DUMP      8
 
 typedef struct wm8213_afe_setup_1 {
     io_rw_8  enable:1;
@@ -163,14 +164,9 @@ typedef struct wm8213_afe_capture {
 extern wm8213_afe_capture_t wm8213_afe_capture_global;
 
 int  wm8213_afe_setup(const wm8213_afe_config_t* config);
+
 static inline void afe_capture_rx_fifo_drain(PIO  pio, uint sm) {
-    // while (!pio_sm_is_rx_fifo_empty(afe_capture_565_pio, afe_capture_565_sm)) {
-    //     (void) pio_sm_get(afe_capture_565_pio, afe_capture_565_sm);
-    // }
-    pio_sm_get(pio, sm);
-    pio_sm_get(pio, sm);
-    pio_sm_get(pio, sm);
-    pio_sm_get(pio, sm);
+    for (int i = 0; i < AFE_PIO_FIFO_FORCE_DUMP; i++) pio_sm_get(pio, sm);
 }
 
 static inline bool wm8213_afe_capture_run(uint hFrontPorch, uintptr_t buffer, uint size) {
