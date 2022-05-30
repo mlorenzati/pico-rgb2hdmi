@@ -6,6 +6,20 @@ Raspberry Pico as an RGB Scanner to HDMI Converter
 - Define PICO_SDK_PATH in your ~/.bashrc• 
 - Download the pico-sdk repository
 
+# Security
+Install sha3sum to hash the binary
+
+## Mac
+```
+brew install md5sha1sum
+```
+
+## Local sha3sum usage for sha256
+```
+sha1sum <file>
+echo <device_salt><device_uid> | sha1sum -b
+```
+
 # Build
 ```
 mkdir build

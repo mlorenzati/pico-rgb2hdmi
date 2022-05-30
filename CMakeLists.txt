@@ -8,9 +8,21 @@ configure_file(config/version.h.in  src/version.h)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
+set(RBG2HDMI_HASH_SALT tY6!U3@z)
 
 # Initialize the Pico SDK
 pico_sdk_init()
+
+# Comment this if you don't care about binary security
+find_program(SHA1SUM NAMES sha1sum)
+if (NOT SHA1SUM)
+    message(FATAL_ERROR "sha1sum was not found")
+endif()
+
+find_program(STR2HEX NAMES xxd)
+if (NOT STR2HEX)
+    message(FATAL_ERROR "xxd was not found")
+endif()
 
 #Include directory with setup config
 include_directories(config)
