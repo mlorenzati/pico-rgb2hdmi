@@ -15,6 +15,7 @@ if (TARGET tinyusb_device)
         overlay
         keyboard
         security
+        cmdParser
         )
 
     pico_enable_stdio_usb(integrationTest 1)

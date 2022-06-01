@@ -1,6 +1,7 @@
 //System defined includes
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
 #include "pico/sem.h"
@@ -18,6 +19,7 @@
 #include "videoAdjust.h"
 #include "overlay.h"
 #include "keyboard.h"
+#include "cmdParser.h"
 
 //System configuration includes
 #include "version.h"
@@ -40,7 +42,68 @@ uint16_t framebuf[FRAME_WIDTH * FRAME_HEIGHT];
 uint gpio_pins[3] = { KEYBOARD_PIN_UP, KEYBOARD_PIN_DOWN, KEYBOARD_PIN_ACTION };
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
+
+cmd_parser_option_t options[] =
+{
+    {"up",    TRUE, NULL,  'u'},
+    {"down",  TRUE, NULL,  'd'},
+    {"left",  TRUE, NULL,  'l'},
+	{"right", TRUE, NULL,  'r'},
+	{"key",   TRUE, NULL,  'k'},
+	{"info",  TRUE, NULL,  'i'},
+    {NULL,    FALSE, NULL,  0 }
+};
 // --------- Global register end --------- 
+
+void parse_command(int argc, char *const argv[]) {
+    int option_result = 0;
+    int option_index = 0;
+    int arg_index = 0;
+    char *strValue = NULL;
+    char value = 0;
+
+    while ((option_result = cmd_parser_get_cmd(argc, argv, options, &option_index, &arg_index)) != -1) {
+        strValue = options[option_index].strval;
+        printf ("Request %s<%c>(%s)\n", options[option_index].name, option_result, strValue);
+
+        switch (option_result) {
+            case 'u':
+                value = atoi(strValue);
+
+                printf ("Move screen up %d positions\n", value);
+				GET_VIDEO_PROPS().vertical_front_porch -= value;
+				GET_VIDEO_PROPS().vertical_back_porch  += value;
+                break;
+            case 'd': 
+                value = atoi(strValue);
+
+                printf ("Move screen down %d positions\n", value);
+				GET_VIDEO_PROPS().vertical_front_porch += value;
+				GET_VIDEO_PROPS().vertical_back_porch  -= value;
+                break;
+            case 'l':
+                value = atoi(strValue);
+
+                printf ("Move screen left %d positions\n", value);
+				GET_VIDEO_PROPS().horizontal_front_porch -= value;
+				GET_VIDEO_PROPS().horizontal_back_porch  += value;
+                break;
+            case 'r':
+                value = atoi(strValue);
+
+                printf ("Move screen right %d positions\n", value);
+				GET_VIDEO_PROPS().horizontal_front_porch += value;
+				GET_VIDEO_PROPS().horizontal_back_porch  -= value;
+                break;
+			case 'i':
+				value = strcmp(strValue, "true") == 0;
+				printf("Show on screen info to %s\n", value > 0 ? "on" : "off");
+				video_overlay_enable(value);
+                break;
+            default:  printf("Unknown command: "); cmd_parser_print_cmd(options); break;
+         }
+    }
+}
 
 void __not_in_flash_func(core1_main)() {
 	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
@@ -131,28 +194,20 @@ int main() {
 	printf("Core 1 start\n");
 	multicore_launch_core1(core1_main);
 
-	printf("Start rendering\n");
-
-	for (int y = 0; y < FRAME_HEIGHT; ++y) {
-		for (int x = 0; x < FRAME_WIDTH; ++x) {
-			int red = x * 32 / FRAME_WIDTH;
-			int green = y * 64 / FRAME_HEIGHT;
-			int blue = 31 - (x * 32) / FRAME_WIDTH;
-			framebuf[y * FRAME_WIDTH + x] = (x%8>0)&&(y%8>0) ? blue<<11 |green<<5 | red : 0xFFFF;
-		}
-	}
-	
-	int count = 5;
-	printf("%s version - IntegrationTest %s started!\n", PROJECT_NAME, PROJECT_VER);
+	for (int i = 10; i > 0; i--) {
+        sleep_ms(1000);
+        printf("%d\n", i);
+    }
+	video_overlay_enable(false);
+	printf("IntegrationTest %s - version %s started!\n", PROJECT_NAME, PROJECT_VER);
+	char inputStr[64];
+    char *argv[8];
+    int argc;
 	while (1)
 	{
-		printf("Current Clock=%ldhz, Vysnc=%ldnSec, %ldHz, Hsync=%dnSec, %dHz\n", clock_get_hz(clk_sys), rgbScannerGetVsyncNanoSec(), 1000000000 / rgbScannerGetVsyncNanoSec(), rgbScannerGetHsyncNanoSec(), 1000000000 / rgbScannerGetHsyncNanoSec());
-		sleep_ms(1000);
-		if (count > 0) {
-			if (--count == 0) {
-				video_overlay_enable(false);
-			};
-		}
+		gets(inputStr);
+        cmd_parser_get_argv_argc(inputStr, &argc, argv);
+        parse_command(argc, argv);
 	}
 	__builtin_unreachable();
 }

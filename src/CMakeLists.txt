@@ -6,5 +6,6 @@ add_subdirectory(keyboard)
 add_subdirectory(storage)
 add_subdirectory(graphics)
 add_subdirectory(menu)
+add_subdirectory(cmdParser)
 add_subdirectory(app)
 
