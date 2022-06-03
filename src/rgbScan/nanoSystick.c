@@ -23,18 +23,3 @@ int systick_start(bool wait, uint32_t ticks) {
     nanoSystick_timestampLast = systick_current->current;
     return 0;
 }
-
-uint32_t systick_mark(bool stop) {
-    uint32_t current = systick_current->current;
-    uint32_t delta = (nanoSystick_timestampLast - current)&0xFFFFFF;
-    nanoSystick_timestampLast = current;
-    if (stop) {
-        systick_control->enable = 0; 
-    }
-
-    return delta;
-}
-
-uint32_t systick_get_current() {
-    return systick_current->current;
-}

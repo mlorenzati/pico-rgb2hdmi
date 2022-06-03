@@ -29,9 +29,27 @@ typedef struct {
     io_rw_32 noref:1;
 } *systick_calibration_r;
 
+extern systick_cvr systick_current;
+extern systick_csr systick_control;
+extern uint32_t nanoSystick_timestampLast;
+
 int systick_setup(bool useInterrupts);
 int systick_start(bool wait, uint32_t ticks);
 uint32_t systick_mark(bool stop);
-uint32_t systick_get_current();
+
+inline uint32_t systick_get_current() {
+    return systick_current->current;
+}
+ 
+inline uint32_t systick_mark(bool stop) {
+    uint32_t current = systick_current->current;
+    uint32_t delta = (nanoSystick_timestampLast - current)&0xFFFFFF;
+    nanoSystick_timestampLast = current;
+    if (stop) {
+        systick_control->enable = 0; 
+    }
+
+    return delta;
+}
 
 #endif//_NANO_SYSTICK_H

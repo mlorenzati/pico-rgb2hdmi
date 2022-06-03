@@ -89,9 +89,11 @@ void draw_bresen(const graphic_ctx_t *ctx, uint xc, uint yc, uint x, uint y, uin
     put_pixel(ctx, xc - y, yc - x, color);
 }
 
-void draw_circle(const graphic_ctx_t *ctx, uint xc, uint yc, uint radius, uint color) {
-    int x = 0, y = radius;
-    int d = 3 - 2 * radius;
+void draw_circle(const graphic_ctx_t *ctx, uint xc, uint yc, signed int radius, uint color) {
+    int x = 0, y = abs(radius);
+    int d = 3 - 2 * y;
+    if (radius == 0) { return ; }
+
     draw_bresen(ctx, xc, yc, x, y, color);
     while (y >= x)
     {
@@ -106,12 +108,15 @@ void draw_circle(const graphic_ctx_t *ctx, uint xc, uint yc, uint radius, uint c
             
         draw_bresen(ctx, xc, yc, x, y, color);
     }
+    if (radius < 0) {
+        draw_circle(ctx, xc, yc, radius + 1, color);
+    }
 }
 
 void draw_text(const graphic_ctx_t *ctx, uint x0, uint y0, uint fg_color, uint bg_color, const char *text) {
     if (y0 >= ctx->height) { return; }
     uint y_max = (y0 + GRAPHICS_FONT_SIZE) >= ctx->height ? ctx->height - 1 : y0 + GRAPHICS_FONT_SIZE;
-    const char *ptr;
+    const char *ptr = NULL;
     char c;
 
     for (int y = y0; y < y_max; ++y) {

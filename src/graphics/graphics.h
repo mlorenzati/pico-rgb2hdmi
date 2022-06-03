@@ -29,7 +29,7 @@ uint get_pixel(const graphic_ctx_t *ctx, uint x, uint y);
 void draw_line(const graphic_ctx_t *ctx, uint x0, uint y0, uint x1, uint y1, uint color);
 void draw_rect(const graphic_ctx_t *ctx, uint x0, uint y0, uint width, uint height, uint color);
 void fill_rect(const graphic_ctx_t *ctx, uint x0, uint y0, uint width, uint height, uint color);
-void draw_circle(const graphic_ctx_t *ctx, uint xc, uint yc, uint radius, uint color);
+void draw_circle(const graphic_ctx_t *ctx, uint xc, uint yc, signed int radius, uint color);
 void draw_text(const graphic_ctx_t *ctx, uint x0, uint y0, uint fg_color, uint bg_color, const char *text);
 void draw_textf(const graphic_ctx_t *ctx, uint x0, uint y0, uint fg_color, uint bg_color, const char *fmt, ...);
 // TODO: text, line, rect

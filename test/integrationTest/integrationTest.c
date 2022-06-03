@@ -18,6 +18,7 @@
 #include "wm8213Afe.h"
 #include "videoAdjust.h"
 #include "overlay.h"
+#include "graphics.h"
 #include "keyboard.h"
 #include "cmdParser.h"
 
@@ -43,6 +44,20 @@ uint gpio_pins[3] = { KEYBOARD_PIN_UP, KEYBOARD_PIN_DOWN, KEYBOARD_PIN_ACTION };
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
 
+static graphic_ctx_t graphic_ctx = {
+	.width = FRAME_WIDTH,
+	.height = FRAME_HEIGHT,
+	.video_buffer = framebuf,
+	.bppx = rgb_16,
+	.parent = NULL
+};
+
+static graphic_ctx_t overlay_ctx = {
+	.video_buffer = NULL,
+	.bppx = rgb_16,
+	.parent = &graphic_ctx
+};
+
 cmd_parser_option_t options[] =
 {
     {"up",    TRUE, NULL,  'u'},
@@ -53,6 +68,13 @@ cmd_parser_option_t options[] =
 	{"info",  TRUE, NULL,  'i'},
     {NULL,    FALSE, NULL,  0 }
 };
+
+// Colors                0brrrrrggggggbbbbb;
+uint color_white       = 0b1111111111111111;
+uint color_gray        = 0b0110001100101100;
+uint color_dark        = 0b0011000110000110;
+uint color_light_blue  = 0b0111010101011011;
+uint color_yellow	   = 0b1111110111101001;
 // --------- Global register end --------- 
 
 void parse_command(int argc, char *const argv[]) {
@@ -151,8 +173,12 @@ int main() {
 	set_video_props(44, 56, 50, 20, FRAME_WIDTH, FRAME_HEIGHT, REFRESH_RATE);
 	afec_cfg_2.sampling_rate_afe = GET_VIDEO_PROPS().sampling_rate;
 
-	//Prepare video Overlay
-	set_video_overlay(-100,-100, true);
+	//Prepare video Overlay & graphics context
+	set_video_overlay(-136,-100, true);
+	overlay_ctx.width = video_overlay.width;
+	overlay_ctx.height = video_overlay.height;
+	overlay_ctx.x = video_overlay_get_startx();
+	overlay_ctx.y = video_overlay_get_starty();
 
 	if (wm8213_afe_setup(&afec_cfg_2) > 0) {
          printf("AFE initialize failed \n");
@@ -181,9 +207,14 @@ int main() {
 
 	// Once we've given core 1 the framebuffer, it will just keep on displaying
 	// it without any intervention from core 0
-	for (int n=0; n < FRAME_WIDTH * FRAME_HEIGHT; n++) {
-		framebuf[n] = 0xFFFF;
-	}
+	fill_rect(&graphic_ctx, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, color_white);
+	fill_rect(&overlay_ctx, 1, 1, overlay_ctx.width - 2, overlay_ctx.height - 2, color_gray);
+	bool license = true;
+	draw_textf(&overlay_ctx, 2, 2, color_dark, color_dark, "LorenTek\nRGB2HDMI 2022\n\nLicense is %s\n\nmlorenzati@gmail\nArtentina", license ? "valid" : "invalid");
+	fill_rect(&overlay_ctx, 36, 58, 64, 14, color_light_blue);
+	fill_rect(&overlay_ctx, 36, 72, 64, 14, color_white);
+	fill_rect(&overlay_ctx, 36, 86, 64, 14, color_light_blue);
+	draw_circle(&overlay_ctx, 68, 78, -7,   color_yellow);
 
 	//Prepare for the first time the two initial lines
 	uint16_t *bufptr = framebuf;
@@ -198,7 +229,9 @@ int main() {
         sleep_ms(1000);
         printf("%d\n", i);
     }
+
 	video_overlay_enable(false);
+	
 	printf("IntegrationTest %s - version %s started!\n", PROJECT_NAME, PROJECT_VER);
 	char inputStr[64];
     char *argv[8];

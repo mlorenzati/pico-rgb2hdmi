@@ -3,11 +3,14 @@
 
 #include "pico/stdlib.h"
 #include "rgbScan.h"
-#include "nanoSystick.h"
 #include "hardware/clocks.h"
 #include "hardware/irq.h"
 #include "hardware/structs/iobank0.h"
 #include "hardware/sync.h"
+
+#ifdef RGB_SCANNER_TIMING_INFO
+#include "nanoSystick.h"
+#endif
 
 uint _vsyncGPIO, _hsyncGPIO;
 unsigned long tickVsync;
@@ -19,13 +22,17 @@ scanlineCallback rgbScannerScanlineCallback = NULL;
 unsigned int     rgbScannerScanlineTriggerFrontPorch = 10000;   
 unsigned int     rgbScannerScanlineTriggerBackPorch = 10000; 
 
+static inline void rgb_scanner_gpio_acknowledge_irq(uint gpio, uint32_t events) {
+    iobank0_hw->intr[gpio / 8] = events << 4 * (gpio % 8);
+}
+
 static void __not_in_flash_func(rgb_scanner_gpio_irq_handler)(void) {
     io_irq_ctrl_hw_t *irq_ctrl_base = get_core_num() ? &iobank0_hw->proc1_irq_ctrl : &iobank0_hw->proc0_irq_ctrl;
 
     io_ro_32 *status_reg_hsync = &irq_ctrl_base->ints[_hsyncGPIO / 8];
     uint events_hsync = (*status_reg_hsync >> 4 * (_hsyncGPIO % 8)) & 0xf;
     if (events_hsync) {
-        gpio_acknowledge_irq(_hsyncGPIO, events_hsync);
+        rgb_scanner_gpio_acknowledge_irq(_hsyncGPIO, events_hsync);
 
         hsyncCounter++;
         if (hsyncCounter >= rgbScannerScanlineTriggerFrontPorch && hsyncCounter <= rgbScannerScanlineTriggerBackPorch) {
@@ -35,12 +42,13 @@ static void __not_in_flash_func(rgb_scanner_gpio_irq_handler)(void) {
     io_ro_32 *status_reg_vsync = &irq_ctrl_base->ints[_vsyncGPIO / 8];
     uint events_vsync = (*status_reg_vsync >> 4 * (_vsyncGPIO % 8)) & 0xf;
     if (events_vsync) {
-        gpio_acknowledge_irq(_vsyncGPIO, events_vsync);
-
+        rgb_scanner_gpio_acknowledge_irq(_vsyncGPIO, events_vsync);
+        #ifdef RGB_SCANNER_TIMING_INFO
         tickVsync = systick_mark(false);
         if (hsyncCounter > 0) {
             tickHsync = (unsigned int)(tickVsync / hsyncCounter);
-        } 
+        }
+        #endif
         hsyncCounter = 0;
     }    
 }
