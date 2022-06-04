@@ -25,6 +25,7 @@
 //System configuration includes
 #include "version.h"
 #include "common_configs.h"
+#include "system.h"
 
 // System config definitions
 // TMDS bit clock 252 MHz
@@ -163,7 +164,7 @@ int main() {
 
 	// Run system at TMDS bit clock
 	set_sys_clock_khz(DVI_TIMING.bit_clk_khz, true);
-
+	system_delayed_write_disable();
 	stdio_init_all();
 
 	gpio_init(LED_PIN);
@@ -210,7 +211,7 @@ int main() {
 	fill_rect(&graphic_ctx, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, color_white);
 	fill_rect(&overlay_ctx, 1, 1, overlay_ctx.width - 2, overlay_ctx.height - 2, color_gray);
 	bool license = true;
-	draw_textf(&overlay_ctx, 2, 2, color_dark, color_dark, "LorenTek\nRGB2HDMI 2022\n\nLicense is %s\n\nmlorenzati@gmail\nArtentina", license ? "valid" : "invalid");
+	draw_textf(&overlay_ctx, 2, 2, color_dark, color_dark, "LorenTek\nRGB2HDMI 2022\n\nLicense is %s\n\nmlorenzati@gmail\nArgentina", license ? "valid" : "invalid");
 	fill_rect(&overlay_ctx, 36, 58, 64, 14, color_light_blue);
 	fill_rect(&overlay_ctx, 36, 72, 64, 14, color_white);
 	fill_rect(&overlay_ctx, 36, 86, 64, 14, color_light_blue);

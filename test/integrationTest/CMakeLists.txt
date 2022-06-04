@@ -16,6 +16,7 @@ if (TARGET tinyusb_device)
         graphics
         keyboard
         security
+        system
         cmdParser
         )
 
