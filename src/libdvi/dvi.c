@@ -41,11 +41,10 @@ void dvi_init(struct dvi_inst *inst, uint spinlock_tmds_queue, uint spinlock_col
 	dvi_setup_scanline_for_active(inst->timing, inst->dma_cfg, NULL, &inst->dma_list_error);
 
 	for (int i = 0; i < DVI_N_TMDS_BUFFERS; ++i) {
-		void *tmdsbuf;
 #if DVI_MONOCHROME_TMDS
-		tmdsbuf = malloc(inst->timing->h_active_pixels / DVI_SYMBOLS_PER_WORD * sizeof(uint32_t));
+		void *tmdsbuf = malloc(inst->timing->h_active_pixels / DVI_SYMBOLS_PER_WORD * sizeof(uint32_t));
 #else
-		tmdsbuf = malloc(3 * inst->timing->h_active_pixels / DVI_SYMBOLS_PER_WORD * sizeof(uint32_t));
+		void *tmdsbuf = malloc(3 * inst->timing->h_active_pixels / DVI_SYMBOLS_PER_WORD * sizeof(uint32_t));
 #endif
 		if (!tmdsbuf)
 			panic("TMDS buffer allocation failed");
@@ -115,7 +114,7 @@ void dvi_start(struct dvi_inst *inst) {
 }
 
 static inline void __dvi_func_x(_dvi_prepare_scanline_8bpp)(struct dvi_inst *inst, uint32_t *scanbuf) {
-	uint32_t *tmdsbuf;
+	uint32_t *tmdsbuf = NULL;
 	queue_remove_blocking_u32(&inst->q_tmds_free, &tmdsbuf);
 	uint pixwidth = inst->timing->h_active_pixels;
 	uint words_per_channel = pixwidth / DVI_SYMBOLS_PER_WORD;
@@ -127,7 +126,7 @@ static inline void __dvi_func_x(_dvi_prepare_scanline_8bpp)(struct dvi_inst *ins
 }
 
 static inline void __dvi_func_x(_dvi_prepare_scanline_16bpp)(struct dvi_inst *inst, uint32_t *scanbuf) {
-	uint32_t *tmdsbuf;
+	uint32_t *tmdsbuf = NULL;
 	queue_remove_blocking_u32(&inst->q_tmds_free, &tmdsbuf);
 	uint pixwidth = inst->timing->h_active_pixels;
 	uint words_per_channel = pixwidth / DVI_SYMBOLS_PER_WORD;
@@ -143,7 +142,7 @@ static inline void __dvi_func_x(_dvi_prepare_scanline_16bpp)(struct dvi_inst *in
 void __dvi_func(dvi_scanbuf_main_8bpp)(struct dvi_inst *inst) {
 	uint y = 0;
 	while (1) {
-		uint32_t *scanbuf;
+		uint32_t *scanbuf = NULL;
 		queue_remove_blocking_u32(&inst->q_colour_valid, &scanbuf);
 		_dvi_prepare_scanline_8bpp(inst, scanbuf);
 		queue_add_blocking_u32(&inst->q_colour_free, &scanbuf);
@@ -159,7 +158,7 @@ void __dvi_func(dvi_scanbuf_main_8bpp)(struct dvi_inst *inst) {
 void __dvi_func(dvi_scanbuf_main_16bpp)(struct dvi_inst *inst) {
 	uint y = 0;
 	while (1) {
-		uint32_t *scanbuf;
+		uint32_t *scanbuf = NULL;
 		queue_remove_blocking_u32(&inst->q_colour_valid, &scanbuf);
 		_dvi_prepare_scanline_16bpp(inst, scanbuf);
 		queue_add_blocking_u32(&inst->q_colour_free, &scanbuf);
@@ -188,7 +187,7 @@ static void __dvi_func(dvi_dma_irq_handler)(struct dvi_inst *inst) {
 			tight_loop_contents();
 	}
 
-	uint32_t *tmdsbuf;
+	uint32_t *tmdsbuf = NULL;
 	while (inst->late_scanline_ctr > 0 && queue_try_remove_u32(&inst->q_tmds_valid, &tmdsbuf)) {
 		// If we displayed this buffer then it would be in the wrong vertical
 		// position on-screen. Just pass it back.
