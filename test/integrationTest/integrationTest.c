@@ -164,7 +164,9 @@ int main() {
 
 	// Run system at TMDS bit clock
 	set_sys_clock_khz(DVI_TIMING.bit_clk_khz, true);
-	system_delayed_write_disable();
+	#ifdef RGB2HDMI_DEBUG
+	//system_delayed_write_disable();
+	#endif
 	stdio_init_all();
 
 	gpio_init(LED_PIN);
@@ -190,7 +192,7 @@ int main() {
     }
 
 	int error = rgbScannerSetup(
-		RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, GET_VIDEO_PROPS().vertical_front_porch, GET_VIDEO_PROPS().vertical_front_porch + GET_VIDEO_PROPS().height, scanLineTriggered);
+		RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, GET_VIDEO_PROPS().vertical_front_porch, GET_VIDEO_PROPS().height, scanLineTriggered);
 	if (error > 0) {
         printf("rgbScannerSetup failed with code %d\n", error);
 		 gpio_put(LED_PIN, false);
