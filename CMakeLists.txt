@@ -24,6 +24,8 @@ if (NOT STR2HEX)
     message(FATAL_ERROR "xxd was not found")
 endif()
 
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DRGB2HDMI_DEBUG")
+
 #Include directory with setup config
 include_directories(config)
 

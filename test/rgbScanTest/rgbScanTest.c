@@ -12,7 +12,7 @@
 #include "common_configs.h"
 
 int frontPorch = 20;
-int backPorch = 30;
+int height = 100;
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
 
@@ -31,7 +31,7 @@ int main() {
     gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
     int error;
-    if (error = rgbScannerSetup(RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, frontPorch, backPorch, &scanLineTriggered) > 0) {
+    if (error = rgbScannerSetup(RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, frontPorch, height, &scanLineTriggered) > 0) {
         printf("rgbScannerSetup failed with code %d\n", error);
     }
 

@@ -117,7 +117,7 @@ void draw_text(const graphic_ctx_t *ctx, uint x0, uint y0, uint fg_color, uint b
     if (y0 >= ctx->height) { return; }
     uint y_max = (y0 + GRAPHICS_FONT_SIZE) >= ctx->height ? ctx->height - 1 : y0 + GRAPHICS_FONT_SIZE;
     const char *ptr = NULL;
-    char c;
+    char c = 0;
 
     for (int y = y0; y < y_max; ++y) {
         uint xbase = x0;

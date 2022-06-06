@@ -39,7 +39,6 @@ wm8213_afe_config_t afec_cfg_2 = afec_cfg;
 uint16_t framebuf[FRAME_HEIGHT / 3][FRAME_WIDTH];
 
 int vFrontPorch =  28;
-int vBackPorch = 239 + 28;
 int hFrontPorch = 50;
 int samplingRate = (FRAME_WIDTH+56+56)*((FRAME_HEIGHT)+48+48)*50;
 
@@ -73,7 +72,7 @@ void __not_in_flash("main") core1_main() {
 		 gpio_put(LED_PIN, true);
     }
 
-	int error = rgbScannerSetup(RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, vFrontPorch, vBackPorch, scanLineTriggered);
+	int error = rgbScannerSetup(RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, vFrontPorch, FRAME_HEIGHT, scanLineTriggered);
 	if (error > 0) {
         printf("rgbScannerSetup failed with code %d\n", error);
 		gpio_put(LED_PIN, false);
