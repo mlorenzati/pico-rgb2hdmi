@@ -94,29 +94,33 @@ void parse_command(int argc, char *const argv[]) {
                 value = atoi(strValue);
 
                 printf ("Move screen up %d positions\n", value);
-				GET_VIDEO_PROPS().vertical_front_porch -= value;
-				GET_VIDEO_PROPS().vertical_back_porch  += value;
+				GET_VIDEO_PROPS().vertical_front_porch += value;
+				GET_VIDEO_PROPS().vertical_back_porch  -= value;
+
+				rgbScannerUpdateData(GET_VIDEO_PROPS().vertical_front_porch, 0);
                 break;
             case 'd': 
                 value = atoi(strValue);
 
                 printf ("Move screen down %d positions\n", value);
-				GET_VIDEO_PROPS().vertical_front_porch += value;
-				GET_VIDEO_PROPS().vertical_back_porch  -= value;
+				GET_VIDEO_PROPS().vertical_front_porch -= value;
+				GET_VIDEO_PROPS().vertical_back_porch  += value;
+
+				rgbScannerUpdateData(GET_VIDEO_PROPS().vertical_front_porch, 0);
                 break;
             case 'l':
-                value = atoi(strValue);
-
-                printf ("Move screen left %d positions\n", value);
-				GET_VIDEO_PROPS().horizontal_front_porch -= value;
-				GET_VIDEO_PROPS().horizontal_back_porch  += value;
-                break;
-            case 'r':
                 value = atoi(strValue);
 
                 printf ("Move screen right %d positions\n", value);
 				GET_VIDEO_PROPS().horizontal_front_porch += value;
 				GET_VIDEO_PROPS().horizontal_back_porch  -= value;
+                break;
+            case 'r':
+				value = atoi(strValue);
+
+                printf ("Move screen left %d positions\n", value);
+				GET_VIDEO_PROPS().horizontal_front_porch -= value;
+				GET_VIDEO_PROPS().horizontal_back_porch  += value;
                 break;
 			case 'i':
 				value = strcmp(strValue, "true") == 0;

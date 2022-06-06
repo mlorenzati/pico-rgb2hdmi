@@ -19,8 +19,8 @@ unsigned int  tickHsync;
 unsigned int  hsyncCounter;
 
 scanlineCallback rgbScannerScanlineCallback = NULL;
-unsigned int     rgbScannerScanlineTriggerFrontPorch = 0;   
-unsigned int     rgbScannerScanlineTriggerlastLine = 0; 
+volatile unsigned int     rgbScannerScanlineTriggerFrontPorch = 0;   
+volatile unsigned int     rgbScannerScanlineTriggerlastLine   = 0; 
 
 static inline void rgb_scanner_gpio_acknowledge_irq(uint gpio, uint32_t events) {
     iobank0_hw->intr[gpio / 8] = events << 4 * (gpio % 8);
@@ -58,8 +58,7 @@ int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height
         return 1;
     }
     rgbScannerScanlineCallback = callback;
-    rgbScannerScanlineTriggerFrontPorch = frontPorch;
-    rgbScannerScanlineTriggerlastLine = frontPorch + height;
+    rgbScannerUpdateData(frontPorch, height);
     _vsyncGPIO = vsyncGPIO;
     _hsyncGPIO = hsyncGPIO;
     gpio_init(_vsyncGPIO);
@@ -101,7 +100,21 @@ unsigned int rgbScannerGetHsyncNanoSec() {
     #endif
 }
 
+static bool rgbScannerEnabled = false;
 void rgbScannerEnable(bool value) {
     gpio_set_irq_enabled(_vsyncGPIO,  GPIO_IRQ_EDGE_FALL, value);
     gpio_set_irq_enabled(_hsyncGPIO,  GPIO_IRQ_EDGE_RISE, value);
+    rgbScannerEnabled = value;
+}
+
+void rgbScannerUpdateData(uint frontPorch, uint height) {
+    bool wasRgbScannerEnabled = rgbScannerEnabled;
+    rgbScannerEnable(false);
+    if (height == 0) {
+        height = rgbScannerScanlineTriggerlastLine - rgbScannerScanlineTriggerFrontPorch;
+    }
+
+    rgbScannerScanlineTriggerFrontPorch = frontPorch;
+    rgbScannerScanlineTriggerlastLine = frontPorch + height;
+    rgbScannerEnable(wasRgbScannerEnabled);
 }

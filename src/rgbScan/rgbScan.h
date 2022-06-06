@@ -12,5 +12,6 @@ int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height
 unsigned long rgbScannerGetVsyncNanoSec();
 unsigned int rgbScannerGetHsyncNanoSec();
 void         rgbScannerEnable(bool value);
+void         rgbScannerUpdateData(uint frontPorch, uint height);
 
 #endif//_RGB_SCANNER_H
