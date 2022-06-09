@@ -35,7 +35,6 @@ extern uint32_t nanoSystick_timestampLast;
 
 int systick_setup(bool useInterrupts);
 int systick_start(bool wait, uint32_t ticks);
-uint32_t systick_mark(bool stop);
 
 inline uint32_t systick_get_current() {
     return systick_current->current;

@@ -61,13 +61,14 @@ static graphic_ctx_t overlay_ctx = {
 
 cmd_parser_option_t options[] =
 {
-    {"up",    TRUE, NULL,  'u'},
-    {"down",  TRUE, NULL,  'd'},
-    {"left",  TRUE, NULL,  'l'},
-	{"right", TRUE, NULL,  'r'},
-	{"key",   TRUE, NULL,  'k'},
-	{"info",  TRUE, NULL,  'i'},
-    {NULL,    FALSE, NULL,  0 }
+    {"up",      TRUE,  NULL,  'u'},
+    {"down",    TRUE,  NULL,  'd'},
+    {"left",    TRUE,  NULL,  'l'},
+	{"right",   TRUE,  NULL,  'r'},
+	{"key",     TRUE,  NULL,  'k'},
+	{"info",    TRUE,  NULL,  'i'},
+	{"capture", FALSE, NULL,  'c'},
+    {NULL,      FALSE, NULL,  0 }
 };
 
 // Colors                0brrrrrggggggbbbbb;
@@ -127,6 +128,17 @@ void parse_command(int argc, char *const argv[]) {
 				printf("Show on screen info to %s\n", value > 0 ? "on" : "off");
 				video_overlay_enable(value);
                 break;
+			case 'c':
+				printf("capture screen:");
+				rgbScannerEnable(false);
+				for(int height=0; height < FRAME_HEIGHT; height++) {
+					printf("\n");
+					for(int width=0; width < FRAME_WIDTH; width++) {
+						printf("%d%s", framebuf[FRAME_WIDTH * height + width], (width < FRAME_WIDTH -1) ? ",": "");
+					}
+				}
+				rgbScannerEnable(true);
+                break;
             default:  printf("Unknown command: "); cmd_parser_print_cmd(options); break;
          }
     }
@@ -159,7 +171,44 @@ static void __not_in_flash_func(scanLineTriggered)(unsigned int render_line_numb
 }
 
 void on_keyboard_event(keyboard_status_t keys) {
-    printf("Keyboard event received \n");
+	static bool usb_enabled = false;
+	static bool move_x_y = false;
+	//Three keys pressed enables USB support
+	if (keys.key1_down && keys.key2_down && keys.key3_down) {
+		if (!usb_enabled) {
+			usb_enabled = true;
+			stdio_init_all();
+		}
+	}
+
+	//key 1 toggles x vs y
+	if (keys.key1_up) {
+		move_x_y = ! move_x_y;
+	}
+
+	if (keys.key2_up || keys.key3_up) {
+		io_rw_16 *porch_1;
+		io_rw_16 *porch_2;
+		bool is_vertical = false;
+		if (move_x_y) {
+			porch_1 = &(GET_VIDEO_PROPS().vertical_front_porch);
+			porch_2 = &(GET_VIDEO_PROPS().vertical_back_porch);
+			is_vertical = true;
+		} else {
+			porch_1 = &(GET_VIDEO_PROPS().horizontal_front_porch);
+			porch_2 = &(GET_VIDEO_PROPS().horizontal_back_porch);
+		}
+		if (keys.key3_up) {
+			io_rw_16 *swap = porch_1;
+			porch_1 = porch_2;
+			porch_2 = swap;
+		}
+		(*porch_1)++;
+		(*porch_2)--;
+		if (is_vertical) {
+			rgbScannerUpdateData(GET_VIDEO_PROPS().vertical_front_porch, 0);
+		}
+	}	
 }
 
 int main() {
@@ -171,7 +220,6 @@ int main() {
 	#ifdef RGB2HDMI_DEBUG
 	//system_delayed_write_disable();
 	#endif
-	stdio_init_all();
 
 	gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
@@ -199,7 +247,7 @@ int main() {
 		RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, GET_VIDEO_PROPS().vertical_front_porch, GET_VIDEO_PROPS().height, scanLineTriggered);
 	if (error > 0) {
         printf("rgbScannerSetup failed with code %d\n", error);
-		 gpio_put(LED_PIN, false);
+		gpio_put(LED_PIN, false);
     }
 
 	printf("Initializing keyboard\n");
