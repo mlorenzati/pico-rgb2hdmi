@@ -17,7 +17,7 @@ brew install md5sha1sum
 ## Local sha3sum usage for sha256
 ```
 sha1sum <file>
-echo <device_salt><device_uid> | sha1sum -b
+echo -n "<device_salt><device_uid>" | sha1sum -b
 ```
 
 # Build

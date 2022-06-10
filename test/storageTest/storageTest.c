@@ -42,7 +42,7 @@ int main() {
         
         printf("Storage capacity of %d bytes\n", flash_capacity);
 
-        int res = storage_initialize(buffer, &settings_in_flash, 255);
+        int res = storage_initialize(buffer, &settings_in_flash, 255, true);
         if (res > 0) {
             printf("Storage inialization failed\n");
         } else if (res < 0) {

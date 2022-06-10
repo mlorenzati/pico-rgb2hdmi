@@ -17,6 +17,7 @@ if (TARGET tinyusb_device)
         keyboard
         security
         system
+        storage
         cmdParser
         )
 

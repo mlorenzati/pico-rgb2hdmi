@@ -25,7 +25,7 @@ size_t get_size_in_blocks(size_t in_size, size_t block_size) {
     return ((in_size / block_size) + (in_size % block_size > 0)) * block_size;
 }
 
-int storage_flash(uint32_t offset, size_t size, const void *settings) {
+void storage_flash(uint32_t offset, size_t size, const void *settings) {
     uint8_t buffer[FLASH_PAGE_SIZE];
 
     // Set Canary to off
@@ -41,7 +41,7 @@ int storage_flash(uint32_t offset, size_t size, const void *settings) {
     }
 } 
 
-int storage_initialize(const void *initial_settings, const void **updated_settings, size_t size) {
+int storage_initialize(const void *initial_settings, const void **updated_settings, size_t size, bool force) {
     // Size is +1 to host the canary byte
     global_storage_erase_size = get_size_in_blocks(size + 1, FLASH_SECTOR_SIZE);
     global_storage_write_size = get_size_in_blocks(size + 1, FLASH_PAGE_SIZE);
@@ -57,7 +57,7 @@ int storage_initialize(const void *initial_settings, const void **updated_settin
     *updated_settings = &(global_storage_memory_offset[1]);
     
      // First byte is the canary, if unitialized requires to be flashed
-    if (canary != 0) {
+    if (canary != 0 || force) {
         // Flash data
         storage_update(initial_settings);
 
@@ -71,9 +71,9 @@ int storage_update(const void *settings) {
     // Erase full range, disable IRQs to avoid XIP errors
     uint32_t status = save_and_disable_interrupts();
     flash_range_erase(global_storage_offset, global_storage_erase_size);
-    restore_interrupts(status);
-
+   
     // Update pages
     storage_flash(global_storage_offset, global_storage_write_size, settings);
+    restore_interrupts(status);
     return 0;
 }

@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include "pico/stdlib.h"
 #include "security.h"
+#include "storage.h"
 
 //System configuration includes
 #include "version.h"
@@ -15,10 +16,9 @@
 
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
+const void *security_key_in_flash;
 
 int main() {
-    stdio_init_all();
-
     gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
 
@@ -42,8 +42,14 @@ int main() {
     security_hexa_2_str(bad_key, bad_key_str, 20);
 
     const char *hexa_test_str = "0123456789ABCDEF";
-    uint8_t hexa_test[8];  
+    uint8_t hexa_test[8];
+
+    int res = storage_initialize(key, &security_key_in_flash, 20, true);
+    if (res > 0) {
+        printf("storage_initialize failed\n");
+    }
     
+    stdio_init_all();
     while (true) {
         printf("Security module Test %s - version %s started!\n", PROJECT_NAME, PROJECT_VER);
         const char *unique_id = security_get_uid();
@@ -58,7 +64,7 @@ int main() {
             printf("security_str_2_hexa converted %s %s\n", hexa_test_str, res == 0 ? "succesfully" : "wrong"); 
         }
 
-        res = security_key_is_valid(key, token);
+        res = security_key_is_valid(security_key_in_flash, token);
         printf("The good security key (%s) is %s\n", key_str, res > 0 ? "invalid" : "valid");
         if (res <= 0) {
             token = res;

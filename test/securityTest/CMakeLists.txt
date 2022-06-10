@@ -6,6 +6,7 @@ if (TARGET tinyusb_device)
 
     target_link_libraries(securityTest PRIVATE
         security
+        storage
         pico_stdlib)
         
     pico_enable_stdio_usb(securityTest 1)

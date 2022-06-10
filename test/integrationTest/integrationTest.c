@@ -20,6 +20,8 @@
 #include "overlay.h"
 #include "graphics.h"
 #include "keyboard.h"
+#include "security.h"
+#include "storage.h"
 #include "cmdParser.h"
 
 //System configuration includes
@@ -65,10 +67,11 @@ cmd_parser_option_t options[] =
     {"down",    TRUE,  NULL,  'd'},
     {"left",    TRUE,  NULL,  'l'},
 	{"right",   TRUE,  NULL,  'r'},
-	{"key",     TRUE,  NULL,  'k'},
 	{"info",    TRUE,  NULL,  'i'},
 	{"capture", FALSE, NULL,  'c'},
-    {NULL,      FALSE, NULL,  0 }
+	{"id",      FALSE, NULL,  'I'},
+	// {"key",  	TRUE, NULL,   'k'},
+    {NULL,      TRUE, NULL,  0 }
 };
 
 // Colors                0brrrrrggggggbbbbb;
@@ -77,7 +80,23 @@ uint color_gray        = 0b0110001100101100;
 uint color_dark        = 0b0011000110000110;
 uint color_light_blue  = 0b0111010101011011;
 uint color_yellow	   = 0b1111110111101001;
+
+const char security_key[20] = "12345678901234567890";
+const void *security_key_in_flash;
+bool license_is_valid;
 // --------- Global register end --------- 
+void show_info(bool value) {
+	video_overlay_enable(value);
+	if (value) {
+		fill_rect(&overlay_ctx, 0, 0, overlay_ctx.width, overlay_ctx.height, color_white);
+		fill_rect(&overlay_ctx, 2, 2, overlay_ctx.width - 5, overlay_ctx.height - 5, color_gray);
+		draw_textf(&overlay_ctx, 2, 2, color_dark, color_dark, "LorenTek RGB2HDMI\nLicense is %s\n\nmlorenzati@gmail\nArgentina", license_is_valid ? "valid" : "invalid");
+		fill_rect(&overlay_ctx, 41, 50, 64, 13, color_light_blue);
+		fill_rect(&overlay_ctx, 41, 64, 64, 14, color_white);
+		fill_rect(&overlay_ctx, 41, 79, 64, 13, color_light_blue);
+		draw_circle(&overlay_ctx, 73, 71, -6,   color_yellow);
+	}
+}
 
 void parse_command(int argc, char *const argv[]) {
     int option_result = 0;
@@ -85,7 +104,7 @@ void parse_command(int argc, char *const argv[]) {
     int arg_index = 0;
     char *strValue = NULL;
     char value = 0;
-
+	//uint8_t serial_key[20];
     while ((option_result = cmd_parser_get_cmd(argc, argv, options, &option_index, &arg_index)) != -1) {
         strValue = options[option_index].strval;
         printf ("Request %s<%c>(%s)\n", options[option_index].name, option_result, strValue);
@@ -125,8 +144,13 @@ void parse_command(int argc, char *const argv[]) {
                 break;
 			case 'i':
 				value = strcmp(strValue, "true") == 0;
-				printf("Show on screen info to %s\n", value > 0 ? "on" : "off");
-				video_overlay_enable(value);
+				if (license_is_valid) {
+					printf("Show on screen info to %s\n", value > 0 ? "on" : "off");
+					show_info(value);
+				} else {
+					printf("Invalid license, will not change info screen\n");
+				}
+				
                 break;
 			case 'c':
 				printf("capture screen:");
@@ -139,6 +163,14 @@ void parse_command(int argc, char *const argv[]) {
 				}
 				rgbScannerEnable(true);
                 break;
+			case 'I':
+				printf("Device is: %s\n", security_get_uid());
+				break;
+			// case 'k':
+			// 	printf("Storing key: %s\n", strValue);
+			// 	security_str_2_hexa(strValue, serial_key, 40);
+			// 	storage_update(serial_key);
+			// 	break;
             default:  printf("Unknown command: "); cmd_parser_print_cmd(options); break;
          }
     }
@@ -224,12 +256,20 @@ int main() {
 	gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
 
+	//
+	if (storage_initialize(security_key, &security_key_in_flash, 20, false) > 0) {
+		printf("storage initialize failed \n");
+	}
+
+	int token = -1;
+	license_is_valid = security_key_is_valid((const char *)security_key_in_flash, token) <= 0;
+
 	//Configure video properties
 	set_video_props(44, 56, 50, 20, FRAME_WIDTH, FRAME_HEIGHT, REFRESH_RATE);
 	afec_cfg_2.sampling_rate_afe = GET_VIDEO_PROPS().sampling_rate;
 
 	//Prepare video Overlay & graphics context
-	set_video_overlay(-136,-100, true);
+	set_video_overlay(-148,-100, true);
 	overlay_ctx.width = video_overlay.width;
 	overlay_ctx.height = video_overlay.height;
 	overlay_ctx.x = video_overlay_get_startx();
@@ -263,13 +303,7 @@ int main() {
 	// Once we've given core 1 the framebuffer, it will just keep on displaying
 	// it without any intervention from core 0
 	fill_rect(&graphic_ctx, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, color_white);
-	fill_rect(&overlay_ctx, 1, 1, overlay_ctx.width - 2, overlay_ctx.height - 2, color_gray);
-	bool license = true;
-	draw_textf(&overlay_ctx, 2, 2, color_dark, color_dark, "LorenTek\nRGB2HDMI 2022\n\nLicense is %s\n\nmlorenzati@gmail\nArgentina", license ? "valid" : "invalid");
-	fill_rect(&overlay_ctx, 36, 58, 64, 14, color_light_blue);
-	fill_rect(&overlay_ctx, 36, 72, 64, 14, color_white);
-	fill_rect(&overlay_ctx, 36, 86, 64, 14, color_light_blue);
-	draw_circle(&overlay_ctx, 68, 78, -7,   color_yellow);
+	show_info(true);
 
 	//Prepare for the first time the two initial lines
 	uint16_t *bufptr = framebuf;
@@ -285,7 +319,9 @@ int main() {
         printf("%d\n", i);
     }
 
-	video_overlay_enable(false);
+	if (license_is_valid) { 
+		show_info(false);
+	}
 	
 	printf("IntegrationTest %s - version %s started!\n", PROJECT_NAME, PROJECT_VER);
 	char inputStr[64];
