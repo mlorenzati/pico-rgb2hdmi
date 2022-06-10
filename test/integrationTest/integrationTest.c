@@ -70,6 +70,7 @@ cmd_parser_option_t options[] =
 	{"info",    TRUE,  NULL,  'i'},
 	{"capture", FALSE, NULL,  'c'},
 	{"id",      FALSE, NULL,  'I'},
+	{"version", FALSE, NULL,  'v'},
 	// {"key",  	TRUE, NULL,   'k'},
     {NULL,      TRUE, NULL,  0 }
 };
@@ -171,6 +172,9 @@ void parse_command(int argc, char *const argv[]) {
 			// 	security_str_2_hexa(strValue, serial_key, 40);
 			// 	storage_update(serial_key);
 			// 	break;
+			case 'v':
+				printf("%s - Integration Test - version %s\n", PROJECT_NAME, PROJECT_VER);
+				break;
             default:  printf("Unknown command: "); cmd_parser_print_cmd(options); break;
          }
     }

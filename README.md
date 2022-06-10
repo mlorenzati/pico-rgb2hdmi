@@ -20,6 +20,12 @@ sha1sum <file>
 echo -n "<device_salt><device_uid>" | sha1sum -b
 ```
 
+## converting CSV captures from serial port to images
+```
+python3 csv2png.py image.csv
+```
+This generates as output image.png
+
 # Build
 ```
 mkdir build
