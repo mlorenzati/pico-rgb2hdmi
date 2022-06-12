@@ -1,0 +1,12 @@
+#ifndef _COMMANDS_H
+#define _COMMANDS_H
+#include "pico.h"
+
+int  command_on_receive(int option, const void *data, bool convert);
+void command_storage_initialize();
+void command_validate_license();
+void command_show_info(bool value);
+void command_prepare_graphics();
+bool command_is_license_valid();
+void command_fill_blank();
+#endif

@@ -24,6 +24,8 @@ struct graphic_ctx {
     graphic_ctx_t   *parent;
 };
 
+#define GET_RGB16_BUFFER(x) ((uint16_t *)x)
+
 void put_pixel(const graphic_ctx_t *ctx, uint x, uint y, uint color);
 uint get_pixel(const graphic_ctx_t *ctx, uint x, uint y);
 void draw_line(const graphic_ctx_t *ctx, uint x0, uint y0, uint x1, uint y1, uint color);

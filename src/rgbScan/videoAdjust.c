@@ -9,7 +9,8 @@ void set_video_props(
     io_rw_16    horizontal_back_porch,
     io_rw_16    width,
     io_rw_16    height,
-    io_rw_8     refresh_rate
+    io_rw_8     refresh_rate,
+    void        *video_buffer
     ) {
     video_props.vertical_front_porch = vertical_front_porch;
     video_props.vertical_back_porch = vertical_back_porch;
@@ -20,4 +21,5 @@ void set_video_props(
     video_props.refresh_rate = refresh_rate;
     video_props.sampling_rate = 
         (horizontal_front_porch + width + horizontal_back_porch) * (vertical_front_porch + height + vertical_back_porch) * refresh_rate;
+     video_props.video_buffer = video_buffer;
 }

@@ -13,12 +13,10 @@ if (TARGET tinyusb_device)
         libdvi
         rgbScan
         overlay
-        graphics
         keyboard
-        security
         system
-        storage
         cmdParser
+        commands
         )
 
     pico_enable_stdio_usb(integrationTest 1)
