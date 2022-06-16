@@ -173,15 +173,6 @@ int main() {
          printf("AFE initialize succeded \n");
     }
 
-	// Initializing RGBSCAN and the leds to indicate it's activity
-	gpio_init(LED_PIN);
-    gpio_set_dir(LED_PIN, GPIO_OUT);
-	int error = rgbScannerSetup(
-		RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, GET_VIDEO_PROPS().vertical_front_porch, GET_VIDEO_PROPS().height, scanLineTriggered);
-	if (error > 0) {
-        printf("rgbScannerSetup failed with code %d\n", error);
-    }
-
 	// Initialize Keyboard
 	keyboard_initialize(keyboard_gpio_pins, 3, KEYBOARD_REFRESH_RATE_MS, KEYBOARD_REPEAT_RATE_MS, on_keyboard_event);
 
@@ -202,6 +193,16 @@ int main() {
 	bufptr += FRAME_WIDTH;
 	queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
 	multicore_launch_core1(core1_main);
+
+	// Initializing RGBSCAN and the leds to indicate it's activity
+	sleep_ms(10);
+	gpio_init(LED_PIN);
+    gpio_set_dir(LED_PIN, GPIO_OUT);
+	int error = rgbScannerSetup(
+		RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, GET_VIDEO_PROPS().vertical_front_porch, GET_VIDEO_PROPS().height, scanLineTriggered);
+	if (error > 0) {
+        printf("rgbScannerSetup failed with code %d\n", error);
+    }
 
 	// Wait some seconds with visual report
 	for (int i = 10; i > 0; i--) {
