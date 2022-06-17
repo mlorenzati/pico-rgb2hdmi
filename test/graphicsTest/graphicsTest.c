@@ -131,7 +131,7 @@ int main() {
 
 	draw_rect(&graphic_ctx, 20, 20, 279, 199, color2);
 
-	draw_textf(&graphic_ctx, 58, 196, color4, color4, "This is a test of LorenTek\nRGB2HDMI %d", 2022);
+	draw_textf(&graphic_ctx, 58, 196, color4, color4, false, "This is a test of LorenTek\nRGB2HDMI %d", 2022);
 
 	while (1)
 	{

@@ -167,8 +167,9 @@ int main() {
 	command_prepare_graphics();
 	
 	// Configure AFE Capture System
-	if (wm8213_afe_setup(&afec_cfg_2) > 0) {
-         printf("AFE initialize failed \n");
+	command_info_afe_error = wm8213_afe_setup(&afec_cfg_2);
+	if ( command_info_afe_error > 0) {
+         printf("AFE initialize failed with error %d\n", command_info_afe_error);
     } else {
          printf("AFE initialize succeded \n");
     }
@@ -198,11 +199,13 @@ int main() {
 	sleep_ms(10);
 	gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
-	int error = rgbScannerSetup(
-		RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, GET_VIDEO_PROPS().vertical_front_porch, GET_VIDEO_PROPS().height, scanLineTriggered);
-	if (error > 0) {
-        printf("rgbScannerSetup failed with code %d\n", error);
-    }
+	if (command_info_afe_error == 0) {
+		command_info_scanner_error = rgbScannerSetup(
+			RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, GET_VIDEO_PROPS().vertical_front_porch, GET_VIDEO_PROPS().height, scanLineTriggered);
+		if (command_info_scanner_error > 0) {
+			printf("rgbScannerSetup failed with code %d\n", command_info_scanner_error);
+		}
+	}
 
 	// Wait some seconds with visual report
 	for (int i = 10; i > 0; i--) {

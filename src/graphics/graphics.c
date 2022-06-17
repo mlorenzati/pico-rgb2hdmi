@@ -113,16 +113,19 @@ void draw_circle(const graphic_ctx_t *ctx, uint xc, uint yc, signed int radius, 
     }
 }
 
-void draw_text(const graphic_ctx_t *ctx, uint x0, uint y0, uint fg_color, uint bg_color, const char *text) {
+
+
+void draw_text(const graphic_ctx_t *ctx, uint x0, uint y0, uint fg_color, uint bg_color, bool word_wrap, const char *text) {
     if (y0 >= ctx->height) { return; }
     uint y_max = (y0 + GRAPHICS_FONT_SIZE) >= ctx->height ? ctx->height - 1 : y0 + GRAPHICS_FONT_SIZE;
     const char *ptr = NULL;
     char c = 0;
+    uint xbase = 0;
 
     for (int y = y0; y < y_max; ++y) {
-        uint xbase = x0;
+        xbase = x0;
 		ptr = text; 
-        while ((c = *ptr++) > 0 && (c != '\n') && (xbase < ctx->width)) {
+        while ((c = *ptr++) > 0 && (c != '\n') && (word_wrap ? (xbase + GRAPHICS_FONT_SIZE) < ctx->width : xbase < ctx->width)) {
             uint8_t font_bits = font_8x8[(c - FONT_FIRST_ASCII) + (y - y0) * FONT_N_CHARS];
             for (int i = 0; i < GRAPHICS_FONT_SIZE; ++i) {
                 bool pixel = font_bits & (1u << i);
@@ -130,19 +133,24 @@ void draw_text(const graphic_ctx_t *ctx, uint x0, uint y0, uint fg_color, uint b
                     put_pixel(ctx, xbase + i, y, pixel ? fg_color : bg_color);
                 }
             }
-            xbase += 8;
+            xbase += GRAPHICS_FONT_SIZE;
         }
     }
+    if (word_wrap && ((xbase + GRAPHICS_FONT_SIZE) >= ctx->width)) {
+        c = '\n';
+        ptr = text + (ctx->width - x0) / GRAPHICS_FONT_SIZE;
+        if (*ptr == '\n') { ptr++; }
+    }
     if (c == '\n') {
-        draw_text(ctx, x0, y0 + GRAPHICS_FONT_SIZE, fg_color, bg_color, ptr);
+        draw_text(ctx, x0, y0 + GRAPHICS_FONT_SIZE, fg_color, bg_color, word_wrap, ptr);
     }
 }
 
-void draw_textf(const graphic_ctx_t *ctx, uint x0, uint y0, uint fg_color, uint bg_color, const char *fmt, ...) {
+void draw_textf(const graphic_ctx_t *ctx, uint x0, uint y0, uint fg_color, uint bg_color, bool word_wrap, const char *fmt, ...) {
     char buf[128];
 	va_list args;
 	va_start(args, fmt);
 	vsnprintf(buf, 128, fmt, args);
-	draw_text(ctx, x0, y0, fg_color, bg_color, buf);
+	draw_text(ctx, x0, y0, fg_color, bg_color, word_wrap, buf);
 	va_end(args); 
 }

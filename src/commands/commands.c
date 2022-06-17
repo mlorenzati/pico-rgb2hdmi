@@ -10,6 +10,9 @@
 #include "graphics.h"
 #include "version.h"
 
+int command_info_afe_error;
+int command_info_scanner_error;
+
 ///////////   GLOBALS   ///////////
 bool command_license_is_valid;
 const void *security_key_in_flash;
@@ -73,7 +76,11 @@ void command_show_info(bool value) {
 	if (value) {
 		fill_rect(&overlay_ctx,  0, 0, overlay_ctx.width, overlay_ctx.height, color_white);
 		fill_rect(&overlay_ctx,  2, 2, overlay_ctx.width - 5, overlay_ctx.height - 5, color_gray);
-		draw_textf(&overlay_ctx, 2, 2, color_dark, color_dark, "LorenTek RGB2HDMI\nLicense is %s\n\nmlorenzati@gmail\nArgentina", command_license_is_valid ? "valid" : "invalid");
+		if (command_info_afe_error > 0 || command_info_scanner_error > 0) {
+			draw_textf(&overlay_ctx, 2, 2, color_dark, color_dark, true, "AFE error:%d\nScan error:%d\nD:%s\nmlorenzati@gmail\nVer:%s", command_info_afe_error, command_info_scanner_error, security_get_uid(), PROJECT_VER);
+		} else {
+			draw_textf(&overlay_ctx, 2, 2, color_dark, color_dark, true, "LorenTek RGB2HDMI\nLicense is %s\n\nmlorenzati@gmail\nVer:%s", command_license_is_valid ? "valid" : "invalid", PROJECT_VER);
+		}
 		fill_rect(&overlay_ctx, 41, 50, 64, 13, color_light_blue);
 		fill_rect(&overlay_ctx, 41, 64, 64, 14, color_white);
 		fill_rect(&overlay_ctx, 41, 79, 64, 13, color_light_blue);

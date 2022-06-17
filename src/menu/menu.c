@@ -9,7 +9,7 @@ void menu_draw_button(menu_base_t *base) {
     uint color1 = 0b0000011111100000;
     uint color2 = 0b0101010101010101;
     draw_rect(base->ctx, base->x, base->y, base->width, base->height, color1);
-    draw_textf(base->ctx, (base->x)+2, (base->y)+2, color1, color2, (const char *) base->data);
+    draw_textf(base->ctx, (base->x)+2, (base->y)+2, color1, color2, false, (const char *) base->data);
 }
 
 menu_base_t menu_create_base(const graphic_ctx_t *ctx, uint x, uint y, uint width, uint height) {

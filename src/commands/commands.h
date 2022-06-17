@@ -2,6 +2,9 @@
 #define _COMMANDS_H
 #include "pico.h"
 
+extern int command_info_afe_error;
+extern int command_info_scanner_error;
+
 int  command_on_receive(int option, const void *data, bool convert);
 void command_storage_initialize();
 void command_validate_license();
