@@ -25,7 +25,7 @@
 	#define AFE_SDI  19
 
 	//AFE Paralel port pins
-	#define AFE_OP		12 //Takes 5 pins starting from the beforementioned number
+	#define AFE_OP		11 //Takes 6 pins starting from the beforementioned number
 	#define AFE_VSMP	20 //Video Sample timing pulse
 	#define AFE_RSMP	21 //Reset sample timing pulse
 	#define AFE_MCLK	22 //Master ADC Clock
@@ -38,6 +38,7 @@
 	#define AFE_SAMPLING_RATE (320+25+25)*(240+35+35)*50
     #define AFE_PGA_GAIN_RGB  60
 	#define AFE_RLC_DAC_NEG   1
+	#define AFE_OFFSET_DAC    0
 
 	static const wm8213_afe_config_t afec_cfg = {
 		.spi = spi0,
@@ -87,9 +88,9 @@
 				.clamp_ctrl = 0
 			},
 			.offset_dac = {
-				.red = 0,
-				.green = 0,
-				.blue = 0
+				.red = AFE_OFFSET_DAC,
+				.green = AFE_OFFSET_DAC,
+				.blue = AFE_OFFSET_DAC
 			},
 			.pga_gain = {
 				.red = {
