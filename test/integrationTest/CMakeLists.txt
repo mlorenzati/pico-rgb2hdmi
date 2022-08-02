@@ -6,6 +6,11 @@ if (TARGET tinyusb_device)
 
     target_compile_options(integrationTest PRIVATE -Wall)
 
+    target_compile_definitions(integrationTest PRIVATE
+        DVI_VERTICAL_REPEAT=2
+        DVI_SYMBOLS_PER_WORD=2
+    )
+
     target_link_libraries(integrationTest PRIVATE
         pico_stdlib
         pico_multicore

@@ -112,7 +112,8 @@
 		.sm_afe_cp = 0,
 		.pin_base_afe_op = AFE_OP,
 		.pin_base_afe_ctrl = AFE_VSMP,
-		.sampling_rate_afe = AFE_SAMPLING_RATE
+		.sampling_rate_afe = AFE_SAMPLING_RATE,
+		.bppx = rgb_16_565
 	};
 #endif
 

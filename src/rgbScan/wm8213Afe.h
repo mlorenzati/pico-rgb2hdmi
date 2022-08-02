@@ -136,7 +136,13 @@ typedef struct wm8213_afe_setups {
 
 typedef struct wm8213_afe_pins { 
         uint sck, sdi, sdo, cs;
-    } wm8213_afe_pins_t;
+} wm8213_afe_pins_t;
+
+typedef enum {
+	rgb_8_332  = 1,
+    rgb_16_565 = 2,
+    rgb_24_888 = 3
+} wm8213_afe_bppx;
 
 typedef struct wm8213_afe_config {
     spi_inst_t         *spi;
@@ -149,7 +155,7 @@ typedef struct wm8213_afe_config {
     uint                pin_base_afe_op;
     uint                pin_base_afe_ctrl;
     uint                sampling_rate_afe;
-
+    wm8213_afe_bppx     bppx;
 } wm8213_afe_config_t;
 
 typedef struct wm8213_afe_capture {
@@ -158,6 +164,7 @@ typedef struct wm8213_afe_capture {
     uint capture_dma;
     uint front_porch_dma;
     uint sampling_rate;
+    wm8213_afe_bppx bppx;
     uint op_pins, control_pins;
 } wm8213_afe_capture_t;
 
@@ -191,5 +198,6 @@ static inline bool wm8213_afe_capture_run(uint hFrontPorch, uintptr_t buffer, ui
 void wm8213_afe_capture_stop();
 void wm8213_afe_capture_wait();
 void wm8213_afe_capture_update_sampling_rate(uint sampling_rate);
+void wm8213_afe_capture_update_bppx(wm8213_afe_bppx bppx);
 
 #endif

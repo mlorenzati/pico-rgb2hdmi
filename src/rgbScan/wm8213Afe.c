@@ -99,23 +99,50 @@ int wm8213_afe_spi_setup(const wm8213_afe_config_t* config) {
 }
 
 // AFE Pio Capture Related
-void wm8213_afe_capture_setup(PIO pio, uint sm, uint sampling_rate, uint op_pins, uint control_pins) {
-    //Setup OP and sample ports on PIO
-    wm8213_afe_capture_global.pio = pio;
-    wm8213_afe_capture_global.sm =  sm;
-    wm8213_afe_capture_global.sampling_rate = sampling_rate;
-    wm8213_afe_capture_global.op_pins = op_pins;
-    wm8213_afe_capture_global.control_pins = control_pins;
-    uint offset =  pio_add_program(wm8213_afe_capture_global.pio, 
-        sampling_rate > AFE_SAMPLING_LIMIT ?  &afe_capture_565_inverted_program : &afe_capture_565_program);
-    afe_capture_565_program_init(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm, offset, wm8213_afe_capture_global.sampling_rate, op_pins, control_pins);
+void wm8213_afe_capture_setup_from_global() {
+    const pio_program_t *program = NULL;
+    uint8_t op_bits = 0;
+    switch (wm8213_afe_capture_global.bppx) {
+        case rgb_8_332:
+            program = (wm8213_afe_capture_global.sampling_rate > AFE_SAMPLING_LIMIT) ? &afe_capture_332_inverted_program : &afe_capture_332_program; 
+            op_bits = 3;
+            break;
+        case rgb_16_565:
+            program = (wm8213_afe_capture_global.sampling_rate > AFE_SAMPLING_LIMIT) ? &afe_capture_565_inverted_program : &afe_capture_565_program; 
+            op_bits = 6;   
+            break;
+        case rgb_24_888: //Not supported yet
+        default:
+            assert(false);
+            break;
+    }
+
+    uint offset =  pio_add_program(wm8213_afe_capture_global.pio, program);
+    afe_capture_program_init(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm, offset, wm8213_afe_capture_global.sampling_rate, wm8213_afe_capture_global.op_pins, wm8213_afe_capture_global.control_pins, op_bits);
     
     //Give DMA R/W priority over the Bus
     //bus_ctrl_hw->priority = BUSCTRL_BUS_PRIORITY_DMA_W_BITS | BUSCTRL_BUS_PRIORITY_DMA_R_BITS;
 }
+void wm8213_afe_capture_setup(PIO pio, uint sm, uint sampling_rate, wm8213_afe_bppx bppx, uint op_pins, uint control_pins) {
+    //Setup OP and sample ports on PIO
+    wm8213_afe_capture_global.pio = pio;
+    wm8213_afe_capture_global.sm =  sm;
+    wm8213_afe_capture_global.sampling_rate = sampling_rate;
+    wm8213_afe_capture_global.bppx = bppx;
+    wm8213_afe_capture_global.op_pins = op_pins;
+    wm8213_afe_capture_global.op_pins = op_pins;
+    wm8213_afe_capture_global.control_pins = control_pins;
+    
+    wm8213_afe_capture_setup_from_global();
+}
 
 void wm8213_afe_capture_update_sampling_rate(uint sampling_rate) {
-    wm8213_afe_capture_setup(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm, sampling_rate, wm8213_afe_capture_global.op_pins, wm8213_afe_capture_global.control_pins);
+    wm8213_afe_capture_global.sampling_rate = sampling_rate;
+    wm8213_afe_capture_setup_from_global();
+}
+
+void wm8213_afe_capture_update_bppx(wm8213_afe_bppx bppx) {
+    wm8213_afe_capture_setup_from_global();
 }
 
 // AFE DMA related
@@ -160,7 +187,7 @@ int wm8213_afe_setup(const wm8213_afe_config_t* config)
 
     if (res > 0) { return res; }
 
-    wm8213_afe_capture_setup(config->pio, config->sm_afe_cp, config->sampling_rate_afe, config->pin_base_afe_op, config->pin_base_afe_ctrl);
+    wm8213_afe_capture_setup(config->pio, config->sm_afe_cp, config->sampling_rate_afe, config->bppx, config->pin_base_afe_op, config->pin_base_afe_ctrl);
     afe_dma_prepare(config->pio, config->sm_afe_cp);
 
     return res;

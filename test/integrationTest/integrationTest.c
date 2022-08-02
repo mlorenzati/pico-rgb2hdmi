@@ -28,15 +28,23 @@
 #include "system.h"
 
 // System config definitions
-#define FRAME_WIDTH 	320
 #define FRAME_HEIGHT 	240
+#if DVI_SYMBOLS_PER_WORD == 2
+	//With 2 repeated symbols per word, we go for 320 pixels width and 16 bits per pixel
+	#define FRAME_WIDTH 	320
+	uint16_t            framebuf[FRAME_HEIGHT][FRAME_WIDTH];
+#else
+	//With no repeated symbols per word, we go for 640 pixels width and 8 bits per pixel
+	#define FRAME_WIDTH 	320
+	uint8_t            framebuf[FRAME_HEIGHT][FRAME_WIDTH];
+#endif 
+
 #define REFRESH_RATE	50
 #define VREG_VSEL 		VREG_VOLTAGE_1_20
 #define DVI_TIMING 		dvi_timing_640x480p_60hz
 
 // --------- Global register start --------- 
 struct dvi_inst 	dvi0;
-uint16_t 			framebuf[FRAME_HEIGHT][FRAME_WIDTH];
 wm8213_afe_config_t afec_cfg_2 	          = afec_cfg;
 static uint 		hdmi_scanline         = 2;
 uint 				keyboard_gpio_pins[3] = { KEYBOARD_PIN_UP, KEYBOARD_PIN_DOWN, KEYBOARD_PIN_ACTION };
@@ -62,18 +70,27 @@ cmd_parser_option_t options[] =
 void __not_in_flash_func(core1_main)() {
 	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
 	dvi_start(&dvi0);
-	dvi_scanbuf_main_16bpp(&dvi0);
+	#if DVI_SYMBOLS_PER_WORD == 2
+		dvi_scanbuf_main_16bpp(&dvi0);
+	#else
+		dvi_scanbuf_main_8bpp(&dvi0);
+	#endif
+	
 	__builtin_unreachable();
 }
 
 static inline void core1_scanline_callback() {
-	uint16_t *bufptr;
+	#if DVI_SYMBOLS_PER_WORD == 2
+		uint16_t *bufptr;
+	#else
+		uint8_t *bufptr;
+	#endif
 	while (queue_try_remove_u32(&dvi0.q_colour_free, &bufptr));
 	
 	bufptr = &framebuf[hdmi_scanline][0];
 	queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
 	if (++hdmi_scanline >= FRAME_HEIGHT) {
-		hdmi_scanline = 0;
+    	hdmi_scanline = 0;
 	}
 }
 // ---------  DVI API CALL END  --------- 
@@ -82,7 +99,7 @@ static inline void core1_scanline_callback() {
 static void __not_in_flash_func(scanLineTriggered)(unsigned int render_line_number) {
 	gpio_put(LED_PIN, true);
     if (wm8213_afe_capture_run(VIDEO_OVERLAY_GET_COMPUTED_FRONT_PORCH(), (uintptr_t)&framebuf[render_line_number][VIDEO_OVERLAY_GET_COMPUTED_OFFSET()], VIDEO_OVERLAY_GET_COMPUTED_WIDTH())) {
-
+		//Nothing is done here so far
 	}
 	video_overlay_scanline_prepare(render_line_number);
 	gpio_put(LED_PIN, false);
@@ -153,7 +170,7 @@ int main() {
 	// Run system at TMDS bit clock
 	set_sys_clock_khz(DVI_TIMING.bit_clk_khz, true);
 	#ifdef RGB2HDMI_DEBUG
-	//system_delayed_write_disable();
+		//system_delayed_write_disable();
 	#endif
 
 	// Validate license prior starting second core
@@ -162,6 +179,11 @@ int main() {
 	// Configure scan video properties
 	set_video_props(44, 56, 50, 20, FRAME_WIDTH, FRAME_HEIGHT, REFRESH_RATE, framebuf);
 	afec_cfg_2.sampling_rate_afe = GET_VIDEO_PROPS().sampling_rate;
+	#if DVI_SYMBOLS_PER_WORD == 2
+		afec_cfg_2.bppx = rgb_16_565;
+	#else
+		afec_cfg_2.bppx = rgb_8_332;
+	#endif
 
 	// Prepare render video Overlay & graphics context
 	command_prepare_graphics();
@@ -189,7 +211,12 @@ int main() {
 
 	// Prepare DVI for the first time the two initial lines, passing core 1 the framebuffer
 	// Start the Core1, dedicated for DVI
-	uint16_t *bufptr = GET_RGB16_BUFFER(GET_VIDEO_PROPS().video_buffer);
+	#if DVI_SYMBOLS_PER_WORD == 2
+		uint16_t *bufptr = GET_RGB16_BUFFER(GET_VIDEO_PROPS().video_buffer);
+	#else
+		uint8_t  *bufptr = GET_RGB8_BUFFER(GET_VIDEO_PROPS().video_buffer);
+	#endif
+	
 	queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
 	bufptr += FRAME_WIDTH;
 	queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
