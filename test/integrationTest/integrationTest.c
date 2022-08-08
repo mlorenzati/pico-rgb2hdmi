@@ -35,7 +35,7 @@
 	uint16_t            framebuf[FRAME_HEIGHT][FRAME_WIDTH];
 #else
 	//With no repeated symbols per word, we go for 640 pixels width and 8 bits per pixel
-	#define FRAME_WIDTH 	320
+	#define FRAME_WIDTH 	640
 	uint8_t            framebuf[FRAME_HEIGHT][FRAME_WIDTH];
 #endif 
 

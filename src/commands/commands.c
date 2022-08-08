@@ -10,6 +10,9 @@
 #include "graphics.h"
 #include "version.h"
 
+#define COMMAND_VIDEO_OVERLAY_WIDTH 	-148
+#define COMMAND_VIDEO_OVERLAY_HEIGHT 	-100
+
 int command_info_afe_error;
 int command_info_scanner_error;
 
@@ -17,23 +20,35 @@ int command_info_scanner_error;
 bool command_license_is_valid;
 const void *security_key_in_flash;
 
+#if DVI_SYMBOLS_PER_WORD == 2
+	#define COMMANDS_OVERLAY_BPPX rgb_16
+	// Colors                0brrrrrggggggbbbbb;
+	uint color_white       = 0b1111111111111111;
+	uint color_gray        = 0b01100 011001 01100;
+	uint color_dark        = 0b0011000110000110;
+	uint color_light_blue  = 0b0111010101011011;
+	uint color_yellow	   = 0b1111110111101001;
+#else
+	#define COMMANDS_OVERLAY_BPPX rgb_8
+	// Colors                0brrrgggbb;
+	uint color_white       = 0b11111111;
+	uint color_gray        = 0b01101110;
+	uint color_dark        = 0b01001001;
+	uint color_light_blue  = 0b01110010;
+	uint color_yellow	   = 0b11110001;
+#endif
+
 static graphic_ctx_t graphic_ctx = {
-	.bppx = rgb_16,
+	.bppx = COMMANDS_OVERLAY_BPPX,
 	.parent = NULL
 };
 
 static graphic_ctx_t overlay_ctx = {
 	.video_buffer = NULL,
-	.bppx = rgb_16,
+	.bppx = COMMANDS_OVERLAY_BPPX,
 	.parent = &graphic_ctx
 };
 
-// Colors                0brrrrrggggggbbbbb;
-uint color_white       = 0b1111111111111111;
-uint color_gray        = 0b0110001100101100;
-uint color_dark        = 0b0011000110000110;
-uint color_light_blue  = 0b0111010101011011;
-uint color_yellow	   = 0b1111110111101001;
 /////////// END GLOBALS ///////////
 
 bool command_is_license_valid() {
@@ -64,7 +79,7 @@ void command_prepare_graphics() {
     graphic_ctx.height = GET_VIDEO_PROPS().height;
     graphic_ctx.video_buffer = GET_VIDEO_PROPS().video_buffer;
 
-    set_video_overlay(-148,-100, true);
+    set_video_overlay(COMMAND_VIDEO_OVERLAY_WIDTH, COMMAND_VIDEO_OVERLAY_HEIGHT, true);
 	overlay_ctx.width = video_overlay.width;
 	overlay_ctx.height = video_overlay.height;
 	overlay_ctx.x = video_overlay_get_startx();
