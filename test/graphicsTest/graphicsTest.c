@@ -132,38 +132,46 @@ int main() {
 	uint sizex = FRAME_WIDTH / 2;
 	uint sizey = FRAME_HEIGHT / 2;
 	#if DVI_SYMBOLS_PER_WORD == 2
-	uint color0 = 0b0001000100000010;
-	uint color1 = 0b1111100000000000;
-	uint color2 = 0b0000011111100000;
-	uint color3 = 0b0000000000011111;
-	uint color4 = 0b1111111111111111;
+	uint color_black = 0b0000000000000000;
+	uint color_gray =  0b0001100011100011;
+	uint color_red =   0b1111100000000000;
+	uint color_green = 0b0000011111100000;
+	uint color_blue =  0b0000000000011111;
+	uint color_white = 0b1111111111111111;
+	uint color_list[] = {color_red, color_green, color_blue, color_white, color_gray, color_black};
 	#else
-	char color0 = 0b00100101;
-	char color1 = 0b11100000;
-	char color2 = 0b00011100;
-	char color3 = 0b00000011;
-	char color4 = 0b11111111;
+	uint color_black = 0b00000000;
+	char color_gray =  0b01101101;
+	char color_red =   0b11100000;
+	char color_green = 0b00011100;
+	char color_blue =  0b00000011;
+	char color_white = 0b11111111;
+	char color_list[] = {color_red, color_green, color_blue, color_white, color_gray, color_black};
 	#endif
 
-	fill_rect(&graphic_ctx,  0, 0, graphic_ctx.width, graphic_ctx.height, color0);
+	//Draw boxes
+	for (int i = 0; i < 6; i++) {
+		int valx = (FRAME_WIDTH * i)  / 30;
+		int valy = (FRAME_HEIGHT * i) / 15;
+		fill_rect(&graphic_ctx, valx, valy, FRAME_WIDTH - (2 * valx), FRAME_HEIGHT - (2 * valy), color_list[i]);
+	}
 
+	//Draw circles
 	for (a = 0; a < 16; a++) {
 		x = sizex + sizex/2 * sin(2*M_PI*a/16);
 		y = sizey + sizey/2 * cos(2*M_PI*a/16);
-		draw_circle(&graphic_ctx, x, y, 16, color1);
+		draw_circle(&graphic_ctx, x, y, 16, color_red);
 	}
 	
-	x = 159;
-	y = 119;
-	
-	fill_rect(&graphic_ctx, x - (FRAME_WIDTH / 20), y - (FRAME_WIDTH / 20), FRAME_WIDTH / 10, FRAME_WIDTH / 10, color2);
-	
-	draw_line(&graphic_ctx, 0, 0, FRAME_WIDTH - 1, FRAME_HEIGHT - 1, color3);
-	draw_line(&graphic_ctx, FRAME_WIDTH - 1, 0, 0, FRAME_HEIGHT - 1, color3);
+	//Draw lines
+	draw_line(&graphic_ctx, 0, 0, FRAME_WIDTH - 1, FRAME_HEIGHT - 1, color_blue);
+	draw_line(&graphic_ctx, FRAME_WIDTH - 1, 0, 0, FRAME_HEIGHT - 1, color_blue);
 
-	draw_rect(&graphic_ctx, FRAME_WIDTH / 16, FRAME_HEIGHT / 12, 279, 199, color2);
+	//Draw rectangle
+	draw_rect(&graphic_ctx, FRAME_WIDTH / 16, FRAME_HEIGHT / 12, FRAME_WIDTH - FRAME_WIDTH / 8, FRAME_HEIGHT - FRAME_HEIGHT / 8, color_gray);
 
-	draw_textf(&graphic_ctx, 58, 196, color4, color4, false, "This is a test of LorenTek\nRGB2HDMI %d", 2022);
+	//Draw text
+	draw_textf(&graphic_ctx, FRAME_WIDTH / 6, (FRAME_HEIGHT *63) / 100, color_gray, color_white, false, "This is a test of RGB%s %d", FRAME_WIDTH == 640 ? "332 " : "565\n", 2022);
 
 	while (1)
 	{
