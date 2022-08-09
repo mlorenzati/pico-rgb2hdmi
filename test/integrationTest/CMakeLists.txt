@@ -26,6 +26,8 @@ if (TARGET tinyusb_device)
 
     pico_enable_stdio_usb(integrationTest 1)
     pico_enable_stdio_uart(integrationTest 0)
+
+    pico_add_extra_outputs(integrationTest)
 elseif(PICO_ON_DEVICE)
     message(WARNING "not building integrationTest because TinyUSB submodule is not initialized in the SDK")
 endif()
