@@ -11,11 +11,11 @@
 public start:
     nop             side 6;
 .wrap_target              ; 12 Clocks per pixel
-    nop             side 4;
+    nop             side 6;
     mov osr, pins   side 0; Capture RED into OSR
     out null, 1     side 0; Drop 1 LSB
     in  osr, 5      side 4; Shift into ISR 5 bits
-    nop             side 4;
+    nop             side 5;
     in pins, 6      side 1; Capture GREEN 6 bits directly into ISR
     nop             side 0;
     nop             side 4;
@@ -30,13 +30,13 @@ public start:
 public start:
     nop             side 5;
 .wrap_target              ; 12 Clocks per pixel
-    nop             side 4;
+    nop             side 5;
     mov osr, pins   side 0; Capture RED into OSR
     out null, 1     side 0; Drop 1 LSB
     in  osr, 5      side 4; Shift into ISR 5 bits
-    nop             side 4;
-    in pins, 6      side 0; Capture GREEN 6 bits directly into ISR
-    nop             side 2;
+    nop             side 6;
+    in pins, 6      side 2; Capture GREEN 6 bits directly into ISR
+    nop             side 0;
     nop             side 4;
     nop             side 4;
     mov osr, pins   side 0; Capture BLUE into OSR
@@ -49,11 +49,11 @@ public start:
 public start:
     nop             side 6;
 .wrap_target              ; 12 Clocks per pixel
-    nop             side 4;
+    nop             side 6;
     in pins, 3      side 0; Capture RED 3 bits directly into ISR
     nop             side 0; Drop 1 LSB
     nop             side 4; Shift into ISR 5 bits
-    nop             side 4;
+    nop             side 5;
     in pins, 3      side 1; Capture GREEN 3 bits directly into ISR
     nop             side 0;
     nop             side 4;
@@ -68,11 +68,11 @@ public start:
 public start:
     nop             side 5;
 .wrap_target              ; 12 Clocks per pixel
-    nop             side 4;
+    nop             side 5;
     in pins, 3      side 0; Capture RED 3 bits directly into ISR
     nop             side 0; Drop 1 LSB
     nop             side 4; Shift into ISR 5 bits
-    nop             side 4;
+    nop             side 6;
     in pins, 3      side 2; Capture GREEN 3 bits directly into ISR
     nop             side 0;
     nop             side 4;
@@ -103,7 +103,7 @@ static inline void afe_capture_program_init(PIO pio, uint sm, uint offset, uint 
 
     pio_sm_config c = afe_capture_565_program_get_default_config(offset);  
     
-    sm_config_set_in_shift(&c, false, true, 16); //The IN shifting is just done by the number of bits being fed until 16 bits
+    sm_config_set_in_shift(&c, false, true, op_bits == 3? 8 : 16); //The IN shifting is just done by the number of bits being fed until 8/16 bits
     sm_config_set_out_shift(&c, true, false, 0); //The OUT shifting is used to get the MSB into the ISR
 
     // We only receive, so disable the TX FIFO to make the RX FIFO deeper.

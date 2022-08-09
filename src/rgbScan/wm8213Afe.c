@@ -102,14 +102,17 @@ int wm8213_afe_spi_setup(const wm8213_afe_config_t* config) {
 void wm8213_afe_capture_setup_from_global() {
     const pio_program_t *program = NULL;
     uint8_t op_bits = 0;
+    uint    op_pins = 0;
     switch (wm8213_afe_capture_global.bppx) {
         case rgb_8_332:
             program = (wm8213_afe_capture_global.sampling_rate > AFE_SAMPLING_LIMIT) ? &afe_capture_332_inverted_program : &afe_capture_332_program; 
             op_bits = 3;
+            op_pins = wm8213_afe_capture_global.op_pins + 3;
             break;
         case rgb_16_565:
             program = (wm8213_afe_capture_global.sampling_rate > AFE_SAMPLING_LIMIT) ? &afe_capture_565_inverted_program : &afe_capture_565_program; 
-            op_bits = 6;   
+            op_bits = 6;
+            op_pins = wm8213_afe_capture_global.op_pins;
             break;
         case rgb_24_888: //Not supported yet
         default:
@@ -118,7 +121,7 @@ void wm8213_afe_capture_setup_from_global() {
     }
 
     uint offset =  pio_add_program(wm8213_afe_capture_global.pio, program);
-    afe_capture_program_init(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm, offset, wm8213_afe_capture_global.sampling_rate, wm8213_afe_capture_global.op_pins, wm8213_afe_capture_global.control_pins, op_bits);
+    afe_capture_program_init(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm, offset, wm8213_afe_capture_global.sampling_rate, op_pins, wm8213_afe_capture_global.control_pins, op_bits);
     
     //Give DMA R/W priority over the Bus
     //bus_ctrl_hw->priority = BUSCTRL_BUS_PRIORITY_DMA_W_BITS | BUSCTRL_BUS_PRIORITY_DMA_R_BITS;
@@ -129,7 +132,6 @@ void wm8213_afe_capture_setup(PIO pio, uint sm, uint sampling_rate, wm8213_afe_b
     wm8213_afe_capture_global.sm =  sm;
     wm8213_afe_capture_global.sampling_rate = sampling_rate;
     wm8213_afe_capture_global.bppx = bppx;
-    wm8213_afe_capture_global.op_pins = op_pins;
     wm8213_afe_capture_global.op_pins = op_pins;
     wm8213_afe_capture_global.control_pins = control_pins;
     
@@ -151,7 +153,7 @@ void afe_dma_prepare(PIO pio, uint sm) {
     wm8213_afe_capture_global.front_porch_dma = dma_claim_unused_channel(true);
 
     dma_channel_config front_porch_dma_channel_cfg = dma_channel_get_default_config(wm8213_afe_capture_global.front_porch_dma);
-    channel_config_set_transfer_data_size(&front_porch_dma_channel_cfg, DMA_SIZE_16);   //Transfer 16bits words that are shifted by pio
+    channel_config_set_transfer_data_size(&front_porch_dma_channel_cfg, wm8213_afe_capture_global.bppx == rgb_8_332 ? DMA_SIZE_8 : DMA_SIZE_16);   //Transfer 8/16bits words that are shifted by pio
     channel_config_set_dreq(&front_porch_dma_channel_cfg, pio_get_dreq(pio, sm, false)); // Pace transfers based on PIO samples availabilty
     channel_config_set_read_increment(&front_porch_dma_channel_cfg, false);
     channel_config_set_write_increment(&front_porch_dma_channel_cfg, false);
@@ -166,7 +168,7 @@ void afe_dma_prepare(PIO pio, uint sm) {
     );
 
     dma_channel_config afe_dma_channel_cfg = dma_channel_get_default_config(wm8213_afe_capture_global.capture_dma);
-    channel_config_set_transfer_data_size(&afe_dma_channel_cfg, DMA_SIZE_16);   //Transfer 16bits words that are shifted by pio
+    channel_config_set_transfer_data_size(&afe_dma_channel_cfg, wm8213_afe_capture_global.bppx == rgb_8_332 ? DMA_SIZE_8 : DMA_SIZE_16);   //Transfer 8/16bits words that are shifted by pio
     channel_config_set_dreq(&afe_dma_channel_cfg, pio_get_dreq(pio, sm, false)); // Pace transfers based on PIO samples availabilty
     channel_config_set_read_increment(&afe_dma_channel_cfg, false);
     channel_config_set_write_increment(&afe_dma_channel_cfg, true);

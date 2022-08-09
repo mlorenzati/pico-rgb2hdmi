@@ -24,10 +24,11 @@ const void *security_key_in_flash;
 	#define COMMANDS_OVERLAY_BPPX rgb_16
 	// Colors                0brrrrrggggggbbbbb;
 	uint color_white       = 0b1111111111111111;
-	uint color_gray        = 0b01100 011001 01100;
+	uint color_gray        = 0b0110001100101100;
 	uint color_dark        = 0b0011000110000110;
 	uint color_light_blue  = 0b0111010101011011;
 	uint color_yellow	   = 0b1111110111101001;
+	#define COMMAND_GETBUFFER GET_RGB16_BUFFER
 #else
 	#define COMMANDS_OVERLAY_BPPX rgb_8
 	// Colors                0brrrgggbb;
@@ -36,6 +37,7 @@ const void *security_key_in_flash;
 	uint color_dark        = 0b01001001;
 	uint color_light_blue  = 0b01110010;
 	uint color_yellow	   = 0b11110001;
+	#define COMMAND_GETBUFFER GET_RGB8_BUFFER
 #endif
 
 static graphic_ctx_t graphic_ctx = {
@@ -151,7 +153,7 @@ int command_on_receive(int option, const void *data, bool convert) {
 				for(int height=0; height < graphic_ctx.height; height++) {
 					printf("\n");
 					for(int width=0; width < graphic_ctx.width; width++) {
-						printf("%d%s", GET_RGB16_BUFFER(graphic_ctx.video_buffer)[graphic_ctx.width * height + width], (width < graphic_ctx.width -1) ? ",": "");
+						printf("%d%s", COMMAND_GETBUFFER(graphic_ctx.video_buffer)[graphic_ctx.width * height + width], (width < graphic_ctx.width -1) ? ",": "");
 					}
 				}
 				rgbScannerEnable(true);
