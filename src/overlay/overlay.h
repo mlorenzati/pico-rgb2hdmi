@@ -30,7 +30,6 @@ inline io_rw_16 video_overlay_get_starty() {
     return video_overlay.up_down ? (video_overlay.video_props)->height - video_overlay.height : 0;
 }
 
-
 void set_video_overlay(volatile signed int width, volatile signed int height, bool enabled);
 
 inline void video_overlay_scanline_prepare(unsigned int render_line_number) {

@@ -1,0 +1,22 @@
+Release Notes:
+pico rgb2hdmi
+
+An rpi pico microprocessed rgb 2 hdmi plus rgb 2 usb on the fly converter
+-------------------------------------------------------------------------
+Date: 2022/08/09
+Version: 0.3.0
+- Completed 640x240 8 bits RGB332 mode and 320x240 16 bits RGB 565 mode
+on HMDI rendering and ADC capture compressing
+
+-------------------------------------------------------------------------
+Date: 2022/06/17
+Version: 0.2.1
+- Initial release of the rgb2hdmi
+    - 320x240 @ 16 bits per pixel
+    - Basic buttons functionality usage (move screen), supports on key up
+      key down, key timeout
+    - Secure key unique identification
+    - Video overlay
+    - Command line interface through USB (must be enabled from buttons)
+        -RGB to USB Image capture
+    - Graphics drawing capabilities, initial menu system 

@@ -6,6 +6,11 @@ if (TARGET tinyusb_device)
 
     target_compile_options(integrationTest PRIVATE -Wall)
 
+    target_compile_definitions(integrationTest PRIVATE
+        DVI_VERTICAL_REPEAT=2
+        DVI_SYMBOLS_PER_WORD=1
+    )
+
     target_link_libraries(integrationTest PRIVATE
         pico_stdlib
         pico_multicore
@@ -21,6 +26,8 @@ if (TARGET tinyusb_device)
 
     pico_enable_stdio_usb(integrationTest 1)
     pico_enable_stdio_uart(integrationTest 0)
+
+    pico_add_extra_outputs(integrationTest)
 elseif(PICO_ON_DEVICE)
     message(WARNING "not building integrationTest because TinyUSB submodule is not initialized in the SDK")
 endif()
