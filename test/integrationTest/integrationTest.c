@@ -31,12 +31,16 @@
 #define FRAME_HEIGHT 	240
 #if DVI_SYMBOLS_PER_WORD == 2
 	//With 2 repeated symbols per word, we go for 320 pixels width and 16 bits per pixel
-	#define FRAME_WIDTH 	320
+	#define FRAME_WIDTH 		320
 	uint16_t            framebuf[FRAME_HEIGHT][FRAME_WIDTH];
+	#define HSYNC_FRONT_PORCH   50
+	#define HSYNC_BACK_PORCH    20
 #else
 	//With no repeated symbols per word, we go for 640 pixels width and 8 bits per pixel
 	#define FRAME_WIDTH 	640
 	uint8_t            framebuf[FRAME_HEIGHT][FRAME_WIDTH];
+	#define HSYNC_FRONT_PORCH   92
+	#define HSYNC_BACK_PORCH    40
 #endif 
 
 #define REFRESH_RATE	50
@@ -177,7 +181,7 @@ int main() {
 	command_validate_license();
 
 	// Configure scan video properties
-	set_video_props(44, 56, 92, 40, FRAME_WIDTH, FRAME_HEIGHT, REFRESH_RATE, framebuf);
+	set_video_props(44, 56, HSYNC_FRONT_PORCH, HSYNC_BACK_PORCH, FRAME_WIDTH, FRAME_HEIGHT, REFRESH_RATE, framebuf);
 	afec_cfg_2.sampling_rate_afe = GET_VIDEO_PROPS().sampling_rate;
 	#if DVI_SYMBOLS_PER_WORD == 2
 		afec_cfg_2.bppx = rgb_16_565;
