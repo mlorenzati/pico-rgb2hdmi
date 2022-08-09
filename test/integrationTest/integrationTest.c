@@ -59,6 +59,7 @@ cmd_parser_option_t options[] =
     {"up",      TRUE,  NULL,  'u'},
     {"down",    TRUE,  NULL,  'd'},
     {"left",    TRUE,  NULL,  'l'},
+	{"mode",    FALSE,  NULL, 'm'},
 	{"right",   TRUE,  NULL,  'r'},
 	{"info",    TRUE,  NULL,  'i'},
 	{"capture", FALSE, NULL,  'c'},

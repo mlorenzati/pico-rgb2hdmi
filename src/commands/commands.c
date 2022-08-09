@@ -29,6 +29,7 @@ const void *security_key_in_flash;
 	uint color_light_blue  = 0b0111010101011011;
 	uint color_yellow	   = 0b1111110111101001;
 	#define COMMAND_GETBUFFER GET_RGB16_BUFFER
+	#define COMMAND_PRINTF_WORD	"%04X%s"
 #else
 	#define COMMANDS_OVERLAY_BPPX rgb_8
 	// Colors                0brrrgggbb;
@@ -38,6 +39,7 @@ const void *security_key_in_flash;
 	uint color_light_blue  = 0b01110010;
 	uint color_yellow	   = 0b11110001;
 	#define COMMAND_GETBUFFER GET_RGB8_BUFFER
+	#define COMMAND_PRINTF_WORD	"%02X%s"
 #endif
 
 static graphic_ctx_t graphic_ctx = {
@@ -148,12 +150,12 @@ int command_on_receive(int option, const void *data, bool convert) {
 				}
                 break;
 			case 'c':
-				printf("capture screen:");
+				printf("Capture screen: %dx%d@%sbppx", graphic_ctx.width, graphic_ctx.height, graphic_ctx.bppx == rgb_8 ? "8" : "16");
 				rgbScannerEnable(false);
 				for(int height=0; height < graphic_ctx.height; height++) {
 					printf("\n");
 					for(int width=0; width < graphic_ctx.width; width++) {
-						printf("%d%s", COMMAND_GETBUFFER(graphic_ctx.video_buffer)[graphic_ctx.width * height + width], (width < graphic_ctx.width -1) ? ",": "");
+						printf(COMMAND_PRINTF_WORD, COMMAND_GETBUFFER(graphic_ctx.video_buffer)[graphic_ctx.width * height + width], (width < graphic_ctx.width -1) ? ",": "");
 					}
 				}
 				rgbScannerEnable(true);
@@ -168,6 +170,9 @@ int command_on_receive(int option, const void *data, bool convert) {
 			    break;
 			case 'v':
                 printf("%s - Integration Test - version %s\n", PROJECT_NAME, PROJECT_VER);
+				break;
+			case 'm':
+                printf("%s %dx%d@%sbppx\n", PROJECT_NAME, graphic_ctx.width, graphic_ctx.height, graphic_ctx.bppx == rgb_8 ? "8" : "16");
 				break;
             default:  return 1;
     }
