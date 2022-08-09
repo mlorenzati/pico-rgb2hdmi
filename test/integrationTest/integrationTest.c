@@ -177,7 +177,7 @@ int main() {
 	command_validate_license();
 
 	// Configure scan video properties
-	set_video_props(44, 56, 50, 20, FRAME_WIDTH, FRAME_HEIGHT, REFRESH_RATE, framebuf);
+	set_video_props(44, 56, 92, 40, FRAME_WIDTH, FRAME_HEIGHT, REFRESH_RATE, framebuf);
 	afec_cfg_2.sampling_rate_afe = GET_VIDEO_PROPS().sampling_rate;
 	#if DVI_SYMBOLS_PER_WORD == 2
 		afec_cfg_2.bppx = rgb_16_565;
