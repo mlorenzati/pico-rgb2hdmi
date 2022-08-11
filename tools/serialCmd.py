@@ -52,5 +52,3 @@ def get_rgb_2_hdmi_ports():
         # response=ser.read(40).decode('utf-8')
         response=wait_for_newline(ser)
         print(response)
-
-get_rgb_2_hdmi_ports()
