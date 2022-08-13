@@ -26,25 +26,6 @@ def get_serial_ports():
             pass
     return result
 
-def read(ser,term, tout):
-    matcher = re.compile(term)    #gives you the ability to search for anything
-    tic     = time.time()
-    buff    = ser.read(128)
-    # you can use if not ('\n' in buff) too if you don't like re
-    while ((time.time() - tic) < tout) and (not matcher.search(buff)):
-       buff += ser.read(128)
-
-    return buff
-
-def wait_for_newline(ser):
-    result = ''
-    while True:
-        char = ser.read(1)
-        print(char)
-        if char == '\n':
-            return result
-        result = result + char.decode('utf-8')
-
 printed_skipped_just_once=False
 def get_rgb_2_hdmi_ports():
     global printed_skipped_just_once
@@ -80,11 +61,17 @@ def get_rgb_2_hdmi_ports():
             return (ser, port, res[1])
     return None
     
-def sendCommand(ser, cmd):
-    ser.write((cmd +'\n').encode('ascii'))
+def sendCommand(ser, val):
+    ser.write((val +'\n').encode('ascii'))
     ackLine=ser.readline()
-
-    if (ackLine.lower() != ('Request '+ cmd + '<' + cmd[0]+ '>()\r\n').encode('ascii').lower()):
+    args=val.split(' ', 1)
+    cmd = args[0]
+    val = ""
+    if len(args)>1:
+        val=args[1]
+    expected=('Request '+ cmd + '<' + cmd[0] + '>(' + val + ')\r\n').encode('ascii').lower()
+    if (ackLine.lower() != expected):
+        ser.flushInput()
         return (False, '')
     
     partial = ''

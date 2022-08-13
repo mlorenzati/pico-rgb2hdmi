@@ -3,9 +3,13 @@ from ctypes import alignment
 import tkinter as tk
 from tkinter import ANCHOR, FLAT, DISABLED, GROOVE, ttk
 from tkinter . scrolledtext import ScrolledText
+from turtle import width
 from PIL import ImageTk, Image
 import serialCmd as serialCmd
+import csv2png as csv2png
 import sys, os
+from tkinter.filedialog import asksaveasfile
+from datetime import *
 
 os.environ['TK_SILENCE_DEPRECATION'] = '1'
 
@@ -21,7 +25,6 @@ class StdoutRedirector(object):
     
     def flush(self):
         pass
-
 
 # root window
 root = tk.Tk()
@@ -41,29 +44,46 @@ upperFrame.grid(column=0, row=0, padx=0, pady=0)
 
 # On upper Frame, image and buttons
 # Image
-img = ImageTk.PhotoImage(Image.open("./rgb2hdmilogo.png"))
-imgLabel = ttk.Label(upperFrame, image = img, borderwidth=0, justify='center')
+saveImg = Image.open("./rgb2hdmilogo.png")
+frontImg = ImageTk.PhotoImage(saveImg)
+imgLabel = ttk.Label(upperFrame, image = frontImg, borderwidth=0, justify='center')
 imgLabel.grid(column=0, row=0, padx=5, pady=10)
 
 # Button Group
 def move_up(step):
     res = serialCmd.sendCommand(serial_port, "up " + step)
-    print("Move up", step, ("step", "steps")[int(step)>1], ("success", "fail")[res[0]])
+    print("Move up",    step, ("step", "steps")[int(step)>1], ("fail", "success")[res[0]])
 def move_down(step):
     res = serialCmd.sendCommand(serial_port, "down " + step)
-    print("Move down", step, ("step", "steps")[int(step)>1], ("success", "fail")[res[0]])
+    print("Move down",  step, ("step", "steps")[int(step)>1], ("fail", "success")[res[0]])
 def move_left(step):
     res = serialCmd.sendCommand(serial_port, "left " + step)
-    print("Move left", step, ("step", "steps")[int(step)>1], ("success", "fail")[res[0]])
+    print("Move left",  step, ("step", "steps")[int(step)>1], ("fail", "success")[res[0]])
 def move_right(step):
     res = serialCmd.sendCommand(serial_port, "right " + step)
-    print("Move right", step,("step", "steps")[int(step)>1], ("success", "fail")[res[0]])
+    print("Move right", step,("step", "steps")[int(step)>1],  ("fail", "success")[res[0]])
 def capture():
-    print("capture")
     res = serialCmd.sendCommand(serial_port, "capture")
-    
+    if res[0]:
+        global frontImg
+        global imgLabel
+        global saveImg
+        print("capture success")
+        saveImg = csv2png.processRGBFromStrArray(res[1])
+        img = saveImg.resize((640,480))
+        frontImg = ImageTk.PhotoImage(image=img)
+        imgLabel.config(image=frontImg)
+    else:
+        print("capture fail")
 def save():
-    print("save")
+    global saveImg
+    print("open save window")
+    now=datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
+    initialFilename = 'rbg2hdmi-'+rgb2hdmi_deviceId+'-'+now+'.png'
+    file = asksaveasfile(initialfile = initialFilename, defaultextension=".png", filetypes=[("Image Files","*.png")])
+    if file:
+        saveImg.save(os.path.abspath(file.name))
+
 def about():
     popup = tk.Tk()
     popup.grab_set()
@@ -164,6 +184,7 @@ sys.stdout = StdoutRedirector(statusLabel)
 
 serial_port = None
 def checkSerial():
+    root.wm_attributes('-topmost', False) 
     global serial_port
     port=serialCmd.get_rgb_2_hdmi_ports()
     if port == None:
@@ -183,5 +204,5 @@ def checkSerial():
 
 print("RGB2HDMIAPP Started")
 root.after(100, checkSerial)
-root.wm_attributes('-topmost', True) 
+root.wm_attributes('-topmost', True)
 root.mainloop()
