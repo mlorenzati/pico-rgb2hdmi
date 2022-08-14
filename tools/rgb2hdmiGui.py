@@ -9,7 +9,7 @@ from tkinter import ANCHOR, FLAT, DISABLED, NORMAL, GROOVE, ttk
 from tkinter . scrolledtext import ScrolledText
 from PIL import ImageTk, Image
 from tkinter.filedialog import asksaveasfile
-
+import signal
 
 os.environ['TK_SILENCE_DEPRECATION'] = '1'
 
@@ -238,7 +238,19 @@ def checkSerial():
             time.sleep(1)
         print("Detected disconnection")
 
+def handler(signum, frame):
+    global serial_thread_running
+    global serialThread
+    sys.stdout = sys.__stdout__
+    print("Closing cmd")
+    serial_thread_running = False
+    serialThread = None
+
+    root.destroy()
+
 print("RGB2HDMIAPP Started")
+signal.signal(signal.SIGINT, handler)
+
 serialThread=Thread(target=checkSerial)
 root.after(100, lambda: (serialThread.start()))
 root.wm_attributes('-topmost', True)

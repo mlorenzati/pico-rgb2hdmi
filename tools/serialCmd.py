@@ -102,6 +102,5 @@ def isConnected(ser):
         ser.write(b' ')
     except  Exception as e:
         ser.close()
-        print("sorete3,", e )
         connected = False
     return connected
