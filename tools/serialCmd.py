@@ -60,23 +60,48 @@ def get_rgb_2_hdmi_ports():
             print("Found device on ", port, "(", res[1], ")")
             return (ser, port, res[1])
     return None
-    
-def sendCommand(ser, val):
-    ser.write((val +'\n').encode('ascii'))
-    ackLine=ser.readline()
-    args=val.split(' ', 1)
-    cmd = args[0]
-    val = ""
-    if len(args)>1:
-        val=args[1]
-    expected=('Request '+ cmd + '<' + cmd[0] + '>(' + val + ')\r\n').encode('ascii').lower()
-    if (ackLine.lower() != expected):
-        ser.flushInput()
-        return (False, '')
-    
-    partial = ''
-    result = ''
-    while ( (partial := ser.readline()) != b''):
-        result = result + partial.decode('ascii')
 
-    return (True, result.rstrip())
+serialBusy=False
+def sendCommand(ser, val):
+    global serialBusy
+    try:
+        if serialBusy:
+            return (False, '')
+        serialBusy = True
+        ser.write((val +'\n').encode('ascii'))
+        ackLine=ser.readline()
+        args=val.split(' ', 1)
+        cmd = args[0]
+        val = ""
+        if len(args)>1:
+            val=args[1]
+        expected=('Request '+ cmd + '<' + cmd[0] + '>(' + val + ')\r\n').encode('ascii').lower()
+        if (ackLine.lower() != expected):
+            ser.flushInput()
+            return (False, '')
+        
+        partial = ''
+        result = ''
+        while ( (partial := ser.readline()) != b''):
+            result = result + partial.decode('ascii')
+        serialBusy = False
+        return (True, result.rstrip())
+    except:
+        ser.close()
+        serialBusy = False
+        return (False, '')
+
+def isConnected(ser):
+    global serialBusy
+    if not ser.isOpen():
+        return False
+    if serialBusy:
+        return True
+    connected = True
+    try:
+        ser.write(b' ')
+    except  Exception as e:
+        ser.close()
+        print("sorete3,", e )
+        connected = False
+    return connected

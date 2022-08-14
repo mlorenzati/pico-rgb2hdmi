@@ -1,15 +1,15 @@
 #!/Users/marcelo.lorenzati/.pyenv/shims/python3
-from ctypes import alignment
+from datetime import *
+from threading import *
+import sys, os, time
 import tkinter as tk
-from tkinter import ANCHOR, FLAT, DISABLED, GROOVE, ttk
-from tkinter . scrolledtext import ScrolledText
-from turtle import width
-from PIL import ImageTk, Image
 import serialCmd as serialCmd
 import csv2png as csv2png
-import sys, os
+from tkinter import ANCHOR, FLAT, DISABLED, NORMAL, GROOVE, ttk
+from tkinter . scrolledtext import ScrolledText
+from PIL import ImageTk, Image
 from tkinter.filedialog import asksaveasfile
-from datetime import *
+
 
 os.environ['TK_SILENCE_DEPRECATION'] = '1'
 
@@ -62,22 +62,32 @@ def move_left(step):
 def move_right(step):
     res = serialCmd.sendCommand(serial_port, "right " + step)
     print("Move right", step,("step", "steps")[int(step)>1],  ("fail", "success")[res[0]])
+
+def capture_in_thread():
+    captureThread=Thread(target=capture)
+    captureThread.start()
+
 def capture():
+    global buttonCapture
+    disableButtons(True)
+    print("Starting capture")
     res = serialCmd.sendCommand(serial_port, "capture")
     if res[0]:
         global frontImg
         global imgLabel
         global saveImg
-        print("capture success")
+        print("Capture success")
         saveImg = csv2png.processRGBFromStrArray(res[1])
         img = saveImg.resize((640,480))
         frontImg = ImageTk.PhotoImage(image=img)
         imgLabel.config(image=frontImg)
     else:
-        print("capture fail")
+        print("Capture fail")
+    disableButtons(False)
+    
 def save():
     global saveImg
-    print("open save window")
+    print("Open save window")
     now=datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
     initialFilename = 'rbg2hdmi-'+rgb2hdmi_deviceId+'-'+now+'.png'
     file = asksaveasfile(initialfile = initialFilename, defaultextension=".png", filetypes=[("Image Files","*.png")])
@@ -109,7 +119,7 @@ Aldo Guillermo Ibañez and Emiliano Escobar
 
 All rights reserved, pico-RGG2HMDI - Marcelo Lorenzati
 mlorenzati@gmail.com"""
-    text=tk.Text(popup, width=90, font=("Arial", 15), height=10)
+    text=tk.Text(popup, width=98, font=("Arial", 15), height=10, padx=4)
     text.insert(tk.END, textStr)
     text.config(state='disabled')
     text.pack(side="top")
@@ -158,11 +168,12 @@ def getStatusInfo():
 
 def setStatusLabel():
     infoLabel.config(text=getStatusInfo())
+    infoLabel.update()
 
 infoLabel = ttk.Label(buttonFrame, text=getStatusInfo())
 infoLabel.grid(column=0, row=2, padx=5, pady=10, sticky='w')
 
-buttonCapture = ttk.Button(buttonFrame, text='Capture', command=capture)
+buttonCapture = ttk.Button(buttonFrame, text='Capture', command=capture_in_thread)
 buttonCapture.grid(column=0, row=3, padx=0, pady=10)
 
 buttonSave = ttk.Button(buttonFrame, text='Save', command=save)
@@ -182,27 +193,54 @@ statusLabel.grid(row=1, padx=0, pady=0)
 statusLabel.config(state='disabled')
 sys.stdout = StdoutRedirector(statusLabel)
 
+def disableButtons(val):
+    buttons = [buttonUp, buttonDown, buttonLeft, buttonRight, buttonCapture]
+    state = (NORMAL, DISABLED)[val]
+    for button in buttons:
+        button['state'] = state
+
+serial_thread_running=True
+def on_closing():
+    sys.stdout = sys.__stdout__
+    print("Closing window")
+    global serial_thread_running
+    global serialThread
+    serial_thread_running = False
+    serialThread = None
+
+    root.destroy()
+
 serial_port = None
 def checkSerial():
-    root.wm_attributes('-topmost', False) 
-    global serial_port
-    port=serialCmd.get_rgb_2_hdmi_ports()
-    if port == None:
-        root.after(1000, checkSerial)
-        usbLabel.config(text=usbPreText)
-        return
-    serial_port = port[0]
-    usbLabel.config(text=usbPreText + port[1])
-    setDeviceVersion(port[2].split("version ",1)[1])
-    res = serialCmd.sendCommand(serial_port, "id")
-    if res[0]:
-        setDeviceId(res[1].split("Device is: ",1)[1])
-    res = serialCmd.sendCommand(serial_port, "mode")
-    if res[0]:
-        setDeviceResolution(res[1].split("pico_rgb2hdmi ",1)[1])
-    setStatusLabel()
+    while (serial_thread_running):
+        disableButtons(True)
+        root.wm_attributes('-topmost', False) 
+        global serial_port
+        while True:
+            port=serialCmd.get_rgb_2_hdmi_ports()
+            if port == None:
+                usbLabel.config(text=usbPreText)
+            else:
+                break
+        serial_port = port[0]
+        usbLabel.config(text=usbPreText + port[1])
+        usbLabel.update()
+        setDeviceVersion(port[2].split("version ",1)[1])
+        res = serialCmd.sendCommand(serial_port, "id")
+        if res[0]:
+            setDeviceId(res[1].split("Device is: ",1)[1])
+        res = serialCmd.sendCommand(serial_port, "mode")
+        if res[0]:
+            setDeviceResolution(res[1].split("pico_rgb2hdmi ",1)[1])
+        setStatusLabel()
+        disableButtons(False)
+        while (serialCmd.isConnected(serial_port) and serial_thread_running):
+            time.sleep(1)
+        print("Detected disconnection")
 
 print("RGB2HDMIAPP Started")
-root.after(100, checkSerial)
+serialThread=Thread(target=checkSerial)
+root.after(100, lambda: (serialThread.start()))
 root.wm_attributes('-topmost', True)
+root.protocol("WM_DELETE_WINDOW", on_closing)
 root.mainloop()
