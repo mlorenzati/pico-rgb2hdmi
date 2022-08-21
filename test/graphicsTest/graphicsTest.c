@@ -45,7 +45,7 @@ uint gpio_pins[3] = { KEYBOARD_PIN_UP, KEYBOARD_PIN_DOWN, KEYBOARD_PIN_ACTION };
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
 static uint hdmi_scanline = 2;
-static const graphic_ctx_t graphic_ctx = {
+static graphic_ctx_t graphic_ctx = {
 	.width = FRAME_WIDTH,
 	.height = FRAME_HEIGHT,
 	.video_buffer = framebuf,
@@ -72,9 +72,9 @@ void __not_in_flash_func(core1_main)() {
 
 static inline void core1_scanline_callback() {
 	#if DVI_SYMBOLS_PER_WORD == 2
-		uint16_t *bufptr;
+		uint16_t *bufptr = NULL;
 	#else
-		uint8_t *bufptr;
+		uint8_t *bufptr  = NULL;
 	#endif
 	while (queue_try_remove_u32(&dvi0.q_colour_free, &bufptr));
 	bufptr = &framebuf[hdmi_scanline][0];
@@ -114,9 +114,9 @@ int main() {
 
 	//Prepare for the first time the two initial lines
 	#if DVI_SYMBOLS_PER_WORD == 2
-		uint16_t *bufptr;
+		uint16_t *bufptr = NULL;
 	#else
-		uint8_t *bufptr;
+		uint8_t *bufptr  = NULL;
 	#endif
 	queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
 	bufptr += FRAME_WIDTH;

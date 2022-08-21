@@ -47,11 +47,7 @@ static graphic_ctx_t graphic_ctx = {
 	.parent = NULL
 };
 
-static graphic_ctx_t overlay_ctx = {
-	.video_buffer = NULL,
-	.bppx = COMMANDS_OVERLAY_BPPX,
-	.parent = &graphic_ctx
-};
+static graphic_ctx_t overlay_ctx;
 
 /////////// END GLOBALS ///////////
 
@@ -84,10 +80,7 @@ void command_prepare_graphics() {
     graphic_ctx.video_buffer = GET_VIDEO_PROPS().video_buffer;
 
     set_video_overlay(COMMAND_VIDEO_OVERLAY_WIDTH, COMMAND_VIDEO_OVERLAY_HEIGHT, true);
-	overlay_ctx.width = video_overlay.width;
-	overlay_ctx.height = video_overlay.height;
-	overlay_ctx.x = video_overlay_get_startx();
-	overlay_ctx.y = video_overlay_get_starty();
+	overlay_ctx = get_sub_graphic_ctx(&graphic_ctx, video_overlay_get_startx(), video_overlay_get_starty(), video_overlay.width, video_overlay.height);
 }
 
 void command_show_info(bool value) {

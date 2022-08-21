@@ -15,17 +15,19 @@ typedef enum {
 typedef struct graphic_ctx graphic_ctx_t;
 
 struct graphic_ctx {
-    uint16_t         width;
-    uint16_t         height;
-    uint16_t         x;
-    uint16_t         y;
-    void            *video_buffer;
-    graphics_bppx   bppx;
-    graphic_ctx_t   *parent;
+    uint16_t             width;
+    uint16_t             height;
+    uint16_t             x;
+    uint16_t             y;
+    void                *video_buffer;
+    graphics_bppx        bppx;
+    const graphic_ctx_t *parent;
 };
 
 #define GET_RGB8_BUFFER(x)  ((uint8_t *)x)
 #define GET_RGB16_BUFFER(x) ((uint16_t *)x)
+
+graphic_ctx_t get_sub_graphic_ctx(const graphic_ctx_t *parent, uint x, uint y, uint width, uint height);
 
 void put_pixel(const graphic_ctx_t *ctx, uint x, uint y, uint color);
 uint get_pixel(const graphic_ctx_t *ctx, uint x, uint y);

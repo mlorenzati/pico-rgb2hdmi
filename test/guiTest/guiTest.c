@@ -15,7 +15,7 @@
 #include "dvi_serialiser.h"
 #include "keyboard.h"
 #include "graphics.h"
-#include "menu.h"
+#include "gui.h"
 
 //System configuration includes
 #include "version.h"
@@ -25,48 +25,77 @@
 // System config definitions
 // TMDS bit clock 252 MHz
 // DVDD 1.2V (1.1V seems ok too)
-#define FRAME_WIDTH 320
 #define FRAME_HEIGHT 240
-#define REFRESH_RATE 50
+#if DVI_SYMBOLS_PER_WORD == 2
+	//With 2 repeated symbols per word, we go for 320 pixels width and 16 bits per pixel
+	#define FRAME_WIDTH 320
+	uint16_t framebuf[FRAME_HEIGHT][FRAME_WIDTH];
+#else
+	//With no repeated symbols per word, we go for 640 pixels width and 8 bits per pixel
+	#define FRAME_WIDTH 640
+	uint8_t framebuf[FRAME_HEIGHT][FRAME_WIDTH];
+#endif
 
+#define REFRESH_RATE 50
 #define VREG_VSEL VREG_VOLTAGE_1_20
 #define DVI_TIMING dvi_timing_640x480p_60hz
 
 // --------- Global register start --------- 
 struct dvi_inst dvi0;
-uint16_t framebuf[FRAME_WIDTH * FRAME_HEIGHT];
 uint gpio_pins[3] = { KEYBOARD_PIN_UP, KEYBOARD_PIN_DOWN, KEYBOARD_PIN_ACTION };
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
-
-static const graphic_ctx_t graphic_ctx = {
+static uint hdmi_scanline = 2;
+static graphic_ctx_t graphic_ctx = {
 	.width = FRAME_WIDTH,
 	.height = FRAME_HEIGHT,
 	.video_buffer = framebuf,
+	#if DVI_SYMBOLS_PER_WORD == 2
 	.bppx = rgb_16,
+	#else
+	.bppx = rgb_8,
+	#endif
 	.parent = NULL
 };
+
+gui_object_t window;
+gui_object_t button;
 
 // --------- Global register end --------- 
 
 void __not_in_flash_func(core1_main)() {
 	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
 	dvi_start(&dvi0);
-	dvi_scanbuf_main_16bpp(&dvi0);
+	#if DVI_SYMBOLS_PER_WORD == 2
+		dvi_scanbuf_main_16bpp(&dvi0);
+	#else
+		dvi_scanbuf_main_8bpp(&dvi0);
+	#endif
 	__builtin_unreachable();
 }
 
-static volatile uint scanline = 2;
 static inline void core1_scanline_callback() {
-	uint16_t *bufptr;
-	while (queue_try_remove_u32(&dvi0.q_colour_free, &bufptr));	
-	bufptr = &framebuf[FRAME_WIDTH * scanline];
+	#if DVI_SYMBOLS_PER_WORD == 2
+		uint16_t *bufptr = NULL;
+	#else
+		uint8_t *bufptr  = NULL;
+	#endif
+	while (queue_try_remove_u32(&dvi0.q_colour_free, &bufptr));
+	bufptr = &framebuf[hdmi_scanline][0];
 	queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
-	scanline = (scanline + 1) % FRAME_HEIGHT;
+	if (++hdmi_scanline >= FRAME_HEIGHT) {
+    	hdmi_scanline = 0;
+	}
 }
 
 void on_keyboard_event(keyboard_status_t keys) {
     printf("Keyboard event received \n");
+	if (keys.key1_down) {
+		button.base.status.activated = 1;
+	} else if (keys.key1_up) {
+		button.base.status.activated = 0;
+	} 
+	button.draw(&button.base);
 }
 
 int main() {
@@ -92,37 +121,54 @@ int main() {
 
 	// Once we've given core 1 the framebuffer, it will just keep on displaying
 	// it without any intervention from core 0
-	for (int n=0; n < FRAME_WIDTH * FRAME_HEIGHT; n++) {
-		framebuf[n] = 0xAAAA;
-	}
 
 	//Prepare for the first time the two initial lines
-	uint16_t *bufptr = framebuf;
+	#if DVI_SYMBOLS_PER_WORD == 2
+		uint16_t *bufptr = NULL;
+	#else
+		uint8_t  *bufptr = NULL;
+	#endif
 	queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
 	bufptr += FRAME_WIDTH;
 	queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
 
 	printf("Core 1 start\n");
 	multicore_launch_core1(core1_main);
-
-	printf("%s version - Menu Test %s started!\n", PROJECT_NAME, PROJECT_VER);
+	
+	printf("%s version - GUI Test %s started!\n", PROJECT_NAME, PROJECT_VER);
 
 	printf("Start rendering\n");
+	#if DVI_SYMBOLS_PER_WORD == 2
+	uint color_black      = 0b0000000000000000;
+	uint color_dark_gray  = 0b0001100011100011;
+	uint color_mid_gray   = 0b0000000000011111;
+	uint color_light_gray = 0b1111100000000000;
+	uint color_green      = 0b0000011111100000;
+	uint color_white      = 0b1111111111111111;
+	#else
+	uint color_black =      0b00000000;
+	uint color_dark_gray = 	0b01001001;
+	uint color_mid_gray =   0b10110110;
+	uint color_light_gray = 0b11011011;
+	uint color_green =      0b00011100;
+	uint color_white =      0b11111111;
+	#endif
+	uint colors[] = {color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green };
+	gui_color_list_t colors_list = {
+		.elements = colors,
+		.size = sizeof(colors)
+	};
 
-	uint color1 = 0b1111100000000000;
-	uint color2 = 0b0000011111100000;
-	uint color3 = 0b0000000000011111;
-	uint color4 = 0b1111111111111111;
+	//Draw a window
+	window = gui_create_window(&graphic_ctx, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, colors_list);
+	window.draw(&window.base);
 
-	menu_object_t window = menu_create_window(&graphic_ctx, 0, 0, 32, 32);
-	(window.draw)(&(window.base));
-
-	menu_object_t button = menu_create_button(&graphic_ctx, 0, 40, 64, 16, "Info");
-	(button.draw)(&(button.base));
+	button = gui_create_button(&graphic_ctx, 32, 32, 100, 12, colors_list, "hello world");
+	button.draw(&button.base);
 
 	while (1)
 	{
-		sleep_ms(100);
+		sleep_ms(1000);
 	}
 	__builtin_unreachable();
 }

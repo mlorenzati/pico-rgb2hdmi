@@ -4,6 +4,19 @@
 #include <stdarg.h>
 #include "font_8x8.h"
 
+graphic_ctx_t get_sub_graphic_ctx(const graphic_ctx_t *parent, uint x, uint y, uint width, uint height) {
+    graphic_ctx_t ctx = {
+        .video_buffer = NULL,
+        .bppx = parent->bppx,
+        .parent = parent,
+        .width = width,
+	    .height = height,
+	    .x = x,
+	    .y = y
+    };
+    return ctx;
+}
+
 static inline void *get_buffer(const graphic_ctx_t *ctx, uint x, uint y) {
     #ifdef GRAPHICS_USE_SUB_WINDOW
     while (ctx->parent != NULL) {
@@ -62,8 +75,8 @@ void draw_line(const graphic_ctx_t *ctx, uint x0, uint y0, uint x1, uint y1, uin
   }
 }
 void draw_rect(const graphic_ctx_t *ctx, uint x0, uint y0, uint width, uint height, uint color) {
-    uint x1 = x0 + width;
-    uint y1 = y0 + height;
+    uint x1 = x0 + width - 1;
+    uint y1 = y0 + height - 1;
     draw_line(ctx, x0, y0, x1, y0, color);
     draw_line(ctx, x0, y0, x0, y1, color);
     draw_line(ctx, x0, y1, x1, y1, color);
@@ -73,8 +86,8 @@ void draw_rect(const graphic_ctx_t *ctx, uint x0, uint y0, uint width, uint heig
 void fill_rect(const graphic_ctx_t *ctx, uint x0, uint y0, uint width, uint height, uint color) {
     uint x1 = x0 + width;
     uint y1 = y0 + height;
-	for (uint x = x0; x <= x1; ++x)
-		for (uint y = y0; y <= y1; ++y)
+	for (uint x = x0; x < x1; ++x)
+		for (uint y = y0; y < y1; ++y)
 			put_pixel(ctx, x, y, color);
 }
 

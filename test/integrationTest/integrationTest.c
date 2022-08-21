@@ -86,9 +86,9 @@ void __not_in_flash_func(core1_main)() {
 
 static inline void core1_scanline_callback() {
 	#if DVI_SYMBOLS_PER_WORD == 2
-		uint16_t *bufptr;
+		uint16_t *bufptr = NULL;
 	#else
-		uint8_t *bufptr;
+		uint8_t *bufptr  = NULL;
 	#endif
 	while (queue_try_remove_u32(&dvi0.q_colour_free, &bufptr));
 	
