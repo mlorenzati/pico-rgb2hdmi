@@ -60,6 +60,7 @@ static graphic_ctx_t graphic_ctx = {
 
 gui_object_t window;
 gui_object_t button;
+gui_object_t slider;
 
 // --------- Global register end --------- 
 
@@ -166,9 +167,24 @@ int main() {
 	button = gui_create_button(&graphic_ctx, 32, 32, 100, 12, colors_list, "hello world");
 	button.draw(&button.base);
 
+	uint value = 0;
+	slider = gui_create_slider(&graphic_ctx, 32, 64, 200, 16, colors_list, &value);
+	slider.draw(&slider.base);
+
+	bool upDown = true;
 	while (1)
 	{
-		sleep_ms(1000);
+		if (upDown) {
+			value += 200;
+		} else {
+			value -= 200;
+		}
+		if (value >= GUI_BAR_100PERCENT) {
+			value = upDown ? GUI_BAR_100PERCENT : 0;
+			upDown = !upDown;
+		}
+		sleep_ms(50);
+		slider.draw(&slider.base);
 	}
 	__builtin_unreachable();
 }

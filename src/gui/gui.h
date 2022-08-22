@@ -1,6 +1,8 @@
 #ifndef _GUI_H
 #define _GUI_H
+
 #include "graphics.h"
+#define GUI_BAR_100PERCENT 10000
 
 enum gui_colors {
    gui_color_bg     = 0,
@@ -57,6 +59,7 @@ typedef struct gui_object {
 // GUI Draw callbacks
 void gui_draw_window(gui_base_t *base);
 void gui_draw_button(gui_base_t *base);
+void gui_draw_slider(gui_base_t *base);
 
 // GUI API Definition
 gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint width, uint height, 
@@ -66,5 +69,6 @@ gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint wi
    gui_create_object(ctx, x, y, width, height, colors, NULL, gui_draw_window)
 #define gui_create_button(ctx, x, y, width, height, colors, text) \
    gui_create_object(ctx, x, y, width, height, colors, (void *) text, gui_draw_button)
-
+#define gui_create_slider(ctx, x, y, width, height, colors, number) \
+   gui_create_object(ctx, x, y, width, height, colors, (void *) number, gui_draw_slider)
 #endif
