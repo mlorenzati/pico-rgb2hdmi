@@ -23,10 +23,10 @@ enum gui_alignment {
    gui_align_right_down   = 8
 };
 
-typedef struct gui_color_list {
-   uint *elements;
+typedef struct gui_list {
+   void *elements;
    uint8_t size;
-} gui_color_list_t;
+} gui_list_t;
 
 typedef struct gui_status {
    uint8_t enabled:1;
@@ -43,7 +43,7 @@ typedef struct gui_base {
    const graphic_ctx_t *ctx;
    uint x, y;
    uint width, height;
-   gui_color_list_t  colors;
+   gui_list_t  *colors;
    gui_status_t      status;
    gui_properties_t  properties;
    const void       *data;
@@ -56,14 +56,23 @@ typedef struct gui_object {
    gui_cb_draw_t draw;
 } gui_object_t;
 
+
+typedef void (*print_delegate_t) (const char * format, ...);
+typedef void (*print_delegate_caller_t)(print_delegate_t printer);
+
 // GUI Draw callbacks
 void gui_draw_window(gui_base_t *base);
+void gui_draw_focus(gui_base_t *base);
+void gui_draw_text(gui_base_t *base);
 void gui_draw_button(gui_base_t *base);
 void gui_draw_slider(gui_base_t *base);
+void gui_draw_label(gui_base_t *base);
 
 // GUI API Definition
+#define initalizeGuiList(list) { .elements = (void *)list, .size = (sizeof(list) / sizeof(list[0])) }
+
 gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint width, uint height, 
-   gui_color_list_t colors, const uint8_t *data, gui_cb_draw_t draw_cb);
+   gui_list_t *colors, const uint8_t *data, gui_cb_draw_t draw_cb);
 
 #define gui_create_window(ctx, x, y, width, height, colors) \
    gui_create_object(ctx, x, y, width, height, colors, NULL, gui_draw_window)
@@ -71,4 +80,8 @@ gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint wi
    gui_create_object(ctx, x, y, width, height, colors, (void *) text, gui_draw_button)
 #define gui_create_slider(ctx, x, y, width, height, colors, number) \
    gui_create_object(ctx, x, y, width, height, colors, (void *) number, gui_draw_slider)
+#define gui_create_label(ctx, x, y, width, height, colors, print_fn) \
+   gui_create_object(ctx, x, y, width, height, colors, (void *) print_fn, gui_draw_label)
 #endif
+
+#define COMMAND(NAME)  { #NAME, NAME ## _command }

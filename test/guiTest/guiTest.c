@@ -61,6 +61,7 @@ static graphic_ctx_t graphic_ctx = {
 gui_object_t window;
 gui_object_t button;
 gui_object_t slider;
+gui_object_t label;
 
 // --------- Global register end --------- 
 
@@ -155,36 +156,42 @@ int main() {
 	uint color_white =      0b11111111;
 	#endif
 	uint colors[] = {color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green };
-	gui_color_list_t colors_list = {
-		.elements = colors,
-		.size = sizeof(colors)
-	};
+	gui_list_t colors_list = initalizeGuiList(colors);
 
 	//Draw a window
-	window = gui_create_window(&graphic_ctx, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, colors_list);
+	window = gui_create_window(&graphic_ctx, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, &colors_list);
 	window.draw(&window.base);
 
-	button = gui_create_button(&graphic_ctx, 32, 32, 100, 12, colors_list, "hello world");
+	button = gui_create_button(&graphic_ctx, 32, 32, 100, 12, &colors_list, "hello world");
 	button.draw(&button.base);
 
 	uint value = 0;
-	slider = gui_create_slider(&graphic_ctx, 32, 64, 200, 16, colors_list, &value);
+	slider = gui_create_slider(&graphic_ctx, 32, 64, 200, 16, &colors_list, &value);
 	slider.draw(&slider.base);
+	
+	void test_print(print_delegate_t printer) {
+		printer("<%d>", value);
+	};
+
+	label = gui_create_label(&graphic_ctx, 32, 100, 256, 16,  &colors_list, test_print);
 
 	bool upDown = true;
 	while (1)
 	{
-		if (upDown) {
-			value += 200;
-		} else {
-			value -= 200;
-		}
-		if (value >= GUI_BAR_100PERCENT) {
-			value = upDown ? GUI_BAR_100PERCENT : 0;
-			upDown = !upDown;
+		if (button.base.status.activated == 0) {
+			if (upDown) {
+				value += 200;
+			} else {
+				value -= 200;
+			}
+			if (value >= GUI_BAR_100PERCENT) {
+				value = upDown ? GUI_BAR_100PERCENT : 0;
+				upDown = !upDown;
+			}
 		}
 		sleep_ms(50);
 		slider.draw(&slider.base);
+		label.draw(&label.base);
 	}
 	__builtin_unreachable();
 }
