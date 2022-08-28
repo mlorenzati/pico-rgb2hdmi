@@ -36,6 +36,7 @@ typedef struct gui_status {
 
 typedef struct gui_properties {
    uint8_t alignment:4;
+   uint8_t horiz_vert:1;
 } gui_properties_t;
 
 
@@ -67,6 +68,7 @@ void gui_draw_text(gui_base_t *base);
 void gui_draw_button(gui_base_t *base);
 void gui_draw_slider(gui_base_t *base);
 void gui_draw_label(gui_base_t *base);
+void gui_draw_group(gui_base_t *base);
 
 // GUI API Definition
 #define initalizeGuiList(list) { .elements = (void *)list, .size = (sizeof(list) / sizeof(list[0])) }
@@ -82,6 +84,6 @@ gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint wi
    gui_create_object(ctx, x, y, width, height, colors, (void *) number, gui_draw_slider)
 #define gui_create_label(ctx, x, y, width, height, colors, print_fn) \
    gui_create_object(ctx, x, y, width, height, colors, (void *) print_fn, gui_draw_label)
+#define gui_create_group(ctx, x, y, width, height, colors, list) \
+   gui_create_object(ctx, x, y, width, height, colors, (void *) list, gui_draw_group)
 #endif
-
-#define COMMAND(NAME)  { #NAME, NAME ## _command }

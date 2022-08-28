@@ -62,6 +62,8 @@ gui_object_t window;
 gui_object_t button;
 gui_object_t slider;
 gui_object_t label;
+gui_object_t group;
+gui_object_t repeatedButton;
 
 // --------- Global register end --------- 
 
@@ -173,7 +175,14 @@ int main() {
 		printer("<%d>", value);
 	};
 
-	label = gui_create_label(&graphic_ctx, 32, 100, 256, 16,  &colors_list, test_print);
+	label = gui_create_label(&graphic_ctx, 32, 100, 100, 16,  &colors_list, test_print);
+
+	repeatedButton = gui_create_button(&graphic_ctx, 0, 0, 100, 12, &colors_list, "repeat me");
+	gui_object_t *group_elements[] = { &button, &repeatedButton, &label, &repeatedButton, &repeatedButton };
+	gui_list_t group_list = initalizeGuiList(group_elements);
+
+	group = gui_create_group(&graphic_ctx, 300, 10, 300, 220, &colors_list, &group_list);
+	group.draw(&group.base);
 
 	bool upDown = true;
 	while (1)

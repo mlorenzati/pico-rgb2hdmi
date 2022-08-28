@@ -108,5 +108,28 @@ void gui_draw_label(gui_base_t *base) {
     }
 
     print_caller(printer);
-    
+}
+
+void gui_draw_group(gui_base_t *base) {
+    gui_list_t *list = (gui_list_t *) base->data;
+    gui_object_t **objects = (gui_object_t **)(list->elements);
+    uint inc_pos_x = base->x;
+    uint inc_pos_y = base->y;
+
+    for (uint8_t cnt = 0; cnt < list->size; cnt++) {
+        gui_object_t *object = objects[cnt];
+        gui_base_t *sub_base = &(object->base);
+        sub_base->x = inc_pos_x;
+        sub_base->y = inc_pos_y;
+
+        if (sub_base->y >= base->ctx->height || sub_base->x >= base->ctx->width) {
+            return;
+        } 
+        object->draw(sub_base);
+        if (base->properties.horiz_vert) {
+            inc_pos_x += sub_base->width + 1;
+        } else {
+            inc_pos_y += sub_base->height + 1;
+        }
+    } 
 }
