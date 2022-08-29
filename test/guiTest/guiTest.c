@@ -159,29 +159,34 @@ int main() {
 	#endif
 	uint colors[] = {color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green };
 	gui_list_t colors_list = initalizeGuiList(colors);
+	gui_properties_t common_props = {
+		.alignment = gui_align_center,
+		.horiz_vert = 0,
+		.padding = 1
+	};
 
 	//Draw a window
-	window = gui_create_window(&graphic_ctx, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, &colors_list);
+	window = gui_create_window(&graphic_ctx, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, &colors_list, common_props);
 	window.draw(&window.base);
 
-	button = gui_create_button(&graphic_ctx, 32, 32, 100, 12, &colors_list, "hello world");
+	button = gui_create_button(&graphic_ctx, 32, 32, 100, 12, &colors_list, common_props, "hello world");
 	button.draw(&button.base);
 
 	uint value = 0;
-	slider = gui_create_slider(&graphic_ctx, 32, 64, 200, 16, &colors_list, &value);
+	slider = gui_create_slider(&graphic_ctx, 32, 64, 200, 16, &colors_list, common_props, &value);
 	slider.draw(&slider.base);
 	
 	void test_print(print_delegate_t printer) {
 		printer("<%d>", value);
 	};
 
-	label = gui_create_label(&graphic_ctx, 32, 100, 100, 16,  &colors_list, test_print);
+	label = gui_create_label(&graphic_ctx, 32, 100, 100, 16,  &colors_list, common_props, test_print);
 
-	repeatedButton = gui_create_button(&graphic_ctx, 0, 0, 100, 12, &colors_list, "repeat me");
+	repeatedButton = gui_create_button(&graphic_ctx, 0, 0, 100, 12, &colors_list, common_props, "repeat me");
 	gui_object_t *group_elements[] = { &button, &repeatedButton, &label, &repeatedButton, &repeatedButton };
 	gui_list_t group_list = initalizeGuiList(group_elements);
 
-	group = gui_create_group(&graphic_ctx, 300, 10, 300, 220, &colors_list, &group_list);
+	group = gui_create_group(&graphic_ctx, 300, 10, 300, 220, &colors_list, common_props , &group_list);
 	group.draw(&group.base);
 
 	bool upDown = true;
