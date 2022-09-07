@@ -90,28 +90,27 @@ void gui_draw_label(gui_base_t *base);
 void gui_draw_group(gui_base_t *base);
 
 // GUI event and subscriber/unsubscriber
-bool gui_event_subscribe(gui_status_t status, gui_base_t *origin, gui_object_t *destination);
+bool gui_event_subscribe(gui_status_t status, gui_base_t *origin, gui_object_t *destination, gui_cb_on_status_t status_cv);
 bool gui_event_unsubscribe(gui_base_t *origin, gui_object_t *destination);
-void gui_event(gui_status_t status, gui_object_t object, gui_status_t event);
+void gui_event(gui_status_t status, gui_object_t *origin);
 
-// Event Handler callbacks
-void gui_handle_button(gui_status_t status, gui_base_t *origin, gui_object_t *destination);
-void gui_handle_text(gui_status_t status,   gui_base_t *origin, gui_object_t *destination);
-void gui_handle_slider(gui_status_t status, gui_base_t *origin, gui_object_t *destination);
-void gui_handle_label(gui_status_t status,  gui_base_t *origin, gui_object_t *destination);
+// Event triggers
+inline void gui_activate(gui_object_t *object)    { gui_status_t unamed_status = object->base.status; unamed_status.activated = 1; gui_event(unamed_status, object); }
+inline void gui_deactivate(gui_object_t *object)  { gui_status_t unamed_status = object->base.status; unamed_status.activated = 0; gui_event(unamed_status, object); }
+inline void gui_update_data(gui_object_t *object) { gui_status_t unamed_status = object->base.status; unamed_status.data_changed = 1; gui_event(unamed_status, object); }
 
 // GUI Object creators
 gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint width, uint height, 
-   gui_list_t *colors, gui_properties_t props, const uint8_t *data, gui_cb_draw_t draw_cb, gui_cb_on_status_t status_cv);
+   gui_list_t *colors, gui_properties_t props, const uint8_t *data, gui_cb_draw_t draw_cb);
 
 #define gui_create_window(ctx, x, y, width, height, colors, props) \
-   gui_create_object(ctx, x, y, width, height, colors, props, NULL, gui_draw_window, NULL)
+   gui_create_object(ctx, x, y, width, height, colors, props, NULL, gui_draw_window)
 #define gui_create_button(ctx, x, y, width, height, colors, props, text) \
-   gui_create_object(ctx, x, y, width, height, colors, props, (void *) text, gui_draw_button, gui_handle_button)
+   gui_create_object(ctx, x, y, width, height, colors, props, (void *) text, gui_draw_button)
 #define gui_create_slider(ctx, x, y, width, height, colors, props, number) \
-   gui_create_object(ctx, x, y, width, height, colors, props, (void *) number, gui_draw_slider, gui_handle_slider)
+   gui_create_object(ctx, x, y, width, height, colors, props, (void *) number, gui_draw_slider)
 #define gui_create_label(ctx, x, y, width, height, colors, props, print_fn) \
-   gui_create_object(ctx, x, y, width, height, colors, props, (void *) print_fn, gui_draw_label, gui_handle_label)
+   gui_create_object(ctx, x, y, width, height, colors, props, (void *) print_fn, gui_draw_label)
 #define gui_create_group(ctx, x, y, width, height, colors, props, list) \
-   gui_create_object(ctx, x, y, width, height, colors, props, (void *) list, gui_draw_group, NULL)
+   gui_create_object(ctx, x, y, width, height, colors, props, (void *) list, gui_draw_group)
 #endif

@@ -7,7 +7,7 @@
 
 // ---- Base object creation ----
 gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint width, uint height, gui_list_t *colors, gui_properties_t props,
-    const uint8_t *data, gui_cb_draw_t draw_cb, gui_cb_on_status_t status_cv) {
+    const uint8_t *data, gui_cb_draw_t draw_cb) {
     gui_object_t obj = {
         .base = {
             .ctx = ctx,
@@ -22,8 +22,7 @@ gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint wi
             .properties = props,
             .data = data
         },
-        .draw = draw_cb,
-        .status_handle = status_cv
+        .draw = draw_cb
     };
     return obj;
 }
@@ -147,42 +146,35 @@ void gui_draw_group(gui_base_t *base) {
     } 
 }
 
-// ------- Event Handlers -------
-void gui_handle_button(gui_status_t status,  gui_base_t *origin, gui_object_t *destination) { 
-}
-
-void gui_handle_text(gui_status_t status,  gui_base_t *origin, gui_object_t *destination) {
-}
-
-void gui_handle_slider(gui_status_t status,  gui_base_t *origin, gui_object_t *destination) {
-}
-
-void gui_handle_label(gui_status_t status,  gui_base_t *origin, gui_object_t *destination) {
-}
-
 // -- GUI event and subscriber --
 gui_event_subscription_t event_subscriptions[GUI_EVENT_HANDLING_MAX];
-bool gui_event_subscribe(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+bool gui_event_subscribe(gui_status_t status, gui_base_t *origin, gui_object_t *destination, gui_cb_on_status_t status_cv) {
     //Check the first available event slot
-    gui_event_subscription_t *free_event = NULL;
+    gui_event_subscription_t *sel_event = NULL;
     gui_status_cast_t *n_status = (gui_status_cast_t *) &status;
     for (uint cnt = 0; cnt < GUI_EVENT_HANDLING_MAX; cnt++) {
        gui_event_subscription_t *event = &event_subscriptions[cnt];
        gui_status_cast_t *c_status = (gui_status_cast_t *) &event->status;
        //Update a subscription
        if (origin == event->origin && destination == event->destination) {
-            event->status = status;
-            event->origin = n_status->word > 0 ? origin : NULL;
-            event->destination = n_status->word > 0 ? destination : NULL;
-            return true;
-       } else if (c_status->word == 0 && free_event == NULL) {
-            free_event = event;
+            if (n_status->word == 0) {
+                origin = NULL;
+                destination = NULL;
+            }
+            sel_event = event;
+            break;
+       } else if (c_status->word == 0 && sel_event == NULL) {
+            sel_event = event;
+            break;
        }
     }
-    if (free_event != NULL) {
-        free_event ->status = status;
-        free_event->origin = origin;
-        free_event->destination = destination;
+    if (sel_event != NULL) {
+        sel_event ->status = status;
+        sel_event->origin = origin;
+        sel_event->destination = destination;
+        if (sel_event->destination != NULL) {
+            sel_event->destination->status_handle = status_cv;
+        }
         return true;
     }
     return false;
@@ -203,6 +195,29 @@ bool gui_event_unsubscribe(gui_base_t *origin, gui_object_t *destination) {
     return false;
 }
 
-void gui_event(gui_status_t status, gui_object_t object, gui_status_t event) {
+void gui_event(gui_status_t status, gui_object_t *origin) {
+    //Update self
+    gui_status_cast_t *c_status_new = (gui_status_cast_t *) &status;
+    gui_status_cast_t *c_status_old= (gui_status_cast_t *) &origin->base.status;
+    gui_status_cast_t c_status_changed;
+    c_status_changed.word = c_status_new->word ^ c_status_old->word;
+    if (c_status_new != c_status_old) {
+        *c_status_old = *c_status_new;
+        origin->draw(&origin->base);
+    }
 
+    //Check subscribers of the event
+    for (uint cnt = 0; cnt < GUI_EVENT_HANDLING_MAX; cnt++) {
+        gui_event_subscription_t *event = &event_subscriptions[cnt];
+        gui_status_cast_t *c_status_sub = (gui_status_cast_t *) &event->status;
+        gui_status_cast_t c_status_match;
+        c_status_match.word = c_status_sub->word & c_status_changed.word;
+
+        if (&origin->base == event->origin && c_status_match.word > 0) {
+            event->destination->status_handle(status, &origin->base, event->destination);
+        }
+    }
+
+    //Data updates has to be reset after
+    c_status_old->bits.data_changed = 0;
 }
