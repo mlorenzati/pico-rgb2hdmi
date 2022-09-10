@@ -5,8 +5,9 @@
 
 #define GUI_BAR_WIDTH      6
 
-gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint width, uint height, 
-    gui_list_t *colors, const uint8_t *data, gui_cb_draw_t draw_cb) {
+// ---- Base object creation ----
+gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint width, uint height, gui_list_t *colors, gui_properties_t props,
+    const uint8_t *data, gui_cb_draw_t draw_cb) {
     gui_object_t obj = {
         .base = {
             .ctx = ctx,
@@ -18,6 +19,7 @@ gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint wi
             .status = {
                 .enabled = 1
             },
+            .properties = props,
             .data = data
         },
         .draw = draw_cb
@@ -25,6 +27,17 @@ gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint wi
     return obj;
 }
 
+// ----  Utility Functions  ----
+void gui_get_start_position(gui_properties_t props, int ext_width, uint ext_height, uint in_width, uint in_height, uint *x, uint *y) {
+    uint width_space = ext_width > in_width ? ext_width - in_width : 0;
+    uint height_space = ext_height > in_height ? ext_height - in_height: 0;
+    *x = props.alignment <= gui_align_center_down ? (width_space >> 1) : (props.alignment <= gui_align_left_down ? 0 : width_space);
+    *y = props.alignment == gui_align_center || props.alignment == gui_align_left_center || props.alignment == gui_align_right_center ? 
+        height_space >> 1 :  props.alignment == gui_align_center_up || props.alignment == gui_align_left_up || props.alignment == gui_align_right_up  ?
+        0 : height_space;
+}
+
+// ---- Object Draw methods ----
 void gui_draw_window(gui_base_t *base) {
     uint *colors = (uint *)(base->colors->elements);
     draw_rect(base->ctx, base->x, base->y, base->width, base->height, colors[0]);
@@ -59,13 +72,11 @@ void gui_draw_text(gui_base_t *base) {
     graphic_ctx_t text_ctx = get_sub_graphic_ctx(base->ctx, base->x, base->y, base->width, base->height);
     const char *text = (const char*) base->data; 
     uint text_width = (strlen(text) * GRAPHICS_FONT_SIZE) - 1;
-    uint width = text_ctx.width > text_width ? text_ctx.width - text_width : 0;
-    uint height = text_ctx.height > (GRAPHICS_FONT_SIZE - 1) ? text_ctx.height - GRAPHICS_FONT_SIZE + 1: 0;
-    uint x = width >> 1;
-    uint y = height >> 1;
-    
+    uint x, y;
+    gui_get_start_position(base->properties, text_ctx.width, text_ctx.height, text_width, GRAPHICS_FONT_SIZE - 1, &x, &y);
     draw_text(&text_ctx, x, y, color_text, color_text, false, text);  
 }
+
 void gui_draw_button(gui_base_t *base) {
     gui_draw_border(base);
     gui_base_t inner_base = *base;
@@ -115,6 +126,7 @@ void gui_draw_group(gui_base_t *base) {
     gui_object_t **objects = (gui_object_t **)(list->elements);
     uint inc_pos_x = base->x;
     uint inc_pos_y = base->y;
+    uint padding = base->properties.padding;
 
     for (uint8_t cnt = 0; cnt < list->size; cnt++) {
         gui_object_t *object = objects[cnt];
@@ -127,9 +139,85 @@ void gui_draw_group(gui_base_t *base) {
         } 
         object->draw(sub_base);
         if (base->properties.horiz_vert) {
-            inc_pos_x += sub_base->width + 1;
+            inc_pos_x += sub_base->width + padding;
         } else {
-            inc_pos_y += sub_base->height + 1;
+            inc_pos_y += sub_base->height + padding;
         }
     } 
+}
+
+// -- GUI event and subscriber --
+gui_event_subscription_t event_subscriptions[GUI_EVENT_HANDLING_MAX];
+bool gui_event_subscribe(gui_status_t status, gui_base_t *origin, gui_object_t *destination, gui_cb_on_status_t status_cv) {
+    //Check the first available event slot
+    gui_event_subscription_t *sel_event = NULL;
+    gui_status_cast_t *n_status = (gui_status_cast_t *) &status;
+    for (uint cnt = 0; cnt < GUI_EVENT_HANDLING_MAX; cnt++) {
+       gui_event_subscription_t *event = &event_subscriptions[cnt];
+       gui_status_cast_t *c_status = (gui_status_cast_t *) &event->status;
+       //Update a subscription
+       if (origin == event->origin && destination == event->destination) {
+            if (n_status->word == 0) {
+                origin = NULL;
+                destination = NULL;
+            }
+            sel_event = event;
+            break;
+       } else if (c_status->word == 0 && sel_event == NULL) {
+            sel_event = event;
+            break;
+       }
+    }
+    if (sel_event != NULL) {
+        sel_event ->status = status;
+        sel_event->origin = origin;
+        sel_event->destination = destination;
+        if (sel_event->destination != NULL) {
+            sel_event->destination->status_handle = status_cv;
+        }
+        return true;
+    }
+    return false;
+}
+
+bool gui_event_unsubscribe(gui_base_t *origin, gui_object_t *destination) {
+    //Search stored status
+    for (uint cnt = 0; cnt < GUI_EVENT_HANDLING_MAX; cnt++) {
+       gui_event_subscription_t *event = &event_subscriptions[cnt];
+       gui_status_cast_t *status = (gui_status_cast_t *) &event->status;
+       if (origin == event->origin && destination == event->destination) {
+            status->word = 0;
+            event->origin = NULL;
+            event->destination = NULL;
+            return true;
+       }
+    }
+    return false;
+}
+
+void gui_event(gui_status_t status, gui_object_t *origin) {
+    //Update self
+    gui_status_cast_t *c_status_new = (gui_status_cast_t *) &status;
+    gui_status_cast_t *c_status_old= (gui_status_cast_t *) &origin->base.status;
+    gui_status_cast_t c_status_changed;
+    c_status_changed.word = c_status_new->word ^ c_status_old->word;
+    if (c_status_new != c_status_old) {
+        *c_status_old = *c_status_new;
+        origin->draw(&origin->base);
+    }
+
+    //Check subscribers of the event
+    for (uint cnt = 0; cnt < GUI_EVENT_HANDLING_MAX; cnt++) {
+        gui_event_subscription_t *event = &event_subscriptions[cnt];
+        gui_status_cast_t *c_status_sub = (gui_status_cast_t *) &event->status;
+        gui_status_cast_t c_status_match;
+        c_status_match.word = c_status_sub->word & c_status_changed.word;
+
+        if (&origin->base == event->origin && c_status_match.word > 0) {
+            event->destination->status_handle(status, &origin->base, event->destination);
+        }
+    }
+
+    //Data updates has to be reset after
+    c_status_old->bits.data_changed = 0;
 }

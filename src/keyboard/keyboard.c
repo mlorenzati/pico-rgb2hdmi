@@ -13,7 +13,6 @@ typedef struct key_status {
 typedef union keyboard_status_cast {
     keyboard_status_t bit_status;
     uint8_t           int_status;
-
 } keyboard_status_cast_t;
 
 key_status_t keys_status[KEYBOARD_MAX_COUNT];

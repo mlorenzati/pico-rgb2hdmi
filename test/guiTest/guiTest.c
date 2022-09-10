@@ -95,11 +95,10 @@ static inline void core1_scanline_callback() {
 void on_keyboard_event(keyboard_status_t keys) {
     printf("Keyboard event received \n");
 	if (keys.key1_down) {
-		button.base.status.activated = 1;
+		gui_activate(&button);
 	} else if (keys.key1_up) {
-		button.base.status.activated = 0;
-	} 
-	button.draw(&button.base);
+		gui_deactivate(&button);
+	}
 }
 
 int main() {
@@ -159,29 +158,41 @@ int main() {
 	#endif
 	uint colors[] = {color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green };
 	gui_list_t colors_list = initalizeGuiList(colors);
+	gui_properties_t common_props = {
+		.alignment = gui_align_center,
+		.horiz_vert = 0,
+		.padding = 1
+	};
 
 	//Draw a window
-	window = gui_create_window(&graphic_ctx, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, &colors_list);
+	window = gui_create_window(&graphic_ctx, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, &colors_list, common_props);
 	window.draw(&window.base);
 
-	button = gui_create_button(&graphic_ctx, 32, 32, 100, 12, &colors_list, "hello world");
+	button = gui_create_button(&graphic_ctx, 32, 32, 100, 12, &colors_list, common_props, "hello world");
 	button.draw(&button.base);
 
 	uint value = 0;
-	slider = gui_create_slider(&graphic_ctx, 32, 64, 200, 16, &colors_list, &value);
+	slider = gui_create_slider(&graphic_ctx, 32, 64, 200, 16, &colors_list, common_props, &value);
 	slider.draw(&slider.base);
 	
 	void test_print(print_delegate_t printer) {
 		printer("<%d>", value);
 	};
 
-	label = gui_create_label(&graphic_ctx, 32, 100, 100, 16,  &colors_list, test_print);
+	label = gui_create_label(&graphic_ctx, 32, 100, 100, 16,  &colors_list, common_props, test_print);
+	gui_status_t label_status_sub = {.data_changed = 1};
 
-	repeatedButton = gui_create_button(&graphic_ctx, 0, 0, 100, 12, &colors_list, "repeat me");
+	void update_label(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+		//just go blind with the test and refresh the label
+		destination->draw(&destination->base);
+	}
+	gui_event_subscribe(label_status_sub, &slider.base, &label, update_label);
+
+	repeatedButton = gui_create_button(&graphic_ctx, 0, 0, 100, 12, &colors_list, common_props, "repeat me");
 	gui_object_t *group_elements[] = { &button, &repeatedButton, &label, &repeatedButton, &repeatedButton };
 	gui_list_t group_list = initalizeGuiList(group_elements);
 
-	group = gui_create_group(&graphic_ctx, 300, 10, 300, 220, &colors_list, &group_list);
+	group = gui_create_group(&graphic_ctx, 300, 10, 300, 220, &colors_list, common_props , &group_list);
 	group.draw(&group.base);
 
 	bool upDown = true;
@@ -197,10 +208,9 @@ int main() {
 				value = upDown ? GUI_BAR_100PERCENT : 0;
 				upDown = !upDown;
 			}
+			gui_update_data(&slider);
 		}
 		sleep_ms(50);
-		slider.draw(&slider.base);
-		label.draw(&label.base);
 	}
 	__builtin_unreachable();
 }
