@@ -12,6 +12,16 @@ enum gui_colors {
    gui_color_second = 3
 };
 
+enum gui_orientation {
+   gui_orientation_vertical   = 0,
+   gui_orientation_horizontal = 1
+};
+
+enum gui_coordinate {
+   gui_coord_height = 0,
+   gui_coord_width  = 1
+};
+
 enum gui_alignment {
    gui_align_center       = 0,
    gui_align_center_up    = 1,
@@ -43,13 +53,17 @@ typedef union gui_status_cast {
 } gui_status_cast_t;
 
 typedef struct gui_properties {
-   uint8_t alignment:4;
-   uint8_t horiz_vert:1;
-   uint8_t padding:6;
+   uint16_t alignment:4;
+   uint16_t horiz_vert:1;
+   uint16_t padding:6;
+   uint16_t focusable:1;
+   uint16_t shared:1;
+   uint16_t border:1;
 } gui_properties_t;
 
 typedef struct gui_base {
    const graphic_ctx_t *ctx;
+   const char       *id;
    uint              x, y;
    uint              width, height;
    gui_list_t       *colors;
@@ -113,4 +127,7 @@ gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint wi
    gui_create_object(ctx, x, y, width, height, colors, props, (void *) print_fn, gui_draw_label)
 #define gui_create_group(ctx, x, y, width, height, colors, props, list) \
    gui_create_object(ctx, x, y, width, height, colors, props, (void *) list, gui_draw_group)
+
+// GUI Utilities
+uint gui_sum(gui_list_t *group, gui_properties_t props, bool width_height); 
 #endif

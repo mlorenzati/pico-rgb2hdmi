@@ -63,6 +63,7 @@ gui_object_t button;
 gui_object_t slider;
 gui_object_t label;
 gui_object_t group;
+gui_object_t group2;
 gui_object_t repeatedButton;
 
 // --------- Global register end --------- 
@@ -160,8 +161,16 @@ int main() {
 	gui_list_t colors_list = initalizeGuiList(colors);
 	gui_properties_t common_props = {
 		.alignment = gui_align_center,
-		.horiz_vert = 0,
-		.padding = 1
+		.horiz_vert = gui_orientation_vertical,
+		.padding = 1,
+		.shared = 1
+	};
+	gui_properties_t common_nshared_props = {
+		.alignment = gui_align_center,
+		.horiz_vert = gui_orientation_horizontal,
+		.padding = 1,
+		.shared = 0,
+		.border = 1
 	};
 
 	//Draw a window
@@ -180,12 +189,13 @@ int main() {
 	};
 
 	label = gui_create_label(&graphic_ctx, 32, 100, 100, 16,  &colors_list, common_props, test_print);
+	
 	gui_status_t label_status_sub = {.data_changed = 1};
-
 	void update_label(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
 		//just go blind with the test and refresh the label
 		destination->draw(&destination->base);
 	}
+	
 	gui_event_subscribe(label_status_sub, &slider.base, &label, update_label);
 
 	repeatedButton = gui_create_button(&graphic_ctx, 0, 0, 100, 12, &colors_list, common_props, "repeat me");
@@ -194,6 +204,25 @@ int main() {
 
 	group = gui_create_group(&graphic_ctx, 300, 10, 300, 220, &colors_list, common_props , &group_list);
 	group.draw(&group.base);
+
+	uint spinBoxValue = 100;
+	void spinbox_print(print_delegate_t printer) {
+		printer("%d", spinBoxValue);
+	};
+	gui_object_t group_elements2[] = { 
+		gui_create_button(&graphic_ctx, 0, 0, 16, 12, &colors_list, common_props, "<"),
+		gui_create_label(&graphic_ctx, 0, 0,  32, 12, &colors_list, common_props, spinbox_print),
+		gui_create_button(&graphic_ctx, 0, 0, 16, 12, &colors_list, common_props, ">"),
+		};
+	gui_list_t group_list2 = initalizeGuiList(group_elements2);
+	group2 = gui_create_group(&graphic_ctx, 300, 100,
+		gui_sum(&group_list2, common_nshared_props, gui_coord_width), 
+		gui_sum(&group_list2, common_nshared_props, gui_coord_height), 
+		&colors_list, common_nshared_props , &group_list2);
+	group2.draw(&group2.base);
+
+
+
 
 	bool upDown = true;
 	while (1)
