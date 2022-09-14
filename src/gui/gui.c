@@ -35,6 +35,17 @@ const gui_status_cast_t gui_status_redrawable = { .bits = {
     .substract = 1
 }};
 
+const gui_status_cast_t gui_status_updateable = { .bits = {
+    .activated = 1,
+    .focused = 1,
+    .visible = 1,
+    .enabled = 1,
+    .data_changed = 1,
+    .add = 1,
+    .substract = 1,
+    .navigable = 1
+}};
+
 // ---- Base object creation ----
 gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint width, uint height, const char* id, 
     gui_list_t *colors, gui_properties_t props, const uint8_t *data, gui_cb_draw_t draw_cb) {
@@ -343,6 +354,9 @@ gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
     }
 
     //Check subscribers of the event
+    uint subcribers_updates_cnt = 0;
+    gui_status_cast_t subcribers_updates_status[GUI_EVENT_SUB_UPD_MAX];
+    gui_object_t *subcribers_updates_destination[GUI_EVENT_SUB_UPD_MAX];
     for (uint cnt = 0; cnt < GUI_EVENT_HANDLING_MAX; cnt++) {
         gui_event_subscription_t *event = &event_subscriptions[cnt];
         gui_status_cast_t *c_status_sub = (gui_status_cast_t *) &event->status;
@@ -351,23 +365,43 @@ gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
 
         if (&origin->base == event->origin && c_status_match.word > 0) {
             gui_cb_on_status_t status_handle = event->destination->status_handle;
+            if (origin == event->destination) {
+                // need to update
+            }
+            
+            gui_status_cast_t dest_status_old = *((gui_status_cast_t *)(&event->destination->base.status));
             if (status_handle == NULL || status_handle(status, &origin->base, event->destination)) {
                 if (origin != event->destination) {
                     gui_ref_draw(event->destination);
                 }
-                gui_event(event->destination->base.status, event->destination); //TODO use return status
+                // If it was a status change of the status due the even callback, trigger and event
+                gui_status_cast_t dest_status_new = *((gui_status_cast_t *)(&event->destination->base.status));
+                if (dest_status_old.word != dest_status_new.word && subcribers_updates_cnt < GUI_EVENT_SUB_UPD_MAX) {
+                    event->destination->base.status = dest_status_old.bits;
+                    subcribers_updates_status[subcribers_updates_cnt].word = dest_status_old.word ^ dest_status_new.word;
+                    subcribers_updates_destination[subcribers_updates_cnt] = event->destination;
+                    subcribers_updates_cnt++;
+                }
             }
         }
     }
 
-    // After events publications, update current drawable status
-    if (c_status_new != c_status_old && ((c_status_changed.word & gui_status_redrawable.word) != 0)) {
+    // After events publications, update current updateable status
+    if (c_status_new != c_status_old && ((c_status_changed.word & gui_status_updateable.word) != 0)) {
         //Update only the redrawable events
-        c_status_old->word = (c_status_old->word & ~gui_status_redrawable.word) | (c_status_new->word & gui_status_redrawable.word);
+        c_status_old->word = (c_status_old->word & ~gui_status_updateable.word) | (c_status_new->word & gui_status_updateable.word);
     }
 
     // Consumable events like Data updates have to be reset after
-    c_status_old->word &=  ~gui_status_consumable.word;
+    c_status_old->word &= ~gui_status_consumable.word;
+
+    // Updates from subscriber events
+    for (uint cnt = 0; cnt < subcribers_updates_cnt; cnt++) {
+        gui_object_t *update_dest = subcribers_updates_destination[cnt]; 
+        gui_status_cast_t update_status;
+        update_status.word = ((gui_status_cast_t *)(&update_dest->base.status))->word ^ subcribers_updates_status[cnt].word;
+        gui_event(update_status.bits, update_dest);
+    }
 
     // Check focus change
     gui_object_t *next_focused = origin;

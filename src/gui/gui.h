@@ -4,6 +4,7 @@
 #include "graphics.h"
 #define GUI_BAR_100PERCENT     10000
 #define GUI_EVENT_HANDLING_MAX 32
+#define GUI_EVENT_SUB_UPD_MAX  16
 
 enum gui_colors {
    gui_color_bg     = 0,

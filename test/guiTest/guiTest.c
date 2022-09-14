@@ -219,7 +219,7 @@ int main() {
 		group.base.y,
 		group.base.width * 3, group.base.height,  &colors_list, common_nshared_props, label_print);
 
-	gui_status_t data_status = { .activated = 1, .add = 1, .substract = 1, .data_changed = 1 };
+	gui_status_t buttons_status = { .activated = 1, .add = 1, .substract = 1 };
 	bool on_slider_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
 		if (status.activated && !origin->status.activated) {
 			destination->base.status.navigable = !destination->base.status.navigable;
@@ -228,6 +228,7 @@ int main() {
 		} else if (status.substract && slider_value != 0) {
 			slider_value -= 100;
 		}
+		destination->base.status.data_changed = 1;
 		
 		return true;
 	}
@@ -240,13 +241,15 @@ int main() {
 		} else if (status.substract && spinbox_value != 0) {
 			spinbox_value -= 1;
 		}
+		destination->base.status.data_changed = 1;
 		
 		return true;
 	}
 
 	//Event Subscriptions
-	gui_event_subscribe(data_status, &group_elements[2].base, &group_elements[2], on_slider_event);
-	gui_event_subscribe(data_status, &group_elements[5].base, &group_elements[5], on_spinbox_event);
+	gui_status_t data_status = { .data_changed = 1 };
+	gui_event_subscribe(buttons_status, &group_elements[2].base, &group_elements[2], on_slider_event);
+	gui_event_subscribe(buttons_status, &group_elements[5].base, &group_elements[5], on_spinbox_event);
 	gui_event_subscribe(data_status, &group_elements[2].base, &label, NULL); //Just trigger a redraw, no callback needed
 	gui_event_subscribe(data_status, &group_elements[5].base, &label, NULL); //Just trigger a redraw, no callback needed
 
