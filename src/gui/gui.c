@@ -5,12 +5,27 @@
 
 #define GUI_BAR_WIDTH      6
 
+// GUI Ids
+const char* gui_id_window = "window";
+const char* gui_id_button = "button";
+const char* gui_id_slider = "slider";
+const char* gui_id_label = "label";
+const char* gui_id_group = "group";
+
+// GUI events
+const gui_status_t gui_status_focused      = {.focused = 1};
+const gui_status_t gui_status_go_next      = {.go_next = 1};
+const gui_status_t gui_status_go_previous  = {.go_previous = 1};
+const gui_status_t gui_status_activated    = {.activated = 1};
+const gui_status_t gui_status_data_changed = {.data_changed = 1};
+
 // ---- Base object creation ----
-gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint width, uint height, gui_list_t *colors, gui_properties_t props,
-    const uint8_t *data, gui_cb_draw_t draw_cb) {
+gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint width, uint height, const char* id, 
+    gui_list_t *colors, gui_properties_t props, const uint8_t *data, gui_cb_draw_t draw_cb) {
     gui_object_t obj = {
         .base = {
             .ctx = ctx,
+            .id = id,
             .x = x,
             .y = y,
             .width = width,
@@ -22,8 +37,24 @@ gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint wi
             .properties = props,
             .data = data
         },
-        .draw = draw_cb
+        .draw = draw_cb,
+        .next = NULL,
+        .previous = NULL
     };
+    if (id == gui_id_group) { // We don't need a strcmp on known const keys
+        gui_list_t *list = (gui_list_t *) data;
+        gui_object_t **s_objects = (gui_object_t **)(list->elements);
+        gui_object_t *objects = (gui_object_t *)(list->elements);
+
+        gui_object_t *previous = props.shared ? s_objects[list->size - 1] : &objects[list->size - 1];
+        for (uint8_t cnt = 0; cnt < list->size; cnt++) {
+            gui_object_t *object = props.shared ? s_objects[cnt] : &objects[cnt];
+            uint8_t next = (cnt + 1) % list->size;
+            object->next = props.shared ? s_objects[next] : &objects[next];
+            object->previous = previous;
+            previous = object;
+        }
+    }
     return obj;
 }
 
@@ -203,13 +234,30 @@ bool gui_event_unsubscribe(gui_base_t *origin, gui_object_t *destination) {
     return false;
 }
 
-void gui_event(gui_status_t status, gui_object_t *origin) {
+gui_status_cast_t status_redrawable = { .bits = {
+    .activated = 1,
+    .focused = 1,
+    .visible = 1,
+    .enabled = 1,
+    .data_changed = 1
+}};
+
+gui_status_t gui_status_update(gui_object_t *object, gui_status_t status, bool set_clear) {
+    gui_status_cast_t *c_status_old = (gui_status_cast_t *) &(object->base.status);
+    gui_status_cast_t *c_status_new = (gui_status_cast_t *) &status;
+    c_status_new->word = set_clear ? (c_status_old->word | c_status_new->word) : (c_status_old->word & (~c_status_new->word));
+    return c_status_new->bits;
+}
+
+gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
     //Update self
     gui_status_cast_t *c_status_new = (gui_status_cast_t *) &status;
     gui_status_cast_t *c_status_old= (gui_status_cast_t *) &origin->base.status;
     gui_status_cast_t c_status_changed;
     c_status_changed.word = c_status_new->word ^ c_status_old->word;
-    if (c_status_new != c_status_old) {
+    // Redraw events
+
+    if (c_status_new != c_status_old && ((c_status_changed.word & status_redrawable.word) != 0)) {
         *c_status_old = *c_status_new;
         origin->draw(&origin->base);
     }
@@ -222,12 +270,30 @@ void gui_event(gui_status_t status, gui_object_t *origin) {
         c_status_match.word = c_status_sub->word & c_status_changed.word;
 
         if (&origin->base == event->origin && c_status_match.word > 0) {
-            event->destination->status_handle(status, &origin->base, event->destination);
+            event->destination->status_handle(status, &origin->base, event->destination); //TODO: use success return value
         }
     }
-
-    //Data updates has to be reset after
+    //Consumable events like Data updates have to be reset after
     c_status_old->bits.data_changed = 0;
+
+    //Check focus change
+    gui_object_t *next_focused = origin;
+    if (status.go_next ^ status.go_previous) {
+        if (status.go_next && (origin->next != NULL)) {
+            status.go_next = 0;
+            next_focused = origin->next;
+        }
+        if (status.go_previous && (origin->previous != NULL)) {
+            status.go_previous = 0;
+            next_focused = origin->previous;
+        }
+        if(next_focused != origin) {
+            gui_unfocused(origin);
+            gui_focused(next_focused);
+        }
+    }
+    
+    return next_focused;
 }
 
 // GUI Utilities
