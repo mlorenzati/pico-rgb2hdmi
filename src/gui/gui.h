@@ -114,6 +114,7 @@ void gui_draw_button(gui_base_t *base);
 void gui_draw_slider(gui_base_t *base);
 void gui_draw_label(gui_base_t *base);
 void gui_draw_group(gui_base_t *base);
+void gui_draw_spinbox(gui_base_t *base);
 
 // GUI object draw def
 #define gui_obj_draw(object)  object.draw(&(object.base))
@@ -142,8 +143,10 @@ gui_status_t gui_status_update(gui_object_t *object, gui_status_t status, bool s
 #define gui_activate(object)       gui_event(gui_status_update(object, gui_status_activated,    gui_set),   object)
 #define gui_deactivate(object)     gui_event(gui_status_update(object, gui_status_activated,    gui_clear), object)
 #define gui_update_data(object)    gui_event(gui_status_update(object, gui_status_data_changed, gui_set),   object)
-#define gui_update_add(object)     gui_event(gui_status_update(object, gui_status_add,          gui_set),   object)
-#define gui_update_sub(object)     gui_event(gui_status_update(object, gui_status_substract,    gui_set),   object)
+#define gui_set_add(object)        gui_event(gui_status_update(object, gui_status_add,          gui_set),   object)
+#define gui_set_sub(object)        gui_event(gui_status_update(object, gui_status_substract,    gui_set),   object)
+#define gui_clear_add(object)      gui_event(gui_status_update(object, gui_status_add,          gui_clear), object)
+#define gui_clear_sub(object)      gui_event(gui_status_update(object, gui_status_substract,    gui_clear), object)
 
 // GUI Object creators
 gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint width, uint height, const char* id,
@@ -155,6 +158,7 @@ extern const char* gui_id_button;
 extern const char* gui_id_slider;
 extern const char* gui_id_label;
 extern const char* gui_id_group;
+extern const char* gui_id_spinbox;
 
 #define gui_create_window(ctx, x, y, width, height, colors, props) \
    gui_create_object(ctx, x, y, width, height, gui_id_window, colors, props, NULL, gui_draw_window)
@@ -166,7 +170,10 @@ extern const char* gui_id_group;
    gui_create_object(ctx, x, y, width, height, gui_id_label, colors, props, (void *) print_fn, gui_draw_label)
 #define gui_create_group(ctx, x, y, width, height, colors,  props, list) \
    gui_create_object(ctx, x, y, width, height, gui_id_group, colors, props, (void *) list, gui_draw_group)
+#define gui_create_spinbox(ctx, x, y, width, height, colors,  props, number) \
+   gui_create_object(ctx, x, y, width, height, gui_id_spinbox, colors, props, (void *) number, gui_draw_spinbox)
 
 // GUI Utilities
-uint gui_sum(gui_list_t *group, gui_properties_t props, bool width_height); 
+uint gui_sum(gui_list_t *group, gui_properties_t props, bool width_height);
+bool gui_object_overflow_group(gui_base_t *object, gui_base_t *group);
 #endif

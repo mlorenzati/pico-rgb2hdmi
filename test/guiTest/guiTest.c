@@ -115,14 +115,18 @@ void on_keyboard_event(keyboard_status_t keys) {
 		if (focused_object->base.status.navigable) {
 			focused_object = gui_next_focus(focused_object);
 		} else {
-			gui_update_add(focused_object);
+			gui_set_add(focused_object);
 		}
 	} else if (keys.key3_down) {
 		if (focused_object->base.status.navigable) {
 			focused_object = gui_previous_focus(focused_object);
 		} else {
-			gui_update_sub(focused_object);
+			gui_set_sub(focused_object);
 		}
+	} else if (keys.key2_up && !focused_object->base.status.navigable) {
+		gui_clear_add(focused_object);
+	} else if (keys.key3_up && !focused_object->base.status.navigable) {
+		gui_clear_sub(focused_object);
 	}
 }
 
@@ -177,16 +181,25 @@ int main() {
 		.shared = 0,
 		.border = 1
 	};
+	gui_properties_t spinbox_props = {
+		.alignment = gui_align_center,
+		.horiz_vert = gui_orientation_horizontal,
+		.padding = 1,
+		.shared = 0,
+		.border = 1
+	};
 
 	// GUI Objects
 	uint slider_value = 0;
-	gui_object_t group_elements[] = { 
-		gui_create_button(&graphic_ctx, 0, 0, 100, 12, &colors_list, common_nshared_props, "Button 1"),
-		gui_create_button(&graphic_ctx, 0, 0, 100, 12, &colors_list, common_nshared_props, "Button 2"),
-		gui_create_slider(&graphic_ctx, 0, 0, 100, 16, &colors_list, common_nshared_props, &slider_value),
-		gui_create_button(&graphic_ctx, 0, 0, 100, 12, &colors_list, common_nshared_props, "Button 3"),
-		gui_create_button(&graphic_ctx, 0, 0, 100, 12, &colors_list, common_nshared_props, "Button 4"),
+	uint spinbox_value = 0;
 
+	gui_object_t group_elements[] = { 
+		gui_create_button(&graphic_ctx,  0, 0, 100, 12, &colors_list, common_nshared_props, "Button 1"),
+		gui_create_button(&graphic_ctx,  0, 0, 100, 12, &colors_list, common_nshared_props, "Button 2"),
+		gui_create_slider(&graphic_ctx,  0, 0, 100, 16, &colors_list, common_nshared_props, &slider_value),
+		gui_create_button(&graphic_ctx,  0, 0, 100, 12, &colors_list, common_nshared_props, "Button 3"),
+		gui_create_button(&graphic_ctx,  0, 0, 100, 12, &colors_list, common_nshared_props, "Button 4"),
+		gui_create_spinbox(&graphic_ctx, 0, 0, 100, 12, &colors_list, spinbox_props, &spinbox_value)
 	};
 	gui_list_t group_list = initalizeGuiList(group_elements);
 	gui_object_t group = gui_create_group(&graphic_ctx, 0, 0,
@@ -196,7 +209,7 @@ int main() {
 
 	gui_status_t slider_status = { .activated = 1, .add = 1, .substract = 1 };
 	bool on_slider_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
-		if (!status.activated && !status.add && !status.substract) {
+		if (status.activated && !origin->status.activated) {
 			destination->base.status.navigable = !destination->base.status.navigable;
 		} else if (status.add && slider_value < GUI_BAR_100PERCENT) {
 			slider_value += 100;

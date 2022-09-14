@@ -4,13 +4,15 @@
 #include <stdio.h>
 
 #define GUI_BAR_WIDTH      6
+#define GUI_BUTTON_MIN     12
 
 // GUI Ids
-const char* gui_id_window = "window";
-const char* gui_id_button = "button";
-const char* gui_id_slider = "slider";
-const char* gui_id_label = "label";
-const char* gui_id_group = "group";
+const char* gui_id_window  = "window";
+const char* gui_id_button  = "button";
+const char* gui_id_slider  = "slider";
+const char* gui_id_label   = "label";
+const char* gui_id_group   = "group";
+const char* gui_id_spinbox = "spinbox";
 
 // GUI events
 const gui_status_t      gui_status_focused      = { .focused = 1 };
@@ -21,8 +23,6 @@ const gui_status_t      gui_status_data_changed = { .data_changed = 1 };
 const gui_status_t      gui_status_add          = { .add = 1 };  
 const gui_status_t      gui_status_substract    = { .substract = 1 };
 const gui_status_cast_t gui_status_consumable   = { .bits = {
-    .add = 1,
-    .substract = 1,
     .data_changed = 1
 }};
 const gui_status_cast_t gui_status_redrawable = { .bits = {
@@ -30,7 +30,9 @@ const gui_status_cast_t gui_status_redrawable = { .bits = {
     .focused = 1,
     .visible = 1,
     .enabled = 1,
-    .data_changed = 1
+    .data_changed = 1,
+    .add = 1,
+    .substract = 1
 }};
 
 // ---- Base object creation ----
@@ -155,11 +157,11 @@ void gui_draw_label(gui_base_t *base) {
     gui_base_t labelBase = *base;
     
     void printer(const char * fmt, ...) {
-        char buf[128];
+        char buff[128];
         va_list args;
         va_start(args, fmt);
-        vsnprintf(buf, 128, fmt, args);
-        labelBase.data = buf;
+        vsnprintf(buff, sizeof(buff), fmt, args);
+        labelBase.data = buff;
         gui_draw_text(&labelBase);
         va_end(args); 
     }
@@ -188,7 +190,7 @@ void gui_draw_group(gui_base_t *base) {
         sub_base->x = inc_pos_x;
         sub_base->y = inc_pos_y;
 
-        if (sub_base->y + sub_base->height >= base->y + base->height || sub_base->x + sub_base->width >= base->x + base->width) {
+        if (gui_object_overflow_group(sub_base, base)) {
             return;
         }
 
@@ -200,6 +202,60 @@ void gui_draw_group(gui_base_t *base) {
             inc_pos_y += sub_base->height + padding;
         }
     } 
+}
+
+bool gui_object_overflow_group(gui_base_t *object, gui_base_t *group) {
+    return object->y + object->height >= group->y + group->height || object->x + object->width >= group->x + group->width;
+}
+
+void gui_draw_spinbox(gui_base_t *base) {
+    gui_draw_window(base);
+    uint val = *((uint *)(base->data));
+    uint padding = base->properties.padding;
+
+    // General button preparation
+    gui_base_t button = *base;
+    gui_status_cast_t *button_status = (gui_status_cast_t *)&button.status;
+    button_status->word = 0;
+    button.status.visible = base->status.visible;
+    button.status.enabled = base->status.enabled;
+    button.width  = base->properties.horiz_vert ? GUI_BUTTON_MIN  : base->width - 2;
+    button.height = base->properties.horiz_vert ? base->height - 2 : GUI_BUTTON_MIN;
+    button.x = base->x + 1;
+    button.y = base->y + 1;
+    gui_base_t text = button;
+    text.status.focused = base->status.focused;
+
+    // Button substract preparation
+    button.status.activated = base->status.substract;
+    button.data = "-";
+    if (gui_object_overflow_group(&button, base)) {
+        return;
+    }
+    gui_draw_button(&button);
+
+    // Number display
+    text.x += base->properties.horiz_vert ? (padding + button.width) : 0;
+    text.y += base->properties.horiz_vert ? 0 : (padding + button.height);
+    text.width  = base->properties.horiz_vert ? base->width - (2 * (padding + 1 + button.width)) : base->width - 2;
+    text.height = base->properties.horiz_vert ? base->height - 2 : base->height - (2 * (padding + 1 + button.height));
+    if (gui_object_overflow_group(&text, base)) {
+        return;
+    }
+    char buff[20];
+    sprintf(buff,"%d", val);
+    text.data = buff;
+    gui_draw_text(&text);
+
+    //Button add preparation
+    button.x = base->properties.horiz_vert ? (text.x + padding + text.width) : text.x;
+    button.y = base->properties.horiz_vert ? text.y : (text.y + padding + text.height);
+    if (gui_object_overflow_group(&button, base)) {
+        return;
+    }
+    button.data = "+";
+    button.status.activated = base->status.add;
+    gui_draw_button(&button);
 }
 
 // -- GUI event and subscriber --
@@ -267,9 +323,12 @@ gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
     // Redraw events
 
     if (c_status_new != c_status_old && ((c_status_changed.word & gui_status_redrawable.word) != 0)) {
-        //Update only the redrawable events
-        c_status_old->word =  (c_status_old->word & ~gui_status_redrawable.word) | (c_status_new->word & gui_status_redrawable.word);
+        //Update only the redrawable events for drawing and restore
+        gui_status_cast_t original;
+        original.word =  c_status_old->word;
+        c_status_old->word = (c_status_old->word & ~gui_status_redrawable.word) | (c_status_new->word & gui_status_redrawable.word);
         gui_ref_draw(origin);
+        c_status_old->word = original.word;
     }
 
     //Check subscribers of the event
@@ -285,10 +344,17 @@ gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
             }
         }
     }
-    //Consumable events like Data updates have to be reset after
+
+    // After events publications, update current drawable status
+    if (c_status_new != c_status_old && ((c_status_changed.word & gui_status_redrawable.word) != 0)) {
+        //Update only the redrawable events
+        c_status_old->word = (c_status_old->word & ~gui_status_redrawable.word) | (c_status_new->word & gui_status_redrawable.word);
+    }
+
+    // Consumable events like Data updates have to be reset after
     c_status_old->word &=  ~gui_status_consumable.word;
 
-    //Check focus change
+    // Check focus change
     gui_object_t *next_focused = origin;
     if (status.go_next ^ status.go_previous) {
         if (status.go_next && (origin->next != NULL)) {
