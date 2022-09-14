@@ -83,6 +83,7 @@ void gui_get_start_position(gui_properties_t props, int ext_width, uint ext_heig
     *y = props.alignment == gui_align_center || props.alignment == gui_align_left_center || props.alignment == gui_align_right_center ? 
         height_space >> 1 :  props.alignment == gui_align_center_up || props.alignment == gui_align_left_up || props.alignment == gui_align_right_up  ?
         0 : height_space;
+    //TODO: correct Y on multiline
 }
 
 // ---- Object Draw methods ----
@@ -113,15 +114,24 @@ void gui_draw_border(gui_base_t *base) {
 }
 
 void gui_draw_text(gui_base_t *base) {
-    gui_draw_focus(base);
-    uint *colors = (uint *)(base->colors->elements);
-    uint color_text = base->status.enabled ? colors[3] : colors[2];
+    gui_base_t sub_base = *base;
+    if (base->properties.border) {
+        gui_draw_window(base);
+        sub_base.x += 1;
+        sub_base.y += 1;
+        sub_base.width  -= 2;
+        sub_base.height -= 2;
+    }
+    
+    gui_draw_focus(&sub_base);
+    uint *colors = (uint *)(sub_base.colors->elements);
+    uint color_text = sub_base.status.enabled ? colors[3] : colors[2];
 
-    graphic_ctx_t text_ctx = get_sub_graphic_ctx(base->ctx, base->x, base->y, base->width, base->height);
-    const char *text = (const char*) base->data; 
+    graphic_ctx_t text_ctx = get_sub_graphic_ctx(sub_base.ctx, sub_base.x, sub_base.y, sub_base.width, sub_base.height);
+    const char *text = (const char*) sub_base.data; 
     uint text_width = (strlen(text) * GRAPHICS_FONT_SIZE) - 1;
     uint x, y;
-    gui_get_start_position(base->properties, text_ctx.width, text_ctx.height, text_width, GRAPHICS_FONT_SIZE - 1, &x, &y);
+    gui_get_start_position(sub_base.properties, text_ctx.width, text_ctx.height, text_width, GRAPHICS_FONT_SIZE - 1, &x, &y);
     draw_text(&text_ctx, x, y, color_text, color_text, false, text);  
 }
 
@@ -132,6 +142,7 @@ void gui_draw_button(gui_base_t *base) {
     inner_base.y += 1;
     inner_base.width -= 2;
     inner_base.height -= 2;
+    inner_base.properties.border = 0;
     gui_draw_text(&inner_base);
 }
 
@@ -339,8 +350,12 @@ gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
         c_status_match.word = c_status_sub->word & c_status_changed.word;
 
         if (&origin->base == event->origin && c_status_match.word > 0) {
-            if (event->destination->status_handle(status, &origin->base, event->destination)) {
-                gui_ref_draw(event->destination);
+            gui_cb_on_status_t status_handle = event->destination->status_handle;
+            if (status_handle == NULL || status_handle(status, &origin->base, event->destination)) {
+                if (origin != event->destination) {
+                    gui_ref_draw(event->destination);
+                }
+                gui_event(event->destination->base.status, event->destination); //TODO use return status
             }
         }
     }

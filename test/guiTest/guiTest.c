@@ -192,7 +192,9 @@ int main() {
 	// GUI Objects
 	uint slider_value = 0;
 	uint spinbox_value = 0;
-
+	
+	gui_object_t window = gui_create_window(&graphic_ctx, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, &colors_list, common_nshared_props);
+	
 	gui_object_t group_elements[] = { 
 		gui_create_button(&graphic_ctx,  0, 0, 100, 12, &colors_list, common_nshared_props, "Button 1"),
 		gui_create_button(&graphic_ctx,  0, 0, 100, 12, &colors_list, common_nshared_props, "Button 2"),
@@ -201,13 +203,23 @@ int main() {
 		gui_create_button(&graphic_ctx,  0, 0, 100, 12, &colors_list, common_nshared_props, "Button 4"),
 		gui_create_spinbox(&graphic_ctx, 0, 0, 100, 12, &colors_list, spinbox_props, &spinbox_value)
 	};
+
 	gui_list_t group_list = initalizeGuiList(group_elements);
 	gui_object_t group = gui_create_group(&graphic_ctx, 0, 0,
 		gui_sum(&group_list, common_nshared_props, gui_coord_width), 
 		gui_sum(&group_list, common_nshared_props, gui_coord_height), 
 		&colors_list, common_nshared_props , &group_list);
 
-	gui_status_t slider_status = { .activated = 1, .add = 1, .substract = 1 };
+	void label_print(print_delegate_t printer) {
+		printer("This is an event based text:\nSlider = %d\nSpinbox = %d", slider_value, spinbox_value);
+	};
+
+	gui_object_t label = gui_create_label(&graphic_ctx, 
+		group.base.x + group.base.width,
+		group.base.y,
+		group.base.width * 3, group.base.height,  &colors_list, common_nshared_props, label_print);
+
+	gui_status_t data_status = { .activated = 1, .add = 1, .substract = 1, .data_changed = 1 };
 	bool on_slider_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
 		if (status.activated && !origin->status.activated) {
 			destination->base.status.navigable = !destination->base.status.navigable;
@@ -220,9 +232,27 @@ int main() {
 		return true;
 	}
 
-	gui_event_subscribe(slider_status, &group_elements[2].base, &group_elements[2], on_slider_event);
+	bool on_spinbox_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+		if (status.activated && !origin->status.activated) {
+			destination->base.status.navigable = !destination->base.status.navigable;
+		} else if (status.add && spinbox_value < 100) {
+			spinbox_value += 1;
+		} else if (status.substract && spinbox_value != 0) {
+			spinbox_value -= 1;
+		}
+		
+		return true;
+	}
 
+	//Event Subscriptions
+	gui_event_subscribe(data_status, &group_elements[2].base, &group_elements[2], on_slider_event);
+	gui_event_subscribe(data_status, &group_elements[5].base, &group_elements[5], on_spinbox_event);
+	gui_event_subscribe(data_status, &group_elements[2].base, &label, NULL); //Just trigger a redraw, no callback needed
+	gui_event_subscribe(data_status, &group_elements[5].base, &label, NULL); //Just trigger a redraw, no callback needed
+
+	gui_obj_draw(window);
 	gui_obj_draw(group);
+	gui_obj_draw(label);
 	focused_object = gui_focused(&group_elements[0]);
 
 	while (1)
