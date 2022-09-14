@@ -111,10 +111,18 @@ void on_keyboard_event(keyboard_status_t keys) {
 		focused_object = gui_activate(focused_object);
 	} else if (keys.key1_up) {
 		focused_object = gui_deactivate(focused_object);
-	} else if (keys.key2_up) {
-		focused_object = gui_next_focus(focused_object);
-	} else if (keys.key3_up) {
-		focused_object = gui_previous_focus(focused_object);
+	} else if (keys.key2_down) {
+		if (focused_object->base.status.navigable) {
+			focused_object = gui_next_focus(focused_object);
+		} else {
+			gui_update_add(focused_object);
+		}
+	} else if (keys.key3_down) {
+		if (focused_object->base.status.navigable) {
+			focused_object = gui_previous_focus(focused_object);
+		} else {
+			gui_update_sub(focused_object);
+		}
 	}
 }
 
@@ -159,6 +167,7 @@ int main() {
 
 	printf("Start rendering\n");
 
+	//GUI Props
 	uint colors[] = {color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green };
 	gui_list_t colors_list = initalizeGuiList(colors);
 	gui_properties_t common_nshared_props = {
@@ -168,19 +177,37 @@ int main() {
 		.shared = 0,
 		.border = 1
 	};
-	
+
+	// GUI Objects
+	uint slider_value = 0;
 	gui_object_t group_elements[] = { 
 		gui_create_button(&graphic_ctx, 0, 0, 100, 12, &colors_list, common_nshared_props, "Button 1"),
 		gui_create_button(&graphic_ctx, 0, 0, 100, 12, &colors_list, common_nshared_props, "Button 2"),
+		gui_create_slider(&graphic_ctx, 0, 0, 100, 16, &colors_list, common_nshared_props, &slider_value),
 		gui_create_button(&graphic_ctx, 0, 0, 100, 12, &colors_list, common_nshared_props, "Button 3"),
 		gui_create_button(&graphic_ctx, 0, 0, 100, 12, &colors_list, common_nshared_props, "Button 4"),
-		gui_create_button(&graphic_ctx, 0, 0, 100, 12, &colors_list, common_nshared_props, "Button 5"),
+
 	};
 	gui_list_t group_list = initalizeGuiList(group_elements);
-	gui_object_t group = gui_create_group(&graphic_ctx, 300, 100,
+	gui_object_t group = gui_create_group(&graphic_ctx, 0, 0,
 		gui_sum(&group_list, common_nshared_props, gui_coord_width), 
 		gui_sum(&group_list, common_nshared_props, gui_coord_height), 
 		&colors_list, common_nshared_props , &group_list);
+
+	gui_status_t slider_status = { .activated = 1, .add = 1, .substract = 1 };
+	bool on_slider_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+		if (!status.activated && !status.add && !status.substract) {
+			destination->base.status.navigable = !destination->base.status.navigable;
+		} else if (status.add && slider_value < GUI_BAR_100PERCENT) {
+			slider_value += 100;
+		} else if (status.substract && slider_value != 0) {
+			slider_value -= 100;
+		}
+		
+		return true;
+	}
+
+	gui_event_subscribe(slider_status, &group_elements[2].base, &group_elements[2], on_slider_event);
 
 	gui_obj_draw(group);
 	focused_object = gui_focused(&group_elements[0]);

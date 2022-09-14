@@ -52,11 +52,14 @@ typedef struct gui_status {
    uint16_t data_changed:1;
    uint16_t go_previous:1;
    uint16_t go_next:1;
+   uint16_t navigable:1;
+   uint16_t add:1;
+   uint16_t substract:1;
 } gui_status_t;
 
 typedef union gui_status_cast {
     gui_status_t  bits;
-    uint8_t       word;
+    uint16_t      word;
 } gui_status_cast_t;
 
 typedef struct gui_properties {
@@ -127,6 +130,8 @@ extern const gui_status_t gui_status_go_next;
 extern const gui_status_t gui_status_go_previous;
 extern const gui_status_t gui_status_activated;
 extern const gui_status_t gui_status_data_changed;
+extern const gui_status_t gui_status_add;
+extern const gui_status_t gui_status_substract;
 
 // Event triggers
 gui_status_t gui_status_update(gui_object_t *object, gui_status_t status, bool set_clear);
@@ -137,6 +142,8 @@ gui_status_t gui_status_update(gui_object_t *object, gui_status_t status, bool s
 #define gui_activate(object)       gui_event(gui_status_update(object, gui_status_activated,    gui_set),   object)
 #define gui_deactivate(object)     gui_event(gui_status_update(object, gui_status_activated,    gui_clear), object)
 #define gui_update_data(object)    gui_event(gui_status_update(object, gui_status_data_changed, gui_set),   object)
+#define gui_update_add(object)     gui_event(gui_status_update(object, gui_status_add,          gui_set),   object)
+#define gui_update_sub(object)     gui_event(gui_status_update(object, gui_status_substract,    gui_set),   object)
 
 // GUI Object creators
 gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint width, uint height, const char* id,

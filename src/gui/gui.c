@@ -13,11 +13,25 @@ const char* gui_id_label = "label";
 const char* gui_id_group = "group";
 
 // GUI events
-const gui_status_t gui_status_focused      = {.focused = 1};
-const gui_status_t gui_status_go_next      = {.go_next = 1};
-const gui_status_t gui_status_go_previous  = {.go_previous = 1};
-const gui_status_t gui_status_activated    = {.activated = 1};
-const gui_status_t gui_status_data_changed = {.data_changed = 1};
+const gui_status_t      gui_status_focused      = { .focused = 1 };
+const gui_status_t      gui_status_go_next      = { .go_next = 1 };
+const gui_status_t      gui_status_go_previous  = { .go_previous = 1 };
+const gui_status_t      gui_status_activated    = { .activated = 1 };
+const gui_status_t      gui_status_data_changed = { .data_changed = 1 };
+const gui_status_t      gui_status_add          = { .add = 1 };  
+const gui_status_t      gui_status_substract    = { .substract = 1 };
+const gui_status_cast_t gui_status_consumable   = { .bits = {
+    .add = 1,
+    .substract = 1,
+    .data_changed = 1
+}};
+const gui_status_cast_t gui_status_redrawable = { .bits = {
+    .activated = 1,
+    .focused = 1,
+    .visible = 1,
+    .enabled = 1,
+    .data_changed = 1
+}};
 
 // ---- Base object creation ----
 gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint width, uint height, const char* id, 
@@ -32,7 +46,8 @@ gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint wi
             .height = height,
             .colors = colors,
             .status = {
-                .enabled = 1
+                .enabled = 1,
+                .navigable = 1
             },
             .properties = props,
             .data = data
@@ -175,8 +190,10 @@ void gui_draw_group(gui_base_t *base) {
 
         if (sub_base->y + sub_base->height >= base->y + base->height || sub_base->x + sub_base->width >= base->x + base->width) {
             return;
-        } 
-        object->draw(sub_base);
+        }
+
+        gui_ref_draw(object);
+
         if (base->properties.horiz_vert) {
             inc_pos_x += sub_base->width + padding;
         } else {
@@ -234,14 +251,6 @@ bool gui_event_unsubscribe(gui_base_t *origin, gui_object_t *destination) {
     return false;
 }
 
-gui_status_cast_t status_redrawable = { .bits = {
-    .activated = 1,
-    .focused = 1,
-    .visible = 1,
-    .enabled = 1,
-    .data_changed = 1
-}};
-
 gui_status_t gui_status_update(gui_object_t *object, gui_status_t status, bool set_clear) {
     gui_status_cast_t *c_status_old = (gui_status_cast_t *) &(object->base.status);
     gui_status_cast_t *c_status_new = (gui_status_cast_t *) &status;
@@ -252,14 +261,15 @@ gui_status_t gui_status_update(gui_object_t *object, gui_status_t status, bool s
 gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
     //Update self
     gui_status_cast_t *c_status_new = (gui_status_cast_t *) &status;
-    gui_status_cast_t *c_status_old= (gui_status_cast_t *) &origin->base.status;
+    gui_status_cast_t *c_status_old = (gui_status_cast_t *) &origin->base.status;
     gui_status_cast_t c_status_changed;
     c_status_changed.word = c_status_new->word ^ c_status_old->word;
     // Redraw events
 
-    if (c_status_new != c_status_old && ((c_status_changed.word & status_redrawable.word) != 0)) {
-        *c_status_old = *c_status_new;
-        origin->draw(&origin->base);
+    if (c_status_new != c_status_old && ((c_status_changed.word & gui_status_redrawable.word) != 0)) {
+        //Update only the redrawable events
+        c_status_old->word =  (c_status_old->word & ~gui_status_redrawable.word) | (c_status_new->word & gui_status_redrawable.word);
+        gui_ref_draw(origin);
     }
 
     //Check subscribers of the event
@@ -270,11 +280,13 @@ gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
         c_status_match.word = c_status_sub->word & c_status_changed.word;
 
         if (&origin->base == event->origin && c_status_match.word > 0) {
-            event->destination->status_handle(status, &origin->base, event->destination); //TODO: use success return value
+            if (event->destination->status_handle(status, &origin->base, event->destination)) {
+                gui_ref_draw(event->destination);
+            }
         }
     }
     //Consumable events like Data updates have to be reset after
-    c_status_old->bits.data_changed = 0;
+    c_status_old->word &=  ~gui_status_consumable.word;
 
     //Check focus change
     gui_object_t *next_focused = origin;
