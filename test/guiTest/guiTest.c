@@ -215,7 +215,7 @@ int main() {
 	};
 
 	gui_object_t label = gui_create_label(&graphic_ctx, 
-		group.base.x + group.base.width,
+		group.base.x + group.base.width + 1,
 		group.base.y,
 		group.base.width * 3, group.base.height,  &colors_list, common_nshared_props, label_print);
 

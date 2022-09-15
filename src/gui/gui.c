@@ -88,13 +88,12 @@ gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint wi
 
 // ----  Utility Functions  ----
 void gui_get_start_position(gui_properties_t props, int ext_width, uint ext_height, uint in_width, uint in_height, uint *x, uint *y) {
-    uint width_space = ext_width > in_width ? ext_width - in_width : 0;
-    uint height_space = ext_height > in_height ? ext_height - in_height: 0;
+    volatile uint width_space = ext_width > in_width ? ext_width - in_width : 0;
+    volatile uint height_space = ext_height > in_height ? ext_height - in_height: 0;
     *x = props.alignment <= gui_align_center_down ? (width_space >> 1) : (props.alignment <= gui_align_left_down ? 0 : width_space);
     *y = props.alignment == gui_align_center || props.alignment == gui_align_left_center || props.alignment == gui_align_right_center ? 
         height_space >> 1 :  props.alignment == gui_align_center_up || props.alignment == gui_align_left_up || props.alignment == gui_align_right_up  ?
         0 : height_space;
-    //TODO: correct Y on multiline
 }
 
 // ---- Object Draw methods ----
@@ -139,10 +138,26 @@ void gui_draw_text(gui_base_t *base) {
     uint color_text = sub_base.status.enabled ? colors[3] : colors[2];
 
     graphic_ctx_t text_ctx = get_sub_graphic_ctx(sub_base.ctx, sub_base.x, sub_base.y, sub_base.width, sub_base.height);
-    const char *text = (const char*) sub_base.data; 
-    uint text_width = (strlen(text) * GRAPHICS_FONT_SIZE) - 1;
+    const char *text = (const char*) sub_base.data;
+    const char *scroll_text = text;
+    uint8_t text_lines = 0;
+    uint8_t text_max_per_line = 0;
+    uint16_t curr_chars;
+    const char *found;
+    while ((found = strchr(scroll_text, '\n')) != NULL) {
+        text_lines++;
+        curr_chars = found - scroll_text;
+        text_max_per_line = curr_chars > text_max_per_line ? curr_chars : text_max_per_line;
+        scroll_text = found + 1;
+    }
+    curr_chars = strlen(scroll_text);
+    if (curr_chars > 0) { text_lines++; }
+    text_max_per_line = curr_chars > text_max_per_line ? curr_chars : text_max_per_line;
+
+    uint text_width  = (text_max_per_line * GRAPHICS_FONT_SIZE) - 1;
+    uint text_height = text_lines * GRAPHICS_FONT_SIZE - 1;
     uint x, y;
-    gui_get_start_position(sub_base.properties, text_ctx.width, text_ctx.height, text_width, GRAPHICS_FONT_SIZE - 1, &x, &y);
+    gui_get_start_position(sub_base.properties, text_ctx.width, text_ctx.height, text_width, text_height, &x, &y);
     draw_text(&text_ctx, x, y, color_text, color_text, false, text);  
 }
 
@@ -266,6 +281,7 @@ void gui_draw_spinbox(gui_base_t *base) {
     }
     char buff[20];
     sprintf(buff,"%d", val);
+    text.properties.border = 0;
     text.data = buff;
     gui_draw_text(&text);
 
