@@ -58,13 +58,23 @@ static graphic_ctx_t graphic_ctx = {
 	.parent = NULL
 };
 
-gui_object_t window;
-gui_object_t button;
-gui_object_t slider;
-gui_object_t label;
-gui_object_t group;
-gui_object_t group2;
-gui_object_t repeatedButton;
+#if DVI_SYMBOLS_PER_WORD == 2
+	uint color_black      = 0b0000000000000000;
+	uint color_dark_gray  = 0b0001100011100011;
+	uint color_mid_gray   = 0b0000000000011111;
+	uint color_light_gray = 0b1111100000000000;
+	uint color_green      = 0b0000011111100000;
+	uint color_white      = 0b1111111111111111;
+#else
+	uint color_black =      0b00000000;
+	uint color_dark_gray = 	0b01001001;
+	uint color_mid_gray =   0b10110110;
+	uint color_light_gray = 0b11011011;
+	uint color_green =      0b00011100;
+	uint color_white =      0b11111111;
+#endif
+
+gui_object_t *focused_object = NULL;
 
 // --------- Global register end --------- 
 
@@ -94,11 +104,29 @@ static inline void core1_scanline_callback() {
 }
 
 void on_keyboard_event(keyboard_status_t keys) {
-    printf("Keyboard event received \n");
+	if (focused_object == NULL) {
+		return;
+	}
 	if (keys.key1_down) {
-		gui_activate(&button);
+		focused_object = gui_activate(focused_object);
 	} else if (keys.key1_up) {
-		gui_deactivate(&button);
+		focused_object = gui_deactivate(focused_object);
+	} else if (keys.key2_down) {
+		if (focused_object->base.status.navigable) {
+			focused_object = gui_next_focus(focused_object);
+		} else {
+			gui_set_add(focused_object);
+		}
+	} else if (keys.key3_down) {
+		if (focused_object->base.status.navigable) {
+			focused_object = gui_previous_focus(focused_object);
+		} else {
+			gui_set_sub(focused_object);
+		}
+	} else if (keys.key2_up && !focused_object->base.status.navigable) {
+		gui_clear_add(focused_object);
+	} else if (keys.key3_up && !focused_object->base.status.navigable) {
+		gui_clear_sub(focused_object);
 	}
 }
 
@@ -142,30 +170,18 @@ int main() {
 	printf("%s version - GUI Test %s started!\n", PROJECT_NAME, PROJECT_VER);
 
 	printf("Start rendering\n");
-	#if DVI_SYMBOLS_PER_WORD == 2
-	uint color_black      = 0b0000000000000000;
-	uint color_dark_gray  = 0b0001100011100011;
-	uint color_mid_gray   = 0b0000000000011111;
-	uint color_light_gray = 0b1111100000000000;
-	uint color_green      = 0b0000011111100000;
-	uint color_white      = 0b1111111111111111;
-	#else
-	uint color_black =      0b00000000;
-	uint color_dark_gray = 	0b01001001;
-	uint color_mid_gray =   0b10110110;
-	uint color_light_gray = 0b11011011;
-	uint color_green =      0b00011100;
-	uint color_white =      0b11111111;
-	#endif
+
+	//GUI Props
 	uint colors[] = {color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green };
 	gui_list_t colors_list = initalizeGuiList(colors);
-	gui_properties_t common_props = {
+	gui_properties_t common_nshared_props = {
 		.alignment = gui_align_center,
 		.horiz_vert = gui_orientation_vertical,
 		.padding = 1,
-		.shared = 1
+		.shared = 0,
+		.border = 1
 	};
-	gui_properties_t common_nshared_props = {
+	gui_properties_t spinbox_props = {
 		.alignment = gui_align_center,
 		.horiz_vert = gui_orientation_horizontal,
 		.padding = 1,
@@ -173,72 +189,77 @@ int main() {
 		.border = 1
 	};
 
-	//Draw a window
-	window = gui_create_window(&graphic_ctx, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, &colors_list, common_props);
-	window.draw(&window.base);
-
-	button = gui_create_button(&graphic_ctx, 32, 32, 100, 12, &colors_list, common_props, "hello world");
-	button.draw(&button.base);
-
-	uint value = 0;
-	slider = gui_create_slider(&graphic_ctx, 32, 64, 200, 16, &colors_list, common_props, &value);
-	slider.draw(&slider.base);
+	// GUI Objects
+	uint slider_value = 0;
+	uint spinbox_value = 0;
 	
-	void test_print(print_delegate_t printer) {
-		printer("<%d>", value);
+	gui_object_t window = gui_create_window(&graphic_ctx, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, &colors_list, common_nshared_props);
+	
+	gui_object_t group_elements[] = { 
+		gui_create_button(&graphic_ctx,  0, 0, 100, 12, &colors_list, common_nshared_props, "Button 1"),
+		gui_create_button(&graphic_ctx,  0, 0, 100, 12, &colors_list, common_nshared_props, "Button 2"),
+		gui_create_slider(&graphic_ctx,  0, 0, 100, 16, &colors_list, common_nshared_props, &slider_value),
+		gui_create_button(&graphic_ctx,  0, 0, 100, 12, &colors_list, common_nshared_props, "Button 3"),
+		gui_create_button(&graphic_ctx,  0, 0, 100, 12, &colors_list, common_nshared_props, "Button 4"),
+		gui_create_spinbox(&graphic_ctx, 0, 0, 100, 12, &colors_list, spinbox_props, &spinbox_value)
 	};
 
-	label = gui_create_label(&graphic_ctx, 32, 100, 100, 16,  &colors_list, common_props, test_print);
-	
-	gui_status_t label_status_sub = {.data_changed = 1};
-	void update_label(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
-		//just go blind with the test and refresh the label
-		destination->draw(&destination->base);
-	}
-	
-	gui_event_subscribe(label_status_sub, &slider.base, &label, update_label);
-
-	repeatedButton = gui_create_button(&graphic_ctx, 0, 0, 100, 12, &colors_list, common_props, "repeat me");
-	gui_object_t *group_elements[] = { &button, &repeatedButton, &label, &repeatedButton, &repeatedButton };
 	gui_list_t group_list = initalizeGuiList(group_elements);
+	gui_object_t group = gui_create_group(&graphic_ctx, 0, 0,
+		gui_sum(&group_list, common_nshared_props, gui_coord_width), 
+		gui_sum(&group_list, common_nshared_props, gui_coord_height), 
+		&colors_list, common_nshared_props , &group_list);
 
-	group = gui_create_group(&graphic_ctx, 300, 10, 300, 220, &colors_list, common_props , &group_list);
-	group.draw(&group.base);
-
-	uint spinBoxValue = 100;
-	void spinbox_print(print_delegate_t printer) {
-		printer("%d", spinBoxValue);
+	void label_print(print_delegate_t printer) {
+		printer("This is an event based text:\nSlider = %d\nSpinbox = %d", slider_value, spinbox_value);
 	};
-	gui_object_t group_elements2[] = { 
-		gui_create_button(&graphic_ctx, 0, 0, 16, 12, &colors_list, common_props, "<"),
-		gui_create_label(&graphic_ctx, 0, 0,  32, 12, &colors_list, common_props, spinbox_print),
-		gui_create_button(&graphic_ctx, 0, 0, 16, 12, &colors_list, common_props, ">"),
-		};
-	gui_list_t group_list2 = initalizeGuiList(group_elements2);
-	group2 = gui_create_group(&graphic_ctx, 300, 100,
-		gui_sum(&group_list2, common_nshared_props, gui_coord_width), 
-		gui_sum(&group_list2, common_nshared_props, gui_coord_height), 
-		&colors_list, common_nshared_props , &group_list2);
-	group2.draw(&group2.base);
 
+	gui_object_t label = gui_create_label(&graphic_ctx, 
+		group.base.x + group.base.width + 1,
+		group.base.y,
+		group.base.width * 3, group.base.height,  &colors_list, common_nshared_props, label_print);
 
+	gui_status_t buttons_status = { .activated = 1, .add = 1, .substract = 1 };
+	bool on_slider_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+		if (status.activated && !origin->status.activated) {
+			destination->base.status.navigable = !destination->base.status.navigable;
+		} else if (status.add && slider_value < GUI_BAR_100PERCENT) {
+			slider_value += 100;
+		} else if (status.substract && slider_value != 0) {
+			slider_value -= 100;
+		}
+		destination->base.status.data_changed = 1;
+		
+		return true;
+	}
 
+	bool on_spinbox_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+		if (status.activated && !origin->status.activated) {
+			destination->base.status.navigable = !destination->base.status.navigable;
+		} else if (status.add && spinbox_value < 100) {
+			spinbox_value += 1;
+		} else if (status.substract && spinbox_value != 0) {
+			spinbox_value -= 1;
+		}
+		destination->base.status.data_changed = 1;
+		
+		return true;
+	}
 
-	bool upDown = true;
+	//Event Subscriptions
+	gui_status_t data_status = { .data_changed = 1 };
+	gui_event_subscribe(buttons_status, &group_elements[2].base, &group_elements[2], on_slider_event);
+	gui_event_subscribe(buttons_status, &group_elements[5].base, &group_elements[5], on_spinbox_event);
+	gui_event_subscribe(data_status, &group_elements[2].base, &label, NULL); //Just trigger a redraw, no callback needed
+	gui_event_subscribe(data_status, &group_elements[5].base, &label, NULL); //Just trigger a redraw, no callback needed
+
+	gui_obj_draw(window);
+	gui_obj_draw(group);
+	gui_obj_draw(label);
+	focused_object = gui_focused(&group_elements[0]);
+
 	while (1)
 	{
-		if (button.base.status.activated == 0) {
-			if (upDown) {
-				value += 200;
-			} else {
-				value -= 200;
-			}
-			if (value >= GUI_BAR_100PERCENT) {
-				value = upDown ? GUI_BAR_100PERCENT : 0;
-				upDown = !upDown;
-			}
-			gui_update_data(&slider);
-		}
 		sleep_ms(50);
 	}
 	__builtin_unreachable();
