@@ -2,7 +2,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+
+#ifdef FONT_8X8
 #include "font_8x8.h"
+#elif  FONT_C64_8X8
+#include "font_C64_8x8.h"
+#endif
 
 graphic_ctx_t get_sub_graphic_ctx(const graphic_ctx_t *parent, uint x, uint y, uint width, uint height) {
     graphic_ctx_t ctx = {
