@@ -55,22 +55,28 @@ int security_str_2_hexa(const char *in, uint8_t *out, uint8_t size) {
 int security_key_is_valid(const char *key, int token) {
     static int last_token = 0;
     static uint8_t digest[SHA1HashSize] = {0};
+    static const char *last_key = NULL;
 
     if (token == last_token || token > 0) {
         return 1;
     }
 
-    if (digest[0] != key[0]) {
+    if (key == NULL) {
+        return 2;
+    }
+
+    if (last_key != key) {
         uint8_t message[SECURITY_MESSAGE_SIZE+ 1];
         SHA1Context sha;
         SHA1Reset(&sha);
         sprintf((char *)message, "%s%s", SECURITY_SALT, security_get_uid());
         SHA1Input(&sha, message, SECURITY_MESSAGE_SIZE);
         SHA1Result(&sha, digest);
+        last_key = key;
     }
 
     if (strncmp(key, (char *)digest, SHA1HashSize) != 0) {
-        return 2;
+        return 3;
     }
 
     last_token = token;

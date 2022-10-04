@@ -73,6 +73,9 @@ int main() {
         res = security_key_is_valid(bad_key, token);
         printf("The bad  security key (%s) is %s\n", bad_key_str, res > 0 ? "invalid" : "valid");
 
+        res = security_key_is_valid(NULL, token);
+        printf("The NULL security key (%s) is %s\n", bad_key_str, res > 0 ? "invalid" : "valid");
+
         printf("The stored firmware security signing is %s @ %x\n", security_get_signing_str(), security_get_signing());      
 
         sleep_ms(2000);

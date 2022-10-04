@@ -182,6 +182,7 @@ int main() {
 	#endif
 
 	// Validate license prior starting second core
+	command_storage_initialize();
 	command_validate_license();
 
 	// Configure scan video properties
