@@ -109,7 +109,7 @@ if __name__ == "__main__":
 	parser.add_argument("input", help="Input file name")
 	parser.add_argument("output", help="Output file name")
 	parser.add_argument("--tilesize", "-t", help="Tile size (pixels), default 8",
-		default="8", choices=[str(2 ** i) for i in range(3, 11)])
+		default="8", choices=['8', '16', '32', '64', '128', '256', '512', '768', '1024'])
 	parser.add_argument("--single", "-s", action="store_true",
 		help="The input consists of a single image of arbitrary width/height, rather than a tileset")
 	parser.add_argument("--format", "-f", help="Output pixel format, default argb1555",

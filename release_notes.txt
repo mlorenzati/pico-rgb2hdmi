@@ -2,11 +2,27 @@ Release Notes:
 pico rgb2hdmi
 
 An rpi pico microprocessed rgb 2 hdmi plus rgb 2 usb on the fly converter
+
+
+-------------------------------------------------------------------------
+Date: 2022/10/04
+Version: 0.3.2
+- Completed UI Python App with autodetect, move screen buttons, capture
+  and device identification
+- GUI lib(not integrated to device)
+  buttons, sliders, labels, spinbox and groups (shared and not shared)
+  event management and propagation
+  focus management
+- Tiles and fonts tool
+- Beta HW consolidation support
+- Security: license validation fixes
+
 -------------------------------------------------------------------------
 Date: 2022/08/09
 Version: 0.3.1
 - Image capture supports, 8 and 16 bits modes
 - Added mode command to report current resolution and color density
+
 -------------------------------------------------------------------------
 Date: 2022/08/08
 Version: 0.3.0

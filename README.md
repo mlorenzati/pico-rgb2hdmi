@@ -26,6 +26,10 @@ python3 csv2png.py image.csv
 ```
 This generates as output image.png
 
+## Using packtiles to generate include headers from images
+
+./packtiles -s -t 768 -f r1 char_c64_lineal.png font_c64.h
+
 # Build
 ```
 mkdir build
