@@ -1,6 +1,12 @@
 #include "storage.h"
 
 #include "pico/stdlib.h"
+
+#ifdef STORAGE_USE_MULTICORE
+    #include "pico/multicore.h"
+    #include "hardware/watchdog.h"
+#endif 
+
 #include "hardware/flash.h"
 #include "hardware/sync.h"
 #include <string.h>
@@ -59,9 +65,7 @@ int storage_initialize(const void *initial_settings, const void **updated_settin
      // First byte is the canary, if unitialized requires to be flashed
     if (canary != 0 || force) {
         // Flash data
-        storage_update(initial_settings);
-
-        return -1;
+        return storage_update(initial_settings) == 0 ? -1 : 2;
     }
 
     return 0;
@@ -70,10 +74,30 @@ int storage_initialize(const void *initial_settings, const void **updated_settin
 int storage_update(const void *settings) {
     // Erase full range, disable IRQs to avoid XIP errors
     uint32_t status = save_and_disable_interrupts();
+
+#ifdef STORAGE_USE_MULTICORE
+   // Request other core to pause
+    if (!multicore_lockout_start_timeout_us(STORAGE_CORE_LOCKOUT_TIMEOUT)) {
+        //If it fails, reboot
+        watchdog_reboot(0, SRAM_END, 10);
+        return 1;
+    }
+#endif
+ 
     flash_range_erase(global_storage_offset, global_storage_erase_size);
    
     // Update pages
     storage_flash(global_storage_offset, global_storage_write_size, settings);
+
+#ifdef STORAGE_USE_MULTICORE
+    // Request other core to resume
+    if (!multicore_lockout_end_timeout_us(STORAGE_CORE_LOCKOUT_TIMEOUT)) {
+        //If it fails, reboot
+        watchdog_reboot(0, SRAM_END, 10);
+        return 2;
+    }
+#endif
+ 
     restore_interrupts(status);
     return 0;
 }

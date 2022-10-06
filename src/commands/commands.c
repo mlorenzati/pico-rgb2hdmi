@@ -9,9 +9,16 @@
 #include "security.h"
 #include "graphics.h"
 #include "version.h"
+#include "hardware/watchdog.h"
 
 #define COMMAND_VIDEO_OVERLAY_WIDTH 	-148
 #define COMMAND_VIDEO_OVERLAY_HEIGHT 	-100
+
+#ifdef TEST_MODE
+#define TEST_MODE_STR	"\nTest Mode!!"
+#else
+#define TEST_MODE_STR	""
+#endif
 
 int command_info_afe_error;
 int command_info_scanner_error;
@@ -83,15 +90,22 @@ void command_prepare_graphics() {
 	overlay_ctx = get_sub_graphic_ctx(&graphic_ctx, video_overlay_get_startx(), video_overlay_get_starty(), video_overlay.width, video_overlay.height);
 }
 
+void command_reboot() {
+	printf("Rebooting\n");
+	watchdog_reboot(0, SRAM_END, 10);
+}
+
 void command_show_info(bool value) {
 	video_overlay_enable(value);
 	if (value) {
 		fill_rect(&overlay_ctx,  0, 0, overlay_ctx.width, overlay_ctx.height, color_white);
 		fill_rect(&overlay_ctx,  2, 2, overlay_ctx.width - 5, overlay_ctx.height - 5, color_gray);
 		if (command_info_afe_error > 0 || command_info_scanner_error > 0) {
-			draw_textf(&overlay_ctx, 2, 2, color_dark, color_dark, true, "AFE error:%d\nScan error:%d\nD:%s\nmlorenzati@gmail\nVer:%s", command_info_afe_error, command_info_scanner_error,  security_get_uid(), PROJECT_VER);
+			draw_textf(&overlay_ctx, 2, 2, color_dark, color_dark, true, 
+				"AFE error:%d\nScan error:%d\nD:%s\nmlorenzati@gmail\nVer:%s%s", command_info_afe_error, command_info_scanner_error,  security_get_uid(), PROJECT_VER, TEST_MODE_STR);
 		} else {
-			draw_textf(&overlay_ctx, 2, 2, color_dark, color_dark, true, "LorenTek RGB2HDMI\nLicense is %s\nD:%s\nmlorenzati@gmail\nVer:%s", command_license_is_valid ? "valid" : "invalid", security_get_uid(), PROJECT_VER);
+			draw_textf(&overlay_ctx, 2, 2, color_dark, color_dark, true, 
+				"LorenTek RGB2HDMI\nLicense is %s\nD:%s\nmlorenzati@gmail\nVer:%s%s", command_license_is_valid ? "valid" : "invalid", security_get_uid(), PROJECT_VER, TEST_MODE_STR);
 		}
 		fill_rect(&overlay_ctx, 41, 50, 64, 13, color_light_blue);
 		fill_rect(&overlay_ctx, 41, 64, 64, 14, color_white);
@@ -156,16 +170,36 @@ int command_on_receive(int option, const void *data, bool convert) {
 			case 'I':
                 printf("Device is: %s\n", security_get_uid());
 				break;
-			case 'k':
+#ifdef TEST_MODE
+			case 'k': {
 				printf("Storing key: %s\n", (const char *)data);
-			// 	security_str_2_hexa(strValue, serial_key, 40);
-			// 	storage_update(serial_key);
+				int len = strlen(data);
+				if (len != (SECURITY_SHA_SIZE * 2)) {
+					printf("Key error received: %d chars, requires %d\n",len, SECURITY_SHA_SIZE * 2);
+					return 0;
+				}
+				uint8_t serial_key[SECURITY_SHA_SIZE];
+				security_str_2_hexa(data, serial_key, 40);
+				storage_update(serial_key);
+				command_reboot();
+				}
 			    break;
+			case 'K': {
+				char key_str[41];
+				security_hexa_2_str(security_key_in_flash, key_str, SECURITY_SHA_SIZE);
+				printf("Stored key is: %s\n", key_str);
+				}
+			break;
+#endif
 			case 'v':
                 printf("%s - Integration Test - version %s\n", PROJECT_NAME, PROJECT_VER);
 				break;
 			case 'm':
                 printf("%s %dx%d@%sbppx\n", PROJECT_NAME, graphic_ctx.width, graphic_ctx.height, graphic_ctx.bppx == rgb_8 ? "8" : "16");
+				break;
+			case 'R':
+				printf("Software reboot requested\n");
+				command_reboot();
 				break;
             default:  return 1;
     }

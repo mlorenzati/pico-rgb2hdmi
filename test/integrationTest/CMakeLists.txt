@@ -9,6 +9,7 @@ if (TARGET tinyusb_device)
     target_compile_definitions(integrationTest PRIVATE
         DVI_VERTICAL_REPEAT=2
         DVI_SYMBOLS_PER_WORD=1
+        STORAGE_USE_MULTICORE
     )
 
     target_link_libraries(integrationTest PRIVATE

@@ -9,6 +9,7 @@
 #define SECURITY_SALT_SIZE      8
 #define SECURITY_UID_SIZE       2*PICO_UNIQUE_BOARD_ID_SIZE_BYTES
 #define SECURITY_MESSAGE_SIZE   SECURITY_SALT_SIZE + SECURITY_UID_SIZE
+#define SECURITY_SHA_SIZE       20
 
 const char*    security_get_uid();
 int            security_key_is_valid(const char *key, int token);

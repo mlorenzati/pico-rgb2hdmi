@@ -62,20 +62,25 @@ cmd_parser_option_t options[] =
     {"up",      TRUE,  NULL,  'u'},
     {"down",    TRUE,  NULL,  'd'},
     {"left",    TRUE,  NULL,  'l'},
-	{"mode",    FALSE,  NULL, 'm'},
+	{"mode",    FALSE, NULL,  'm'},
 	{"right",   TRUE,  NULL,  'r'},
 	{"info",    TRUE,  NULL,  'i'},
 	{"capture", FALSE, NULL,  'c'},
 	{"id",      FALSE, NULL,  'I'},
 	{"version", FALSE, NULL,  'v'},
-	{"key",  	TRUE, NULL,   'k'},
-    {NULL,      TRUE, NULL,  0 }
+#ifdef TEST_MODE
+	{"keyset",  TRUE,  NULL,  'k'},
+	{"keyget",  FALSE, NULL,  'K'},
+#endif
+	{"reboot",  FALSE, NULL,  'R'},
+    {NULL,      TRUE, NULL,    0 }
 };
 // ----------- Global register end ----------- 
 
 // *********** IRQ API CALL END   ************
 // ----------- DVI API CALL START ------------ 
 void __not_in_flash_func(core1_main)() {
+	multicore_lockout_victim_init();
 	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
 	dvi_start(&dvi0);
 	#if DVI_SYMBOLS_PER_WORD == 2

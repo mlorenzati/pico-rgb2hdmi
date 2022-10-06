@@ -12,4 +12,5 @@ void command_show_info(bool value);
 void command_prepare_graphics();
 bool command_is_license_valid();
 void command_fill_blank();
+void command_reboot();
 #endif

@@ -9,7 +9,12 @@ configure_file(config/version.h.in  src/version.h)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(RBG2HDMI_HASH_SALT tY6!U3@z)
+set(TEST_MODE false)
+
 add_compile_definitions(FONT_C64_8X8)
+if (TEST_MODE)
+    add_compile_definitions(TEST_MODE)
+endif()
 
 # Initialize the Pico SDK
 pico_sdk_init()

@@ -38,13 +38,13 @@ int main() {
     char key_str[41];
     char bad_key_str[41];
     
-    security_hexa_2_str(key, key_str, 20);
-    security_hexa_2_str(bad_key, bad_key_str, 20);
+    security_hexa_2_str(key, key_str, SECURITY_SHA_SIZE);
+    security_hexa_2_str(bad_key, bad_key_str, SECURITY_SHA_SIZE);
 
     const char *hexa_test_str = "0123456789ABCDEF";
     uint8_t hexa_test[8];
 
-    int res = storage_initialize(key, &security_key_in_flash, 20, true);
+    int res = storage_initialize(key, &security_key_in_flash, SECURITY_SHA_SIZE, true);
     if (res > 0) {
         printf("storage_initialize failed\n");
     }
