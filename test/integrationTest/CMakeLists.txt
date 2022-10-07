@@ -18,6 +18,7 @@ if (TARGET tinyusb_device)
         pico_util
         libdvi
         rgbScan
+        autodetection
         overlay
         keyboard
         system

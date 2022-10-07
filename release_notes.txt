@@ -16,6 +16,8 @@ Version: 0.3.2
 - Tiles and fonts tool
 - Beta HW consolidation support
 - Security: license validation fixes
+- Storage: Usage of storage with a subsequent reboot
+- Commands: reboot
 
 -------------------------------------------------------------------------
 Date: 2022/08/09

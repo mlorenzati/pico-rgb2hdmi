@@ -18,7 +18,7 @@
 #include "videoAdjust.h"
 #include "overlay.h"
 #include "graphics.h"
-
+#include "autodetection.h"
 #include "keyboard.h"
 #include "cmdParser.h"
 #include "commands.h"
@@ -71,6 +71,7 @@ cmd_parser_option_t options[] =
 #ifdef TEST_MODE
 	{"keyset",  TRUE,  NULL,  'k'},
 	{"keyget",  FALSE, NULL,  'K'},
+	{"bg",      FALSE, NULL,  'b'},
 #endif
 	{"reboot",  FALSE, NULL,  'R'},
     {NULL,      TRUE, NULL,    0 }
@@ -242,7 +243,7 @@ int main() {
     gpio_set_dir(LED_PIN, GPIO_OUT);
 	if (command_info_afe_error == 0) {
 		command_info_scanner_error = rgbScannerSetup(
-			RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, GET_VIDEO_PROPS().vertical_front_porch, GET_VIDEO_PROPS().height, scanLineTriggered);
+			RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, GET_VIDEO_PROPS().vertical_front_porch, GET_VIDEO_PROPS().height, scanLineTriggered, detectionLineTriggered);
 		if (command_info_scanner_error > 0) {
 			printf("rgbScannerSetup failed with code %d\n", command_info_scanner_error);
 		}

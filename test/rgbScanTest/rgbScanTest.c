@@ -31,7 +31,7 @@ int main() {
     gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
     int error;
-    if (error = rgbScannerSetup(RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, frontPorch, height, &scanLineTriggered) > 0) {
+    if (error = rgbScannerSetup(RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, frontPorch, height, &scanLineTriggered, NULL) > 0) {
         printf("rgbScannerSetup failed with code %d\n", error);
     }
 

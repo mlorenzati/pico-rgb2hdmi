@@ -39,6 +39,7 @@
     #define AFE_PGA_GAIN_RGB  60
 	#define AFE_RLC_DAC_NEG   1
 	#define AFE_OFFSET_DAC    0
+	//#define AFE_OFFSET_DAC    250
 
 	static const wm8213_afe_config_t afec_cfg = {
 		.spi = spi0,
@@ -90,6 +91,7 @@
 			.offset_dac = {
 				.red = AFE_OFFSET_DAC,
 				.green = AFE_OFFSET_DAC,
+				//.green = (AFE_OFFSET_DAC * 15 / 100) ,
 				.blue = AFE_OFFSET_DAC
 			},
 			.pga_gain = {

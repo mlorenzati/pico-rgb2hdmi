@@ -8,7 +8,7 @@
 
 typedef void (*scanlineCallback)(unsigned int render_line_number);
 
-int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height, scanlineCallback callback);
+int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height, scanlineCallback videoCallback, scanlineCallback detectCallback);
 unsigned long rgbScannerGetVsyncNanoSec();
 unsigned int rgbScannerGetHsyncNanoSec();
 void         rgbScannerEnable(bool value);

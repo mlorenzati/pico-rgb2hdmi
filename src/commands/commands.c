@@ -9,6 +9,7 @@
 #include "security.h"
 #include "graphics.h"
 #include "version.h"
+#include "autodetection.h"
 #include "hardware/watchdog.h"
 
 #define COMMAND_VIDEO_OVERLAY_WIDTH 	-148
@@ -188,6 +189,12 @@ int command_on_receive(int option, const void *data, bool convert) {
 				char key_str[41];
 				security_hexa_2_str(security_key_in_flash, key_str, SECURITY_SHA_SIZE);
 				printf("Stored key is: %s\n", key_str);
+				}
+			break;
+			case 'b':
+				printf("Initial video line: %d, averages: ", getInitialVideoLine());
+				for(int cnt=0; cnt < DETECTION_LINES_SIZE; cnt++) {
+					printf(COMMAND_PRINTF_WORD, detection_average[cnt], (cnt < DETECTION_LINES_SIZE-1) ? ",": "\n");
 				}
 			break;
 #endif

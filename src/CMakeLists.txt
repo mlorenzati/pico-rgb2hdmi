@@ -9,5 +9,6 @@ add_subdirectory(gui)
 add_subdirectory(cmdParser)
 add_subdirectory(system)
 add_subdirectory(commands)
+add_subdirectory(autodetection)
 add_subdirectory(app)
 
