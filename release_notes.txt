@@ -16,6 +16,9 @@ Version: 0.3.2
 - Tiles and fonts tool
 - Beta HW consolidation support
 - Security: license validation fixes
+- Storage: Usage of storage with a subsequent reboot
+- Commands: reboot
+- Added purchase mode fw with VYSNC/HSYNC info at the bottom of the screen
 
 -------------------------------------------------------------------------
 Date: 2022/08/09

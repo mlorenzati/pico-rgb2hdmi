@@ -7,7 +7,6 @@
 #include "overlay.h"
 #include "storage.h"
 #include "security.h"
-#include "graphics.h"
 #include "version.h"
 #include "hardware/watchdog.h"
 
@@ -49,7 +48,7 @@ const void *security_key_in_flash;
 	#define COMMAND_PRINTF_WORD	"%02X%s"
 #endif
 
-static graphic_ctx_t graphic_ctx = {
+graphic_ctx_t cmd_graphic_ctx = {
 	.bppx = COMMANDS_OVERLAY_BPPX,
 	.parent = NULL
 };
@@ -63,7 +62,7 @@ bool command_is_license_valid() {
 }
 
 void command_fill_blank() {
-    fill_rect(&graphic_ctx, 0, 0, graphic_ctx.width, graphic_ctx.height, color_white);
+    fill_rect(&cmd_graphic_ctx, 0, 0, cmd_graphic_ctx.width, cmd_graphic_ctx.height, color_white);
 }
 
 void command_storage_initialize() {
@@ -82,12 +81,12 @@ void command_prepare_graphics() {
 	assert(GET_VIDEO_PROPS().width != 0);
 	assert(GET_VIDEO_PROPS().height != 0);
 	assert(GET_VIDEO_PROPS().video_buffer != 0);
-    graphic_ctx.width = GET_VIDEO_PROPS().width;
-    graphic_ctx.height = GET_VIDEO_PROPS().height;
-    graphic_ctx.video_buffer = GET_VIDEO_PROPS().video_buffer;
+    cmd_graphic_ctx.width = GET_VIDEO_PROPS().width;
+    cmd_graphic_ctx.height = GET_VIDEO_PROPS().height;
+    cmd_graphic_ctx.video_buffer = GET_VIDEO_PROPS().video_buffer;
 
     set_video_overlay(COMMAND_VIDEO_OVERLAY_WIDTH, COMMAND_VIDEO_OVERLAY_HEIGHT, true);
-	overlay_ctx = get_sub_graphic_ctx(&graphic_ctx, video_overlay_get_startx(), video_overlay_get_starty(), video_overlay.width, video_overlay.height);
+	overlay_ctx = get_sub_graphic_ctx(&cmd_graphic_ctx, video_overlay_get_startx(), video_overlay_get_starty(), video_overlay.width, video_overlay.height);
 }
 
 void command_reboot() {
@@ -96,6 +95,10 @@ void command_reboot() {
 }
 
 void command_show_info(bool value) {
+	#ifdef PURCHASE_MODE
+		value = true;
+	#endif
+	
 	video_overlay_enable(value);
 	if (value) {
 		fill_rect(&overlay_ctx,  0, 0, overlay_ctx.width, overlay_ctx.height, color_white);
@@ -157,12 +160,12 @@ int command_on_receive(int option, const void *data, bool convert) {
 				}
                 break;
 			case 'c':
-				printf("Capture screen: %dx%d@%sbppx", graphic_ctx.width, graphic_ctx.height, graphic_ctx.bppx == rgb_8 ? "8" : "16");
+				printf("Capture screen: %dx%d@%sbppx", cmd_graphic_ctx.width, cmd_graphic_ctx.height, cmd_graphic_ctx.bppx == rgb_8 ? "8" : "16");
 				rgbScannerEnable(false);
-				for(int height=0; height < graphic_ctx.height; height++) {
+				for(int height=0; height < cmd_graphic_ctx.height; height++) {
 					printf("\n");
-					for(int width=0; width < graphic_ctx.width; width++) {
-						printf(COMMAND_PRINTF_WORD, COMMAND_GETBUFFER(graphic_ctx.video_buffer)[graphic_ctx.width * height + width], (width < graphic_ctx.width -1) ? ",": "");
+					for(int width=0; width < cmd_graphic_ctx.width; width++) {
+						printf(COMMAND_PRINTF_WORD, COMMAND_GETBUFFER(cmd_graphic_ctx.video_buffer)[cmd_graphic_ctx.width * height + width], (width < cmd_graphic_ctx.width -1) ? ",": "");
 					}
 				}
 				rgbScannerEnable(true);
@@ -195,7 +198,7 @@ int command_on_receive(int option, const void *data, bool convert) {
                 printf("%s - Integration Test - version %s\n", PROJECT_NAME, PROJECT_VER);
 				break;
 			case 'm':
-                printf("%s %dx%d@%sbppx\n", PROJECT_NAME, graphic_ctx.width, graphic_ctx.height, graphic_ctx.bppx == rgb_8 ? "8" : "16");
+                printf("%s %dx%d@%sbppx\n", PROJECT_NAME, cmd_graphic_ctx.width, cmd_graphic_ctx.height, cmd_graphic_ctx.bppx == rgb_8 ? "8" : "16");
 				break;
 			case 'R':
 				printf("Software reboot requested\n");

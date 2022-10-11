@@ -158,7 +158,7 @@ void gui_draw_text(gui_base_t *base) {
     uint text_height = text_lines * GRAPHICS_FONT_SIZE - 1;
     uint x, y;
     gui_get_start_position(sub_base.properties, text_ctx.width, text_ctx.height, text_width, text_height, &x, &y);
-    draw_text(&text_ctx, x, y, color_text, color_text, false, text);  
+    draw_text(&text_ctx, x, y, color_text, color_text, false, text);
 }
 
 void gui_draw_button(gui_base_t *base) {
