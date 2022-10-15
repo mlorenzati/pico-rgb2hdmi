@@ -67,7 +67,7 @@ void command_fill_blank() {
 
 void command_storage_initialize() {
     const char security_key[20] = "12345678901234567890";
-    if (storage_initialize(security_key, &security_key_in_flash, 20, false) > 0) {
+    if (storage_initialize(security_key, &security_key_in_flash, SECURITY_SHA_SIZE, false) > 0) {
 		printf("storage initialize failed \n");
 	}
 }

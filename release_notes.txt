@@ -3,7 +3,12 @@ pico rgb2hdmi
 
 An rpi pico microprocessed rgb 2 hdmi plus rgb 2 usb on the fly converter
 
-
+-------------------------------------------------------------------------
+Date: 2022/10/14
+Version: 0.3.3
+- Storage fix: 
+  On new devices without license, the device went to watchdog reset
+  
 -------------------------------------------------------------------------
 Date: 2022/10/04
 Version: 0.3.2

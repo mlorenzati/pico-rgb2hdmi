@@ -38,7 +38,8 @@
 	#define AFE_SAMPLING_RATE (320+25+25)*(240+35+35)*50
     #define AFE_PGA_GAIN_RGB  60
 	#define AFE_RLC_DAC_NEG   1
-	#define AFE_OFFSET_DAC    0
+	#define AFE_OFFSET_DAC    0   // Common config
+	//#define AFE_OFFSET_DAC    230   // SOG config
 
 	static const wm8213_afe_config_t afec_cfg = {
 		.spi = spi0,
@@ -89,7 +90,8 @@
 			},
 			.offset_dac = {
 				.red = AFE_OFFSET_DAC,
-				.green = AFE_OFFSET_DAC,
+				.green = AFE_OFFSET_DAC,         // Common config
+				//.green = (1 * AFE_OFFSET_DAC) / 5, // SOG config
 				.blue = AFE_OFFSET_DAC
 			},
 			.pga_gain = {

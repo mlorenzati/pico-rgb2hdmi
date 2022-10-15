@@ -22,6 +22,7 @@
 #include "keyboard.h"
 #include "cmdParser.h"
 #include "commands.h"
+#include "storage.h"
 
 //System configuration includes
 #include "common_configs.h"
@@ -91,7 +92,7 @@ cmd_parser_option_t options[] =
 // *********** IRQ API CALL END   ************
 // ----------- DVI API CALL START ------------ 
 void __not_in_flash_func(core1_main)() {
-	multicore_lockout_victim_init();
+	storage_report_core1_use();
 	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
 	dvi_start(&dvi0);
 	#if DVI_SYMBOLS_PER_WORD == 2
@@ -265,7 +266,7 @@ int main() {
 	}
 
 	// Wait some seconds with visual report
-	for (int i = 10; i > 0; i--) {
+	for (int i = 5; i > 0; i--) {
         sleep_ms(1000);
         printf("%d\n", i);
     }
