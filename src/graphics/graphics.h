@@ -12,6 +12,15 @@ typedef enum {
     rgb_24 = 3
 } graphics_bppx;
 
+#define GRAPHICS_FLOOD_DEPTH 128
+typedef struct graphic_flood_queue {
+    uint x1[GRAPHICS_FLOOD_DEPTH];
+    uint x2[GRAPHICS_FLOOD_DEPTH];
+    uint y[GRAPHICS_FLOOD_DEPTH];
+    int dy[GRAPHICS_FLOOD_DEPTH];
+    uint16_t head,tail;
+} graphic_flood_queue_t;
+
 typedef struct graphic_ctx graphic_ctx_t;
 
 struct graphic_ctx {
@@ -37,5 +46,6 @@ void fill_rect(const graphic_ctx_t *ctx, uint x0, uint y0, uint width, uint heig
 void draw_circle(const graphic_ctx_t *ctx, uint xc, uint yc, signed int radius, uint color);
 void draw_text(const graphic_ctx_t *ctx, uint x0, uint y0, uint fg_color, uint bg_color, bool word_wrap, const char *text);
 void draw_textf(const graphic_ctx_t *ctx, uint x0, uint y0, uint fg_color, uint bg_color, bool word_wrap, const char *fmt, ...);
+void draw_flood(const graphic_ctx_t *ctx, uint x, uint y, uint fill_color, uint logic_color, bool invert);
 // TODO: text, line, rect
 #endif

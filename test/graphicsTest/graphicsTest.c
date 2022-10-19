@@ -161,6 +161,8 @@ int main() {
 		x = sizex + sizex/2 * sin(2*M_PI*a/16);
 		y = sizey + sizey/2 * cos(2*M_PI*a/16);
 		draw_circle(&graphic_ctx, x, y, 16, color_red);
+		draw_circle(&graphic_ctx, x, y, 8, color_red);
+		draw_flood(&graphic_ctx, x + 10, y, color_blue, color_red, true);
 	}
 	
 	//Draw lines

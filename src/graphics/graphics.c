@@ -131,8 +131,6 @@ void draw_circle(const graphic_ctx_t *ctx, uint xc, uint yc, signed int radius, 
     }
 }
 
-
-
 void draw_text(const graphic_ctx_t *ctx, uint x0, uint y0, uint fg_color, uint bg_color, bool word_wrap, const char *text) {
     if (y0 >= ctx->height) { return; }
     uint y_max = (y0 + GRAPHICS_FONT_SIZE) >= ctx->height ? ctx->height - 1 : y0 + GRAPHICS_FONT_SIZE;
@@ -171,4 +169,86 @@ void draw_textf(const graphic_ctx_t *ctx, uint x0, uint y0, uint fg_color, uint 
 	vsnprintf(buf, 128, fmt, args);
 	draw_text(ctx, x0, y0, fg_color, bg_color, word_wrap, buf);
 	va_end(args); 
+}
+
+bool shoud_fill(const graphic_ctx_t *ctx, uint x, uint y, uint fill_color, uint logic_color, bool invert) {
+ #ifdef GRAPHICS_BOUNDARY_CHECK
+    if (x >= ctx->width || y >= ctx->height) {
+        return false;
+    }
+#endif
+    uint color = get_pixel(ctx, x, y);
+    return (color != fill_color) && ((color == logic_color) ^ invert);
+}
+
+void graphic_flood_queue_init(graphic_flood_queue_t *queue) {
+    queue->head = 0;
+    queue->tail = 0;
+}
+
+bool graphic_flood_queue_is_empty(graphic_flood_queue_t *queue) {
+    return queue->head == queue->tail;
+}
+
+void graphic_flood_queue_add(graphic_flood_queue_t *queue, uint x1, uint x2, uint y, int dy) {
+    queue->x1[queue->head] = x1;
+    queue->x2[queue->head] = x2;
+    queue->y[queue->head]  = y;
+    queue->dy[queue->head] = dy;
+    queue->head++;
+    queue->head %= GRAPHICS_FLOOD_DEPTH;
+    if (queue->head == queue->tail) {
+        queue->tail++;
+        queue->tail %= GRAPHICS_FLOOD_DEPTH;
+    }
+}
+void graphic_flood_queue_pop(graphic_flood_queue_t *queue, uint *x1, uint *x2, uint *y, int *dy) {
+    *x1 = queue->x1[queue->tail];
+    *x2 = queue->x2[queue->tail];
+    *y  =  queue->y[queue->tail];
+    *dy = queue->dy[queue->tail];
+    queue->tail++;
+    queue->tail %= GRAPHICS_FLOOD_DEPTH;
+}
+
+void draw_flood(const graphic_ctx_t *ctx, uint x, uint y, uint fill_color, uint logic_color, bool invert) {
+    if (!shoud_fill(ctx, x, y, fill_color, logic_color, invert)) {
+        return;
+    }
+
+    graphic_flood_queue_t queue;
+    graphic_flood_queue_init(&queue);
+    graphic_flood_queue_add(&queue, x, x, y, 1);
+    graphic_flood_queue_add(&queue, x, x, y - 1, -1);
+
+    uint x1, x2;
+    int dy;
+    while (!graphic_flood_queue_is_empty(&queue)) {
+        graphic_flood_queue_pop(&queue, &x1, &x2, &y, &dy);
+        x = x1;
+        if (shoud_fill(ctx, x, y, fill_color, logic_color, invert)) {
+            while (shoud_fill(ctx, x - 1, y, fill_color, logic_color, invert)) {
+                put_pixel(ctx, x - 1, y, fill_color);
+                x--;
+            }
+        }
+        if (x < x1) {
+            graphic_flood_queue_add(&queue, x, x1 - 1, y - dy, -dy);
+        }
+        while (x1 <= x2) {
+            while (shoud_fill(ctx, x1, y, fill_color, logic_color, invert)) {
+                put_pixel(ctx, x1, y, fill_color);
+                x1++;
+                graphic_flood_queue_add(&queue, x, x1 - 1, y + dy, dy);
+                if (x1 - 1 > x2) {
+                    graphic_flood_queue_add(&queue, x2 + 1, x1 - 1, y - dy, -dy);
+                }
+            }
+            x1++;
+            while (x1 < x2 && !shoud_fill(ctx, x1, y, fill_color, logic_color, invert)) {
+                x1++;
+            }
+            x = x1;
+        }
+    }
 }
