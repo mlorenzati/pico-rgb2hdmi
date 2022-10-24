@@ -28,7 +28,10 @@ This generates as output image.png
 
 ## Using packtiles to generate include headers from images
 
-./packtiles -s -t 768 -f r1 char_c64_lineal.png font_c64.h
+./packtiles -s -f r1 char_c64_lineal.png font_c64.h
+
+## Using packtiles to generate sprites
+./packtiles -sdf rgab5515 -m  images/commodore.png cbm.h
 
 # Build
 ```
@@ -60,4 +63,9 @@ On the same document check **Appendix A: Using Picoprobe**
 Open deploy and run
 ```
 openocd -f interface/picoprobe.cfg -f target/rp2040.cfg -c "program <specific elf file> verify reset exit"
+```
+
+# Read RP2040 to uf2
+```
+picotool save -a pico_rgb2hdmi_xyz.uf2
 ```
