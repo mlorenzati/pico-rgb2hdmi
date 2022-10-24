@@ -66,8 +66,15 @@ void command_fill_blank() {
 }
 
 void command_storage_initialize() {
-    const char security_key[20] = "12345678901234567890";
-    if (storage_initialize(security_key, &security_key_in_flash, SECURITY_SHA_SIZE, false) > 0) {
+	#ifdef INITIAL_LICENSE
+		const char security_key[20] = INITIAL_LICENSE;
+		const bool force_storage = true;
+	#else 
+		const char security_key[20] = "12345678901234567890";
+		const bool force_storage = false;
+	#endif
+    
+    if (storage_initialize(security_key, &security_key_in_flash, SECURITY_SHA_SIZE, force_storage) > 0) {
 		printf("storage initialize failed \n");
 	}
 }
