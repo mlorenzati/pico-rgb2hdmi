@@ -67,10 +67,12 @@ void command_fill_blank() {
 
 void command_storage_initialize() {
 	#ifdef INITIAL_LICENSE
-		const char security_key[20] = INITIAL_LICENSE;
+		uint8_t security_key[SECURITY_SHA_SIZE];
+		const char *security_key_str = INITIAL_LICENSE;
+		security_str_2_hexa(security_key_str, security_key, 40);
 		const bool force_storage = true;
 	#else 
-		const char security_key[20] = "12345678901234567890";
+		const char security_key[SECURITY_SHA_SIZE] = "12345678901234567890";
 		const bool force_storage = false;
 	#endif
     

@@ -5,6 +5,7 @@ if (TARGET tinyusb_device)
         )
 
     target_link_libraries(securityTest PRIVATE
+        pico_multicore
         security
         storage
         pico_stdlib)

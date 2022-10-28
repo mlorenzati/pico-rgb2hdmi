@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(RBG2HDMI_HASH_SALT tY6!U3@z)
 set(TEST_MODE false)
 set(PURCHASE_MODE false)
-#set(INITIAL_LICENSE "{0xbe, 0x7c, 0x7a, 0xdf, 0x8b, 0xf0, 0xd1, 0x93, 0xa1, 0x73, 0x50, 0xa4, 0xea, 0xe3, 0xf7, 0x72, 0xa1, 0x1b, 0xe2, 0x45}")
+#set(INITIAL_LICENSE "223ed49d6b022a7f821b36db90bec3adac23dc60")
 
 add_compile_definitions(FONT_C64_8X8)
 if (TEST_MODE)
@@ -23,7 +23,7 @@ if (PURCHASE_MODE)
 endif()
 
 if (INITIAL_LICENSE)
-    add_compile_definitions(INITIAL_LICENSE=${INITIAL_LICENSE})
+    add_compile_definitions(INITIAL_LICENSE="${INITIAL_LICENSE}")
 endif()
 
 # Initialize the Pico SDK
