@@ -19,7 +19,7 @@ if (TEST_MODE)
 endif()
 
 if (PURCHASE_MODE)
-    add_compile_definitions(PURCHASE_MODE RGB_SCANNER_TIMING_INFO)
+    add_compile_definitions(PURCHASE_MODE)
 endif()
 
 if (INITIAL_LICENSE)

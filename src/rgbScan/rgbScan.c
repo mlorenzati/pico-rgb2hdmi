@@ -7,12 +7,9 @@
 #include "hardware/irq.h"
 #include "hardware/structs/iobank0.h"
 #include "hardware/sync.h"
-
-#ifdef RGB_SCANNER_TIMING_INFO
 #include "nanoSystick.h"
-float         nanoSecPerTick;
-#endif
 
+float         nanoSecPerTick;
 uint _vsyncGPIO, _hsyncGPIO;
 unsigned long tickVsync;
 unsigned int  tickHsync;
@@ -43,12 +40,10 @@ static void __not_in_flash_func(rgb_scanner_gpio_irq_handler)(void) {
     uint events_vsync = (*status_reg_vsync >> 4 * (_vsyncGPIO % 8)) & 0xf;
     if (events_vsync) {
         rgb_scanner_gpio_acknowledge_irq(_vsyncGPIO, events_vsync);
-        #ifdef RGB_SCANNER_TIMING_INFO
-        tickVsync = systick_mark(false);
+        tickVsync = systick_mark(0);
         if (hsyncCounter > 0) {
             tickHsync = (unsigned int)(tickVsync / hsyncCounter);
         }
-        #endif
         hsyncCounter = 0;
     }    
 }
@@ -72,11 +67,9 @@ int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height
     irq_set_exclusive_handler(IO_IRQ_BANK0, rgb_scanner_gpio_irq_handler);
     irq_set_enabled(IO_IRQ_BANK0, true);
     
-    #ifdef RGB_SCANNER_TIMING_INFO
     nanoSecPerTick = 1000000000.0f / (float)clock_get_hz(clk_sys);
     systick_setup(false);
     systick_start(false, 0xFFFFFF);
-    #endif
     
     //Set the highest priority to the GPIO
     irq_set_priority(IO_IRQ_BANK0, 0);
@@ -85,19 +78,11 @@ int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height
 }
 
 unsigned long rgbScannerGetVsyncNanoSec() {
-    #ifdef RGB_SCANNER_TIMING_INFO
     return tickVsync * nanoSecPerTick;
-    #else
-    return 0;
-    #endif
 }
 
 unsigned int rgbScannerGetHsyncNanoSec() {
-    #ifdef RGB_SCANNER_TIMING_INFO
     return tickHsync * nanoSecPerTick;
-    #else
-    return 0;
-    #endif
 }
 
 static bool rgbScannerEnabled = false;
