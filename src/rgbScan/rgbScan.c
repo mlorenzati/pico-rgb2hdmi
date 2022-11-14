@@ -9,12 +9,14 @@
 #include "hardware/sync.h"
 #include "nanoSystick.h"
 
+uint32_t onEventTick, lastEventTick, lastVsyncTick;
 float         nanoSecPerTick;
 uint _vsyncGPIO, _hsyncGPIO;
 unsigned long tickVsync;
 unsigned int  tickHsync;
 unsigned int  hsyncCounter;
-
+unsigned int  tickCsyncPulse, hsyncRstValue;
+bool          isHsyncLine, isVsync;
 scanlineCallback rgbScannerScanlineCallback = NULL;
 volatile unsigned int     rgbScannerScanlineTriggerFrontPorch = 0;   
 volatile unsigned int     rgbScannerScanlineTriggerlastLine   = 0; 
@@ -30,22 +32,41 @@ static void __not_in_flash_func(rgb_scanner_gpio_irq_handler)(void) {
     uint events_hsync = (*status_reg_hsync >> 4 * (_hsyncGPIO % 8)) & 0xf;
     if (events_hsync) {
         rgb_scanner_gpio_acknowledge_irq(_hsyncGPIO, events_hsync);
-
-        hsyncCounter++;
-        if (hsyncCounter >= rgbScannerScanlineTriggerFrontPorch && hsyncCounter < rgbScannerScanlineTriggerlastLine) {
-            rgbScannerScanlineCallback(hsyncCounter - rgbScannerScanlineTriggerFrontPorch);
-        };
+        if (events_hsync & GPIO_IRQ_EDGE_FALL) {
+            onEventTick = systick_get_current();
+            tickCsyncPulse = systick_delta(lastEventTick, onEventTick);
+            isVsync = tickCsyncPulse && tickCsyncPulse <= RGB_SCANNER_CSYNC_TIMING;
+            isHsyncLine = tickCsyncPulse > RGB_SCANNER_CSYNC_TIMING;
+            if (isVsync) {
+                hsyncRstValue = RGB_SCANNER_CSYNC_CNT;
+            }
+        } else {
+            if (isHsyncLine) {
+                if (hsyncCounter >= rgbScannerScanlineTriggerFrontPorch && hsyncCounter < rgbScannerScanlineTriggerlastLine) {
+                    rgbScannerScanlineCallback(hsyncCounter - rgbScannerScanlineTriggerFrontPorch);
+                };
+                hsyncCounter++;
+            }
+        }
     }
+    
     io_ro_32 *status_reg_vsync = &irq_ctrl_base->ints[_vsyncGPIO / 8];
     uint events_vsync = (*status_reg_vsync >> 4 * (_vsyncGPIO % 8)) & 0xf;
     if (events_vsync) {
         rgb_scanner_gpio_acknowledge_irq(_vsyncGPIO, events_vsync);
-        tickVsync = systick_mark(0);
-        if (hsyncCounter > 0) {
-            tickHsync = (unsigned int)(tickVsync / hsyncCounter);
+        isVsync = true;
+        hsyncRstValue = 0;
+    }
+
+    if (isVsync) {
+        if (hsyncCounter > 180) {
+            tickVsync = systick_delta(lastVsyncTick, onEventTick);
+            lastVsyncTick = onEventTick;
+            tickHsync = (unsigned int)(tickVsync / (hsyncCounter - 1));
         }
-        hsyncCounter = 0;
-    }    
+        hsyncCounter = hsyncRstValue;
+    }
+    lastEventTick = onEventTick;  
 }
 
 int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height, scanlineCallback callback) {
@@ -89,6 +110,7 @@ static bool rgbScannerEnabled = false;
 void rgbScannerEnable(bool value) {
     gpio_set_irq_enabled(_vsyncGPIO,  GPIO_IRQ_EDGE_FALL, value);
     gpio_set_irq_enabled(_hsyncGPIO,  GPIO_IRQ_EDGE_RISE, value);
+    gpio_set_irq_enabled(_hsyncGPIO,  GPIO_IRQ_EDGE_FALL, value);
     rgbScannerEnabled = value;
 }
 

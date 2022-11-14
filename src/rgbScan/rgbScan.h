@@ -4,6 +4,9 @@
 #ifndef _RGB_SCANNER_H
 #define _RGB_SCANNER_H
 
+#define RGB_SCANNER_CSYNC_TIMING 9000
+#define RGB_SCANNER_CSYNC_CNT    5
+
 typedef void (*scanlineCallback)(unsigned int render_line_number);
 
 int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height, scanlineCallback callback);

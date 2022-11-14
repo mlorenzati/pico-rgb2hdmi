@@ -35,22 +35,24 @@ extern systick_cvr systick_current;
 extern systick_csr systick_control;
 extern uint32_t nanoSystick_timestampLast[NANO_SYSTICK_MAX_COUNTERS];
 
+#define systick_delta(last, current) (last - current)&0xFFFFFF;
 int systick_setup(bool useInterrupts);
 int systick_start(bool wait, uint32_t ticks);
 
-inline uint32_t systick_get_current() {
+static inline io_rw_32 systick_get_current() {
     return systick_current->current;
 }
+
  
-inline uint32_t systick_mark(unsigned char id) {
-    uint32_t current = systick_current->current;
-    uint32_t delta = (nanoSystick_timestampLast[id] - current)&0xFFFFFF;
+static inline io_rw_32 systick_mark(unsigned char id) {
+    io_rw_32 current = systick_current->current;
+    io_rw_32 delta = systick_delta(nanoSystick_timestampLast[id], current);
     nanoSystick_timestampLast[id] = current;
 
     return delta;
 }
 
-inline uint32_t systick_stop(unsigned char id) {
+static inline uint32_t systick_stop(unsigned char id) {
     uint32_t delta = systick_mark(id);
     systick_control->enable = 0; 
     return delta;

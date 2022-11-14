@@ -4,6 +4,11 @@ pico rgb2hdmi
 An rpi pico microprocessed rgb 2 hdmi plus rgb 2 usb on the fly converter
 
 -------------------------------------------------------------------------
+Date: 2022/11/13
+Version: 0.3.4
+- Initial CSYNC support
+
+-------------------------------------------------------------------------
 Date: 2022/10/14
 Version: 0.3.3
 - Storage fix: 
