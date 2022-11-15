@@ -6,6 +6,8 @@
 #include "hardware/structs/systick.h"
 // Systick Info: https://developer.arm.com/documentation/dui0497/a/cortex-m0-peripherals/optional-system-timer--systick/systick-control-and-status-register
 
+#define NANO_SYSTICK_MAX_COUNTERS 2
+
 typedef struct {
     io_rw_32 enable:1;      // Enable SysTick counter
     io_rw_32 tickint:1;     // Enables SysTick exception request
@@ -31,23 +33,28 @@ typedef struct {
 
 extern systick_cvr systick_current;
 extern systick_csr systick_control;
-extern uint32_t nanoSystick_timestampLast;
+extern uint32_t nanoSystick_timestampLast[NANO_SYSTICK_MAX_COUNTERS];
 
+#define systick_delta(last, current) (last - current)&0xFFFFFF;
 int systick_setup(bool useInterrupts);
 int systick_start(bool wait, uint32_t ticks);
 
-inline uint32_t systick_get_current() {
+static inline io_rw_32 systick_get_current() {
     return systick_current->current;
 }
- 
-inline uint32_t systick_mark(bool stop) {
-    uint32_t current = systick_current->current;
-    uint32_t delta = (nanoSystick_timestampLast - current)&0xFFFFFF;
-    nanoSystick_timestampLast = current;
-    if (stop) {
-        systick_control->enable = 0; 
-    }
 
+ 
+static inline io_rw_32 systick_mark(unsigned char id) {
+    io_rw_32 current = systick_current->current;
+    io_rw_32 delta = systick_delta(nanoSystick_timestampLast[id], current);
+    nanoSystick_timestampLast[id] = current;
+
+    return delta;
+}
+
+static inline uint32_t systick_stop(unsigned char id) {
+    uint32_t delta = systick_mark(id);
+    systick_control->enable = 0; 
     return delta;
 }
 

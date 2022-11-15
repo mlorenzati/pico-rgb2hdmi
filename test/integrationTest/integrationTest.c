@@ -44,8 +44,8 @@
 	#define HSYNC_BACK_PORCH    50
 #endif 
 
-#define V_FRONT_PORCH   44
-#define V_BACK_PORCH    56
+#define V_FRONT_PORCH   42
+#define V_BACK_PORCH    54
 
 #define REFRESH_RATE	50
 #define VREG_VSEL 		VREG_VOLTAGE_1_20
