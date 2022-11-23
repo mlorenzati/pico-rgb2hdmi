@@ -29,21 +29,21 @@ const void *security_key_in_flash;
 #if DVI_SYMBOLS_PER_WORD == 2
 	#define COMMANDS_OVERLAY_BPPX rgb_16
 	// Colors                0brrrrrggggggbbbbb;
-	uint color_white       = 0b1111111111111111;
-	uint color_gray        = 0b0110001100101100;
-	uint color_dark        = 0b0011000110000110;
-	uint color_light_blue  = 0b0111010101011011;
-	uint color_yellow	   = 0b1111110111101001;
+	// uint color_white       = 0b1111111111111111;
+	// uint color_gray        = 0b0110001100101100;
+	// uint color_dark        = 0b0011000110000110;
+	// uint color_light_blue  = 0b0111010101011011;
+	// uint color_yellow	   = 0b1111110111101001;
 	#define COMMAND_GETBUFFER GET_RGB16_BUFFER
 	#define COMMAND_PRINTF_WORD	"%04X%s"
 #else
 	#define COMMANDS_OVERLAY_BPPX rgb_8
 	// Colors                0brrrgggbb;
-	uint color_white       = 0b11111111;
-	uint color_gray        = 0b01101110;
-	uint color_dark        = 0b01001001;
-	uint color_light_blue  = 0b01110010;
-	uint color_yellow	   = 0b11110001;
+	// uint color_white       = 0b11111111;
+	// uint color_gray        = 0b01101110;
+	// uint color_dark        = 0b01001001;
+	// uint color_light_blue  = 0b01110010;
+	// uint color_yellow	   = 0b11110001;
 	#define COMMAND_GETBUFFER GET_RGB8_BUFFER
 	#define COMMAND_PRINTF_WORD	"%02X%s"
 #endif
@@ -62,7 +62,7 @@ bool command_is_license_valid() {
 }
 
 void command_fill_blank() {
-    fill_rect(&cmd_graphic_ctx, 0, 0, cmd_graphic_ctx.width, cmd_graphic_ctx.height, color_white);
+    //fill_rect(&cmd_graphic_ctx, 0, 0, cmd_graphic_ctx.width, cmd_graphic_ctx.height, color_white);
 }
 
 void command_storage_initialize() {
@@ -110,19 +110,19 @@ void command_show_info(bool value) {
 	
 	video_overlay_enable(value);
 	if (value) {
-		fill_rect(&overlay_ctx,  0, 0, overlay_ctx.width, overlay_ctx.height, color_white);
-		fill_rect(&overlay_ctx,  2, 2, overlay_ctx.width - 5, overlay_ctx.height - 5, color_gray);
-		if (command_info_afe_error > 0 || command_info_scanner_error > 0) {
-			draw_textf(&overlay_ctx, 2, 2, color_dark, color_dark, true, 
-				"AFE error:%d\nScan error:%d\nD:%s\nmlorenzati@gmail\nVer:%s%s", command_info_afe_error, command_info_scanner_error,  security_get_uid(), PROJECT_VER, TEST_MODE_STR);
-		} else {
-			draw_textf(&overlay_ctx, 2, 2, color_dark, color_dark, true, 
-				"LorenTek RGB2HDMI\nLicense is %s\nD:%s\nmlorenzati@gmail\nVer:%s%s", command_license_is_valid ? "valid" : "invalid", security_get_uid(), PROJECT_VER, TEST_MODE_STR);
-		}
-		fill_rect(&overlay_ctx, 41, 50, 64, 13, color_light_blue);
-		fill_rect(&overlay_ctx, 41, 64, 64, 14, color_white);
-		fill_rect(&overlay_ctx, 41, 79, 64, 13, color_light_blue);
-		draw_circle(&overlay_ctx, 73, 71, -6,   color_yellow);
+		// fill_rect(&overlay_ctx,  0, 0, overlay_ctx.width, overlay_ctx.height, color_white);
+		// fill_rect(&overlay_ctx,  2, 2, overlay_ctx.width - 5, overlay_ctx.height - 5, color_gray);
+		// if (command_info_afe_error > 0 || command_info_scanner_error > 0) {
+		// 	draw_textf(&overlay_ctx, 2, 2, color_dark, color_dark, true, 
+		// 		"AFE error:%d\nScan error:%d\nD:%s\nmlorenzati@gmail\nVer:%s%s", command_info_afe_error, command_info_scanner_error,  security_get_uid(), PROJECT_VER, TEST_MODE_STR);
+		// } else {
+		// 	draw_textf(&overlay_ctx, 2, 2, color_dark, color_dark, true, 
+		// 		"LorenTek RGB2HDMI\nLicense is %s\nD:%s\nmlorenzati@gmail\nVer:%s%s", command_license_is_valid ? "valid" : "invalid", security_get_uid(), PROJECT_VER, TEST_MODE_STR);
+		// }
+		// fill_rect(&overlay_ctx, 41, 50, 64, 13, color_light_blue);
+		// fill_rect(&overlay_ctx, 41, 64, 64, 14, color_white);
+		// fill_rect(&overlay_ctx, 41, 79, 64, 13, color_light_blue);
+		// draw_circle(&overlay_ctx, 73, 71, -6,   color_yellow);
 	}
 }
 

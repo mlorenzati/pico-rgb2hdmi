@@ -18,10 +18,10 @@ if (TARGET tinyusb_device)
         libdvi
         rgbScan
         overlay
-        keyboard
         system
         cmdParser
         commands
+        menu
         )
 
     pico_enable_stdio_usb(integrationTest 1)
