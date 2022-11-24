@@ -13,7 +13,7 @@
 
 #ifdef _MENU_H
     #define MENU_VIDEO_OVERLAY_WIDTH   -148
-    #define MENU_VIDEO_OVERLAY_HEIGHT  -100
+    #define MENU_VIDEO_OVERLAY_HEIGHT  -104
 #endif
 
 //SYNC edge triggered Pins

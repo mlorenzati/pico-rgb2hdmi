@@ -105,7 +105,9 @@ typedef struct gui_event_subscription {
    gui_object_t *destination;
 } gui_event_subscription_t;
 
-#define initalizeGuiList(list) { .elements = (void *)list, .size = (sizeof(list) / sizeof(list[0])) }
+#define arraySize(list) (sizeof(list) / sizeof(list[0]))
+#define initalizeGuiDynList(list, _size) { .elements = (void *)list, .size = _size }
+#define initalizeGuiList(list) { .elements = (void *)list, .size = arraySize(list) }
 
 // GUI Draw callbacks
 void gui_draw_window(gui_base_t *base);
@@ -127,6 +129,7 @@ bool gui_event_unsubscribe(gui_base_t *origin, gui_object_t *destination);
 gui_object_t *gui_event(gui_status_t status, gui_object_t *origin);
 
 // Event Status exports
+extern const gui_status_t gui_status_enabled;
 extern const gui_status_t gui_status_focused;
 extern const gui_status_t gui_status_go_next;
 extern const gui_status_t gui_status_go_previous;
@@ -137,6 +140,8 @@ extern const gui_status_t gui_status_substract;
 
 // Event triggers
 gui_status_t gui_status_update(gui_object_t *object, gui_status_t status, bool set_clear);
+#define gui_enable(object)         gui_event(gui_status_update(object, gui_status_enabled,      gui_set),   object)
+#define gui_disable(object)        gui_event(gui_status_update(object, gui_status_enabled,      gui_clear), object)
 #define gui_focused(object)        gui_event(gui_status_update(object, gui_status_focused,      gui_set),   object)
 #define gui_unfocused(object)      gui_event(gui_status_update(object, gui_status_focused,      gui_clear), object)
 #define gui_next_focus(object)     gui_event(gui_status_update(object, gui_status_go_next,      gui_set),   object)

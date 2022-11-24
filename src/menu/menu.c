@@ -2,7 +2,6 @@
 #include "graphics.h"
 #include "videoAdjust.h"
 #include "overlay.h"
-#include "gui.h"
 
 //System configuration includes
 #include "common_configs.h"
@@ -27,7 +26,7 @@
 
 // --------- Global register start ---------
 uint8_t menu_tot_events; 
-menu_event_t  menu_events[menu_max];
+menu_event_t  menu_events[menu_event_max];
 
 static graphic_ctx_t menu_graphic_ctx = {
     .bppx = MENU_OVERLAY_BBPX,
@@ -35,9 +34,8 @@ static graphic_ctx_t menu_graphic_ctx = {
 };
 
 static graphic_ctx_t menu_overlay_ctx;
-
-const uint menu_colors[] = { color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green };
-const gui_list_t menu_colors_list = initalizeGuiList(menu_colors);
+uint menu_colors[] = { color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green };
+gui_list_t menu_colors_list = initalizeGuiList(menu_colors);
 const gui_properties_t menu_common_nshared_props = {
     .alignment  = gui_align_center,
     .horiz_vert = gui_orientation_vertical,
@@ -47,9 +45,12 @@ const gui_properties_t menu_common_nshared_props = {
 };
 
 gui_object_t *menu_focused_object = NULL;
+gui_object_t menu_window;
+gui_object_t menu_left_buttons_group_elements[MENU_TOTAL_LEFT_BUTTONS];
+gui_list_t   menu_left_buttons_group_list;
+gui_object_t menu_left_buttons_group;
 
 // --------- Global register end --------- 
-
 
 // --------- KEYBOARD API CALL START --------- 
 void menu_on_keyboard_event(keyboard_status_t keys) {
@@ -58,12 +59,14 @@ void menu_on_keyboard_event(keyboard_status_t keys) {
         event->key_up   = keyboard_get_key_status(&keys, true, cnt); 
         event->key_down = keyboard_get_key_status(&keys, false, cnt);
         switch (event->type) {
-            case menu_action:
+            case menu_event_action:
                 if (event->key_up) {
                     if (!is_video_overlay_enabled()) {
                         // Enable Overlay, Render and Focus first element
                         video_overlay_enable(true);
-                        //render all
+                        gui_obj_draw(menu_window);
+                        gui_obj_draw(menu_left_buttons_group);
+                        menu_focused_object = gui_focused(&menu_left_buttons_group_elements[0]);
                     } else if (menu_focused_object != NULL) {
                         menu_focused_object = gui_deactivate(menu_focused_object);
                     }
@@ -71,7 +74,7 @@ void menu_on_keyboard_event(keyboard_status_t keys) {
                     menu_focused_object = gui_activate(menu_focused_object);
                 }
                 break;
-            case menu_next:
+            case menu_event_next:
                 if (!is_video_overlay_enabled() || menu_focused_object == NULL) {
                     continue;
                 }
@@ -87,7 +90,7 @@ void menu_on_keyboard_event(keyboard_status_t keys) {
                     }
                 }
                 break;
-            case menu_previous:
+            case menu_event_previous:
                 if (!is_video_overlay_enabled() || menu_focused_object == NULL) {
                     continue;
                 }
@@ -108,12 +111,62 @@ void menu_on_keyboard_event(keyboard_status_t keys) {
         }
     }
 }
-// ---------  KEYBOARD API CALL END  ---------  
+// ---------  KEYBOARD API CALL END  ---------
 
+// ---------  GUI EVENT SLOTS HANDLERS START  ---------
+bool on_exit_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+    if (!status.activated && origin->status.activated) {
+        video_overlay_enable(false);
+        gui_disable(&menu_left_buttons_group);
+    }
+    return true;
+}
 
+// ----------  GUI EVENT SLOTS HANDLERS END  ---------- 
+
+void menu_elements_copy_(const gui_object_t *src, gui_object_t *dst, uint8_t size) {
+    for (uint8_t cnt = 0; cnt < size; cnt++) {
+        dst[cnt] = src[cnt];
+    }
+}
+
+gui_object_t menu_create_left_button_group(menu_button_group_type type) {
+    switch(type) {
+        case menu_button_group_home: {
+             gui_object_t elements[] = { 
+                gui_create_button(&menu_overlay_ctx,  0, 0, 120, 12, &menu_colors_list, menu_common_nshared_props, "Alignment"),
+                gui_create_button(&menu_overlay_ctx,  0, 0, 120, 12, &menu_colors_list, menu_common_nshared_props, "Diagnostics"),
+                gui_create_button(&menu_overlay_ctx,  0, 0, 120, 12, &menu_colors_list, menu_common_nshared_props, "Save & reboot"),
+                gui_create_button(&menu_overlay_ctx,  0, 0, 120, 12, &menu_colors_list, menu_common_nshared_props, "Exit")
+            };
+            menu_elements_copy(elements, menu_left_buttons_group_elements);
+            gui_list_t group_list = initalizeGuiDynList(menu_left_buttons_group_elements, arraySize(elements));
+            menu_left_buttons_group_list = group_list;
+            }
+            gui_status_t button_status = { .activated = 1 };
+            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_exit_event);
+            break;
+            
+        default: {
+            gui_object_t elements[] = { gui_create_button(&menu_overlay_ctx,  0, 0, 100, 12, &menu_colors_list, menu_common_nshared_props, "Exit") };
+            menu_elements_copy(elements, menu_left_buttons_group_elements);
+            gui_list_t group_list = initalizeGuiDynList(menu_left_buttons_group_elements, arraySize(elements));
+            menu_left_buttons_group_list = group_list;
+            }
+            break;
+    };
+   
+	gui_object_t left_buttons_group = gui_create_group(&menu_overlay_ctx, 0, 0,
+		gui_sum(&menu_left_buttons_group_list, menu_common_nshared_props, gui_coord_width), 
+		gui_sum(&menu_left_buttons_group_list, menu_common_nshared_props, gui_coord_height), 
+		&menu_colors_list, menu_common_nshared_props , &menu_left_buttons_group_list);
+    return left_buttons_group;
+}
+
+// --------- MENU INIT API CALL START --------- 
 int menu_initialize(uint *pins, menu_event_type *events, uint8_t count) {
     if (count > KEYBOARD_MAX_COUNT) { return 1; }
-    if (count > menu_max) { return 2; }
+    if (count > menu_event_max) { return 2; }
     
     // Mapping of keys to known events
     menu_tot_events = count;
@@ -135,19 +188,10 @@ int menu_initialize(uint *pins, menu_event_type *events, uint8_t count) {
     set_video_overlay(MENU_VIDEO_OVERLAY_WIDTH, MENU_VIDEO_OVERLAY_HEIGHT, false);
     menu_overlay_ctx = get_sub_graphic_ctx(&menu_graphic_ctx, video_overlay_get_startx(), video_overlay_get_starty(), video_overlay.width, video_overlay.height);
 
-    /**
-     * 
-    */
     //Menu System initialize
-     // gui_object_t window = gui_create_window(&graphic_ctx, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, &colors_list, common_nshared_props);
-    
-    // gui_object_t group_elements[] = { 
-    //     gui_create_button(&graphic_ctx,  0, 0, 100, 12, &colors_list, common_nshared_props, "Button 1"),
-    //     gui_create_button(&graphic_ctx,  0, 0, 100, 12, &colors_list, common_nshared_props, "Button 2"),
-    //     gui_create_slider(&graphic_ctx,  0, 0, 100, 16, &colors_list, common_nshared_props, &slider_value),
-    //     gui_create_button(&graphic_ctx,  0, 0, 100, 12, &colors_list, common_nshared_props, "Button 3"),
-    //     gui_create_button(&graphic_ctx,  0, 0, 100, 12, &colors_list, common_nshared_props, "Button 4"),
-    //     gui_create_spinbox(&graphic_ctx, 0, 0, 100, 12, &colors_list, spinbox_props, &spinbox_value)
-    // };
+    menu_window = gui_create_window(&menu_graphic_ctx, 0, 0, menu_overlay_ctx.width, menu_overlay_ctx.height, &menu_colors_list, menu_common_nshared_props);
+    menu_left_buttons_group = menu_create_left_button_group(menu_button_group_home);
+
     return 0;
 }
+// --------- MENU INIT API CALL END  ---------  

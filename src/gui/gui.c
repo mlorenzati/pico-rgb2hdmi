@@ -15,6 +15,7 @@ const char* gui_id_group   = "group";
 const char* gui_id_spinbox = "spinbox";
 
 // GUI events
+const gui_status_t      gui_status_enabled      = { .enabled = 1 };
 const gui_status_t      gui_status_focused      = { .focused = 1 };
 const gui_status_t      gui_status_go_next      = { .go_next = 1 };
 const gui_status_t      gui_status_go_previous  = { .go_previous = 1 };
