@@ -65,7 +65,8 @@ void menu_on_keyboard_event(keyboard_status_t keys) {
                         // Enable Overlay, Render and Focus first element
                         video_overlay_enable(true);
                         gui_obj_draw(menu_window);
-                        gui_obj_draw(menu_left_buttons_group);
+                        gui_enable(&menu_left_buttons_group);
+                        gui_unfocused(menu_focused_object);
                         menu_focused_object = gui_focused(&menu_left_buttons_group_elements[0]);
                     } else if (menu_focused_object != NULL) {
                         menu_focused_object = gui_deactivate(menu_focused_object);
@@ -191,6 +192,7 @@ int menu_initialize(uint *pins, menu_event_type *events, uint8_t count) {
     //Menu System initialize
     menu_window = gui_create_window(&menu_graphic_ctx, 0, 0, menu_overlay_ctx.width, menu_overlay_ctx.height, &menu_colors_list, menu_common_nshared_props);
     menu_left_buttons_group = menu_create_left_button_group(menu_button_group_home);
+    menu_left_buttons_group.base.status.enabled = false;
 
     return 0;
 }

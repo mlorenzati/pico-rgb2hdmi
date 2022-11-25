@@ -227,12 +227,20 @@ void gui_draw_group(gui_base_t *base) {
         gui_base_t *sub_base = &(object->base);
         sub_base->x = inc_pos_x;
         sub_base->y = inc_pos_y;
+        gui_status_t sub_base_cached_status = sub_base->status;
+
+        if (!base->status.enabled) {
+            sub_base->status.enabled = false;
+            sub_base->status.focused = false;
+        }
 
         if (gui_object_overflow_group(sub_base, base)) {
             return;
         }
 
         gui_ref_draw(object);
+        //Restore draw status changes from parent
+        sub_base->status = sub_base_cached_status;
 
         if (base->properties.horiz_vert) {
             inc_pos_x += sub_base->width + padding;
