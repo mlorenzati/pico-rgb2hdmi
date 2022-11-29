@@ -82,12 +82,21 @@ typedef struct gui_base {
    gui_status_t      status;
    gui_properties_t  properties;
    const void       *data;
-
 } gui_base_t;
 
 typedef struct gui_object gui_object_t ;
 
+//gui_cb_group_t is a callback to be executed on each element on a group iteratively
+typedef bool (*gui_cb_group_t)(gui_object_t *object, void *data);
+
+//gui_cb_draw_t is a drawing callback
 typedef void (*gui_cb_draw_t)(gui_base_t *data);
+
+// gui_cb_on_status_t is the event callback handler from an origin object to a destination target
+// status: the changing status
+// origin: the originator of the event
+// destination: the destination of the event
+// result: (bool) request to propagate the event or not
 typedef bool (*gui_cb_on_status_t)(gui_status_t status, gui_base_t *origin, gui_object_t *destination);
 typedef void (*print_delegate_t) (const char * format, ...);
 typedef void (*print_delegate_caller_t)(print_delegate_t printer);
@@ -182,4 +191,5 @@ extern const char* gui_id_spinbox;
 // GUI Utilities
 uint gui_sum(gui_list_t *group, gui_properties_t props, bool width_height);
 bool gui_object_overflow_group(gui_base_t *object, gui_base_t *group);
+bool gui_group_execute(gui_base_t *group, void *data, gui_cb_group_t group_cv);
 #endif

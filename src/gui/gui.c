@@ -70,19 +70,22 @@ gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint wi
         .next = NULL,
         .previous = NULL
     };
+
+    bool fill_group(gui_object_t *object, void *data) {
+        gui_object_t **previous = (gui_object_t **) data;
+        (*previous)->next = object;
+        object->previous = *previous;
+        *previous = object;
+        return true;
+    }
+
     if (id == gui_id_group) { // We don't need a strcmp on known const keys
         gui_list_t *list = (gui_list_t *) data;
         gui_object_t **s_objects = (gui_object_t **)(list->elements);
         gui_object_t *objects = (gui_object_t *)(list->elements);
-
         gui_object_t *previous = props.shared ? s_objects[list->size - 1] : &objects[list->size - 1];
-        for (uint8_t cnt = 0; cnt < list->size; cnt++) {
-            gui_object_t *object = props.shared ? s_objects[cnt] : &objects[cnt];
-            uint8_t next = (cnt + 1) % list->size;
-            object->next = props.shared ? s_objects[next] : &objects[next];
-            object->previous = previous;
-            previous = object;
-        }
+        
+        gui_group_execute(&(obj.base), &previous, fill_group);
     }
     return obj;
 }
@@ -339,16 +342,44 @@ bool gui_event_subscribe(gui_status_t status, gui_base_t *origin, gui_object_t *
     return false;
 }
 
+
+bool gui_group_execute(gui_base_t *group, void *data, gui_cb_group_t group_cv) {
+    if (group->id != gui_id_group) {
+        return false;
+    }
+    gui_list_t *list = (gui_list_t *) group->data;
+    bool shared = group->properties.shared;
+    gui_object_t **s_objects = (gui_object_t **)(list->elements);
+    gui_object_t *objects = (gui_object_t *)(list->elements);
+    bool found = false;
+    for (uint8_t cnt = 0; cnt < list->size; cnt++) {
+        gui_object_t *object = shared ? s_objects[cnt] : &objects[cnt];
+        found |= group_cv(object, data);
+    }
+    return found;
+}
+
 bool gui_event_unsubscribe(gui_base_t *origin, gui_object_t *destination) {
     //Search stored status
     for (uint cnt = 0; cnt < GUI_EVENT_HANDLING_MAX; cnt++) {
        gui_event_subscription_t *event = &event_subscriptions[cnt];
        gui_status_cast_t *status = (gui_status_cast_t *) &event->status;
-       if (origin == event->origin && destination == event->destination) {
+       if (origin == event->origin && (destination == event->destination || destination == NULL)) {
             status->word = 0;
             event->origin = NULL;
             event->destination = NULL;
             return true;
+       } else if (origin->id == gui_id_group) {
+            gui_list_t *list = (gui_list_t *) origin->data;
+            bool shared = origin->properties.shared;
+            gui_object_t **s_objects = (gui_object_t **)(list->elements);
+            gui_object_t *objects = (gui_object_t *)(list->elements);
+            bool found = false;
+            for (uint8_t cnt = 0; cnt < list->size; cnt++) {
+                gui_object_t *object = shared ? s_objects[cnt] : &objects[cnt];
+                found |= gui_event_unsubscribe(&(object->base), destination);
+            }
+            return found;
        }
     }
     return false;

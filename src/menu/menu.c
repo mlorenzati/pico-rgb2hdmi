@@ -187,18 +187,8 @@ void menu_elements_copy_(const gui_object_t *src, gui_object_t *dst, uint8_t siz
 
 gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu_button_group_type new) {
     //First unsubscribe last objects
-      
-    switch(previous) {
-        case menu_button_group_home:
-            gui_event_unsubscribe(&menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[0]);
-            gui_event_unsubscribe(&menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3]);
-            break;
-        case menu_button_group_alignment:
-            gui_event_unsubscribe(&menu_left_buttons_group_elements[2].base, &menu_left_buttons_group_elements[2]);
-            break;
-        default:
-            break;
-    };
+    gui_event_unsubscribe(&(menu_left_buttons_group.base), NULL);  
+
     // Avoid new button groups if stack is full
     if (menu_button_index > MENU_TOTAL_LEFT_BUTTONS) { 
         return menu_left_buttons_group; 
