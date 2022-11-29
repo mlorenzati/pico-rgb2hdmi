@@ -362,6 +362,9 @@ gui_status_t gui_status_update(gui_object_t *object, gui_status_t status, bool s
 }
 
 gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
+    if (origin == NULL) {
+        return NULL;
+    }
     //Update self
     gui_status_cast_t *c_status_new = (gui_status_cast_t *) &status;
     gui_status_cast_t *c_status_old = (gui_status_cast_t *) &origin->base.status;
@@ -396,7 +399,7 @@ gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
             
             gui_status_cast_t dest_status_old = *((gui_status_cast_t *)(&event->destination->base.status));
             if (status_handle == NULL || status_handle(status, &origin->base, event->destination)) {
-                if (origin != event->destination) {
+                if (origin != event->destination && event->destination != NULL) {
                     gui_ref_draw(event->destination);
                 }
                 // If it was a status change of the status due the even callback, trigger and event

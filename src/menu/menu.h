@@ -6,6 +6,7 @@
 #include "gui.h"
 
 #define MENU_TOTAL_LEFT_BUTTONS 8
+#define MENU_TOTAL_NAV_STACK    8
 
 typedef enum  {
     menu_event_action = 0,
@@ -15,8 +16,9 @@ typedef enum  {
 } menu_event_type;
 
 typedef enum  {
-    menu_button_group_home = 0,
-    menu_button_group_max
+    menu_button_group_none = 0,
+    menu_button_group_home,
+    menu_button_group_alignment
 } menu_button_group_type;
 
 typedef struct menu_event {
@@ -28,6 +30,6 @@ typedef struct menu_event {
 #define menu_elements_copy(src, dst) menu_elements_copy_(src, dst, sizeof(src) / sizeof(src[0]))
 int menu_initialize(uint *pins, menu_event_type *events, uint8_t count);
 void menu_elements_copy_(const gui_object_t *src, gui_object_t *dst, uint8_t size);
-gui_object_t menu_create_left_button_group(menu_button_group_type type);
+gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu_button_group_type new);
 
 #endif
