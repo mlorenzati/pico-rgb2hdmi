@@ -360,6 +360,11 @@ bool gui_group_execute(gui_base_t *group, void *data, gui_cb_group_t group_cv) {
 }
 
 bool gui_event_unsubscribe(gui_base_t *origin, gui_object_t *destination) {
+    bool unsubscribe_group(gui_object_t *object, void *data) {
+        gui_object_t *destination = (gui_object_t *)data;
+        return gui_event_unsubscribe(&(object->base), destination);
+    }
+
     //Search stored status
     for (uint cnt = 0; cnt < GUI_EVENT_HANDLING_MAX; cnt++) {
        gui_event_subscription_t *event = &event_subscriptions[cnt];
@@ -370,16 +375,7 @@ bool gui_event_unsubscribe(gui_base_t *origin, gui_object_t *destination) {
             event->destination = NULL;
             return true;
        } else if (origin->id == gui_id_group) {
-            gui_list_t *list = (gui_list_t *) origin->data;
-            bool shared = origin->properties.shared;
-            gui_object_t **s_objects = (gui_object_t **)(list->elements);
-            gui_object_t *objects = (gui_object_t *)(list->elements);
-            bool found = false;
-            for (uint8_t cnt = 0; cnt < list->size; cnt++) {
-                gui_object_t *object = shared ? s_objects[cnt] : &objects[cnt];
-                found |= gui_event_unsubscribe(&(object->base), destination);
-            }
-            return found;
+            return gui_group_execute(origin, destination, unsubscribe_group);
        }
     }
     return false;
