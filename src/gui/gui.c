@@ -85,7 +85,7 @@ gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint wi
         gui_object_t *objects = (gui_object_t *)(list->elements);
         gui_object_t *previous = props.shared ? s_objects[list->size - 1] : &objects[list->size - 1];
         
-        gui_group_execute(&(obj.base), &previous, fill_group);
+        gui_group_execute(&(obj.base), &previous, fill_group, NULL);
     }
     return obj;
 }
@@ -210,47 +210,56 @@ void gui_draw_label(gui_base_t *base) {
     print_caller(printer);
 }
 
+typedef struct gui_draw_group_data {
+   uint16_t inc_pos_x, inc_pos_y;
+   uint8_t  padding;
+   bool horiz_vert;
+   bool enabled;
+} gui_draw_group_data_t;
+
 void gui_draw_group(gui_base_t *base) {
-    gui_list_t *list = (gui_list_t *) base->data;
-    gui_object_t **s_objects = (gui_object_t **)(list->elements);
-    gui_object_t *objects = (gui_object_t *)(list->elements);
-    uint inc_pos_x = base->x;
-    uint inc_pos_y = base->y;
-    uint padding = base->properties.padding;
-    bool shared = base->properties.shared;
-
-    if (base->properties.border) {
-        gui_draw_window(base);
-        inc_pos_x += 1;
-        inc_pos_y += 1;
-    }
-
-    for (uint8_t cnt = 0; cnt < list->size; cnt++) {
-        gui_object_t *object = shared ? s_objects[cnt] : &objects[cnt];
+    bool draw_group(gui_object_t *object, void *data) {
+        gui_draw_group_data_t *groupdata = (gui_draw_group_data_t *) data;
         gui_base_t *sub_base = &(object->base);
-        sub_base->x = inc_pos_x;
-        sub_base->y = inc_pos_y;
+        sub_base->x = groupdata->inc_pos_x;
+        sub_base->y = groupdata->inc_pos_y;
         gui_status_t sub_base_cached_status = sub_base->status;
 
-        if (!base->status.enabled) {
+        //Cache status
+        if (!groupdata->enabled) {
             sub_base->status.enabled = false;
             sub_base->status.focused = false;
         }
 
-        if (gui_object_overflow_group(sub_base, base)) {
-            return;
-        }
-
         gui_ref_draw(object);
+        
         //Restore draw status changes from parent
         sub_base->status = sub_base_cached_status;
 
-        if (base->properties.horiz_vert) {
-            inc_pos_x += sub_base->width + padding;
+        if (groupdata->horiz_vert) {
+            groupdata->inc_pos_x += sub_base->width + groupdata->padding;
         } else {
-            inc_pos_y += sub_base->height + padding;
+            groupdata->inc_pos_y += sub_base->height + groupdata->padding;
         }
-    } 
+
+        return true;
+    }
+
+    gui_draw_group_data_t group_data = {
+        .inc_pos_x  = base->x,
+        .inc_pos_y  = base->y,
+        .padding    = base->properties.padding,
+        .horiz_vert = base->properties.horiz_vert,
+        .enabled    = base->status.enabled
+    };
+
+    if (base->properties.border) {
+        gui_draw_window(base);
+        group_data.inc_pos_x += 1;
+        group_data.inc_pos_y += 1;
+    }
+
+    gui_group_execute(base, &group_data, draw_group, gui_object_overflow_group);
 }
 
 bool gui_object_overflow_group(gui_base_t *object, gui_base_t *group) {
@@ -310,7 +319,7 @@ void gui_draw_spinbox(gui_base_t *base) {
 
 // -- GUI event and subscriber --
 gui_event_subscription_t event_subscriptions[GUI_EVENT_HANDLING_MAX];
-bool gui_event_subscribe(gui_status_t status, gui_base_t *origin, gui_object_t *destination, gui_cb_on_status_t status_cv) {
+bool gui_event_subscribe(gui_status_t status, gui_base_t *origin, gui_object_t *destination, gui_cb_on_status_t status_cb) {
     //Check the first available event slot
     gui_event_subscription_t *sel_event = NULL;
     gui_status_cast_t *n_status = (gui_status_cast_t *) &status;
@@ -335,15 +344,14 @@ bool gui_event_subscribe(gui_status_t status, gui_base_t *origin, gui_object_t *
         sel_event->origin = origin;
         sel_event->destination = destination;
         if (sel_event->destination != NULL) {
-            sel_event->destination->status_handle = status_cv;
+            sel_event->destination->status_handle = status_cb;
         }
         return true;
     }
     return false;
 }
 
-
-bool gui_group_execute(gui_base_t *group, void *data, gui_cb_group_t group_cv) {
+bool gui_group_execute(gui_base_t *group, void *data, gui_cb_group_t group_cb, gui_cb_group_break_t break_cb) {
     if (group->id != gui_id_group) {
         return false;
     }
@@ -354,7 +362,12 @@ bool gui_group_execute(gui_base_t *group, void *data, gui_cb_group_t group_cv) {
     bool found = false;
     for (uint8_t cnt = 0; cnt < list->size; cnt++) {
         gui_object_t *object = shared ? s_objects[cnt] : &objects[cnt];
-        found |= group_cv(object, data);
+        if (break_cb != NULL) {
+            if (break_cb(&(object->base), group)) {
+                return false;
+            }
+        }
+        found |= group_cb(object, data);
     }
     return found;
 }
@@ -375,7 +388,7 @@ bool gui_event_unsubscribe(gui_base_t *origin, gui_object_t *destination) {
             event->destination = NULL;
             return true;
        } else if (origin->id == gui_id_group) {
-            return gui_group_execute(origin, destination, unsubscribe_group);
+            return gui_group_execute(origin, destination, unsubscribe_group, NULL);
        }
     }
     return false;
