@@ -472,17 +472,34 @@ gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
         gui_event(update_status.bits, update_dest);
     }
 
+    // Check if it was a focus request and it's not focusable
+    // WARNING: Request focus over a list of chained elements with at least one focusable
+    if (status.focused && !origin->base.properties.focusable && !status.go_next & !status.go_previous) {
+        status.go_next = 1;
+    }
+
     // Check focus change
     gui_object_t *next_focused = origin;
+
     if (status.go_next ^ status.go_previous) {
-        if (status.go_next && (origin->next != NULL)) {
-            status.go_next = 0;
-            next_focused = origin->next;
+        gui_object_t *test_focused = origin;
+        for (uint cnt = 0; cnt < GUI_FOCUSABLE_SEARCH_MAX; cnt++) {
+             if (status.go_next && (test_focused->next != NULL)) {
+                test_focused = test_focused->next;
+            }
+
+            if (status.go_previous && (test_focused->previous != NULL)) {
+                test_focused = test_focused->previous;
+            }
+
+            if (test_focused->base.properties.focusable) {
+                status.go_next = 0;
+                status.go_previous = 0;
+                next_focused = test_focused;
+                break;
+            }
         }
-        if (status.go_previous && (origin->previous != NULL)) {
-            status.go_previous = 0;
-            next_focused = origin->previous;
-        }
+
         if(next_focused != origin) {
             gui_unfocused(origin);
             gui_focused(next_focused);

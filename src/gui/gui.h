@@ -2,9 +2,10 @@
 #define _GUI_H
 
 #include "graphics.h"
-#define GUI_BAR_100PERCENT     10000
-#define GUI_EVENT_HANDLING_MAX 32
-#define GUI_EVENT_SUB_UPD_MAX  16
+#define GUI_BAR_100PERCENT       10000
+#define GUI_EVENT_HANDLING_MAX   32
+#define GUI_EVENT_SUB_UPD_MAX    16
+#define GUI_FOCUSABLE_SEARCH_MAX 16
 
 enum gui_colors {
    gui_color_bg     = 0,
@@ -97,7 +98,7 @@ typedef void (*gui_cb_draw_t)(gui_base_t *data);
 // status: the changing status
 // origin: the originator of the event
 // destination: the destination of the event
-// result: (bool) request to propagate the event or not
+// result: (bool) request to propagate the event or not (VIP if the consumer of the event wants to invalidate it for others)
 typedef bool (*gui_cb_on_status_t)(gui_status_t status, gui_base_t *origin, gui_object_t *destination);
 typedef void (*print_delegate_t) (const char * format, ...);
 typedef void (*print_delegate_caller_t)(print_delegate_t printer);

@@ -91,7 +91,6 @@ void menu_on_keyboard_event(keyboard_status_t keys) {
                         //Fix when focused object changes outside the event system
                         if (menu_focused_object != old_focus && new_focus == old_focus) {
                             new_focus->base.status.focused = false;
-                            new_focus->base.status.navigable = true;
                         }
                     }
                 } else if (event->key_down && is_video_overlay_enabled() && menu_focused_object != NULL) {
@@ -155,7 +154,7 @@ bool on_alignment_event(gui_status_t status, gui_base_t *origin, gui_object_t *d
         gui_obj_draw(menu_left_buttons_group);
         menu_focused_object = gui_focused(&menu_left_buttons_group_elements[0]);
     }
-    return true;
+    return false;
 }
 
 bool on_back_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
