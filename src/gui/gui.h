@@ -172,12 +172,15 @@ gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint wi
 extern const char* gui_id_window;
 extern const char* gui_id_button;
 extern const char* gui_id_slider;
+extern const char* gui_id_text;
 extern const char* gui_id_label;
 extern const char* gui_id_group;
 extern const char* gui_id_spinbox;
 
 #define gui_create_window(ctx, x, y, width, height, colors, props) \
    gui_create_object(ctx, x, y, width, height, gui_id_window, colors, props, NULL, gui_draw_window)
+#define gui_create_text(ctx, x, y, width, height, colors, props, text) \
+   gui_create_object(ctx, x, y, width, height, gui_id_text, colors, props, (void *) text, gui_draw_text)
 #define gui_create_button(ctx, x, y, width, height, colors, props, text) \
    gui_create_object(ctx, x, y, width, height, gui_id_button, colors, props, (void *) text, gui_draw_button)
 #define gui_create_slider(ctx, x, y, width, height, colors, props, number) \

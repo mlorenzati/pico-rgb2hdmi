@@ -10,6 +10,7 @@
 const char* gui_id_window  = "window";
 const char* gui_id_button  = "button";
 const char* gui_id_slider  = "slider";
+const char* gui_id_text    = "text";
 const char* gui_id_label   = "label";
 const char* gui_id_group   = "group";
 const char* gui_id_spinbox = "spinbox";
@@ -110,7 +111,7 @@ void gui_draw_window(gui_base_t *base) {
 void gui_draw_focus(gui_base_t *base) {
     uint *colors = (uint *)(base->colors->elements);
     uint color_bg = base->status.activated ?
-        colors[4] : base->status.focused ? colors[5] : colors[1];
+        colors[4] : (base->status.focused && base->properties.focusable) ? colors[5] : colors[1];
     fill_rect(base->ctx, base->x, base->y, base->width, base->height, color_bg);
 }
 
@@ -263,7 +264,7 @@ void gui_draw_group(gui_base_t *base) {
 }
 
 bool gui_object_overflow_group(gui_base_t *object, gui_base_t *group) {
-    return object->y + object->height >= group->y + group->height || object->x + object->width >= group->x + group->width;
+    return object->y + object->height > group->y + group->height || object->x + object->width > group->x + group->width;
 }
 
 void gui_draw_spinbox(gui_base_t *base) {
@@ -507,6 +508,7 @@ uint gui_sum(gui_list_t *group, gui_properties_t props, bool width_height) {
         height = orientation ? (object->base.height > height ? object->base.height : height) : (height + object->base.height + padding);
         padding = props.padding;
     }
+    
     if (props.border) {
         width += 2;
         height += 2;

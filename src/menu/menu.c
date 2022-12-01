@@ -39,18 +39,26 @@ static graphic_ctx_t menu_overlay_ctx;
 uint menu_colors[] = { color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green };
 gui_list_t menu_colors_list = initalizeGuiList(menu_colors);
 const gui_properties_t menu_common_nshared_props = {
+    .focusable  = 1,
     .alignment  = gui_align_center,
     .horiz_vert = gui_orientation_vertical,
     .padding    = 1,
     .shared     = 0,
     .border     = 1
 };
+
+const gui_properties_t menu_common_text_props = {
+    .alignment  = gui_align_center,
+    .focusable  = 0
+};
+
 const gui_properties_t menu_spinbox_props = {
-		.alignment = gui_align_center,
+        .focusable  = 1,
+		.alignment  = gui_align_center,
 		.horiz_vert = gui_orientation_horizontal,
-		.padding = 1,
-		.shared = 0,
-		.border = 1
+		.padding    = 1,
+		.shared     = 0,
+		.border     = 1
 	};
 
 gui_object_t *menu_focused_object = NULL;
@@ -80,8 +88,10 @@ void menu_on_keyboard_event(keyboard_status_t keys) {
                     } else if (menu_focused_object != NULL) {
                         gui_object_t *old_focus = menu_focused_object;
                         gui_object_t *new_focus = gui_deactivate(menu_focused_object);
+                        //Fix when focused object changes outside the event system
                         if (menu_focused_object != old_focus && new_focus == old_focus) {
-                            new_focus ->base.status.focused = false;
+                            new_focus->base.status.focused = false;
+                            new_focus->base.status.navigable = true;
                         }
                     }
                 } else if (event->key_down && is_video_overlay_enabled() && menu_focused_object != NULL) {
@@ -218,7 +228,9 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
 
         case menu_button_group_alignment: {
             gui_object_t elements[] = {
+                gui_create_text(&menu_overlay_ctx, 0, 0, 120, 12, &menu_colors_list, menu_common_text_props, "Horizontal"),
                 gui_create_spinbox(&menu_overlay_ctx, 0, 0, 120, 12, &menu_colors_list, menu_spinbox_props, &test1),
+                gui_create_text(&menu_overlay_ctx, 0, 0, 120, 12, &menu_colors_list, menu_common_text_props, "Vertical"),
                 gui_create_spinbox(&menu_overlay_ctx, 0, 0, 120, 12, &menu_colors_list, menu_spinbox_props, &test2),
                 gui_create_button(&menu_overlay_ctx,  0, 0, 120, 12, &menu_colors_list, menu_common_nshared_props, "Back")
             };
@@ -227,9 +239,9 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             menu_left_buttons_group_list = group_list;
             
             gui_status_t button_status = { .activated = 1, .add = 1, .substract = 1};
-            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[2].base, &menu_left_buttons_group_elements[2], on_back_event);
-            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[0], on_spinbox_event);
+            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[4].base, &menu_left_buttons_group_elements[4], on_back_event);
             gui_event_subscribe(button_status, &menu_left_buttons_group_elements[1].base, &menu_left_buttons_group_elements[1], on_spinbox_event);
+            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_spinbox_event);
             }
             break;
             
