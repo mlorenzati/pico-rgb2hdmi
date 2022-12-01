@@ -80,8 +80,8 @@ void menu_on_keyboard_event(keyboard_status_t keys) {
                     } else if (menu_focused_object != NULL) {
                         gui_object_t *old_focus = menu_focused_object;
                         gui_object_t *new_focus = gui_deactivate(menu_focused_object);
-                        if (menu_focused_object == old_focus && new_focus != old_focus) {
-                            menu_focused_object = new_focus;
+                        if (menu_focused_object != old_focus && new_focus == old_focus) {
+                            new_focus ->base.status.focused = false;
                         }
                     }
                 } else if (event->key_down && is_video_overlay_enabled() && menu_focused_object != NULL) {
