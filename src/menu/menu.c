@@ -165,12 +165,13 @@ bool on_back_event(gui_status_t status, gui_base_t *origin, gui_object_t *destin
 
 uint test1, test2;
 bool on_spinbox_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
-		if (!status.activated && origin->status.activated) {
+		uint8_t *data = (uint8_t *) origin->data;
+        if (!status.activated && origin->status.activated) {
 			destination->base.status.navigable = !destination->base.status.navigable;
-		} else if (status.add && test1 < 100) {
-			test1 += 1;
-		} else if (status.substract && test1 != 0) {
-			test1 -= 1;
+		} else if (status.add && *data < 100) {
+			*data += 1;
+		} else if (status.substract && *data != 0) {
+			*data -= 1;
 		}
 		destination->base.status.data_changed = 1;
 		
@@ -194,6 +195,7 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
         return menu_left_buttons_group; 
     }
     menu_button_index++;
+    
     //Generate new objects and subscriptions
     menu_nav_stack[menu_button_index - 1] = new;
     switch(new) {
@@ -227,6 +229,7 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             gui_status_t button_status = { .activated = 1, .add = 1, .substract = 1};
             gui_event_subscribe(button_status, &menu_left_buttons_group_elements[2].base, &menu_left_buttons_group_elements[2], on_back_event);
             gui_event_subscribe(button_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[0], on_spinbox_event);
+            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[1].base, &menu_left_buttons_group_elements[1], on_spinbox_event);
             }
             break;
             
