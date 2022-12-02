@@ -104,10 +104,6 @@ void command_reboot() {
 }
 
 void command_show_info(bool value) {
-	#ifdef PURCHASE_MODE
-		value = true;
-	#endif
-	
 	video_overlay_enable(value);
 	if (value) {
 		// fill_rect(&overlay_ctx,  0, 0, overlay_ctx.width, overlay_ctx.height, color_white);

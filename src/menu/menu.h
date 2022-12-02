@@ -7,6 +7,7 @@
 
 #define MENU_TOTAL_LEFT_BUTTONS 8
 #define MENU_TOTAL_NAV_STACK    8
+#define MENU_HV_SYNC_REFRESH    500
 
 typedef enum  {
     menu_event_action = 0,
@@ -18,7 +19,9 @@ typedef enum  {
 typedef enum  {
     menu_button_group_none = 0,
     menu_button_group_home,
-    menu_button_group_alignment
+    menu_button_group_alignment,
+    menu_button_group_diagnostic,
+    menu_button_group_about
 } menu_button_group_type;
 
 typedef struct menu_event {

@@ -5,12 +5,12 @@
 
 extern int command_info_afe_error;
 extern int command_info_scanner_error;
-extern graphic_ctx_t cmd_graphic_ctx;
-extern uint color_white;
-extern uint color_gray;
-extern uint color_dark;
-extern uint color_light_blue;
-extern uint color_yellow;
+// extern graphic_ctx_t cmd_graphic_ctx;
+// extern uint color_white;
+// extern uint color_gray;
+// extern uint color_dark;
+// extern uint color_light_blue;
+// extern uint color_yellow;
 
 int  command_on_receive(int option, const void *data, bool convert);
 void command_storage_initialize();

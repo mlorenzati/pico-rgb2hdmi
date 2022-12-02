@@ -252,3 +252,12 @@ void draw_flood(const graphic_ctx_t *ctx, uint x, uint y, uint fill_color, uint 
         }
     }
 }
+
+uint8_t bppx_to_int(graphics_bppx bppx) {
+    switch (bppx) {
+        case rgb_8:  return 8;
+        case rgb_16: return 16;
+        case rgb_24: return 24;
+        default: return 0;
+    }
+}

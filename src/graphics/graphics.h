@@ -38,6 +38,7 @@ struct graphic_ctx {
 
 graphic_ctx_t get_sub_graphic_ctx(const graphic_ctx_t *parent, uint x, uint y, uint width, uint height);
 
+uint8_t bppx_to_int(graphics_bppx bppx);
 void put_pixel(const graphic_ctx_t *ctx, uint x, uint y, uint color);
 uint get_pixel(const graphic_ctx_t *ctx, uint x, uint y);
 void draw_line(const graphic_ctx_t *ctx, uint x0, uint y0, uint x1, uint y1, uint color);

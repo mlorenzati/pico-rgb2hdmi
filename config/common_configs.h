@@ -12,7 +12,7 @@
 #endif
 
 #ifdef _MENU_H
-    #define MENU_VIDEO_OVERLAY_WIDTH   -148
+    #define MENU_VIDEO_OVERLAY_WIDTH   -200
     #define MENU_VIDEO_OVERLAY_HEIGHT  -104
 #endif
 

@@ -78,16 +78,6 @@ cmd_parser_option_t options[] =
     {NULL,      TRUE, NULL,    0 }
 };
 
-#ifdef PURCHASE_MODE
-    struct  repeating_timer ui_vsync_hsync_timer;
-    #define UI_VSYNC_HSYNC_REFRESH 500
-    bool ui_vsync_hsync_timer_callback(struct repeating_timer *t) {
-        // draw_textf(&cmd_graphic_ctx, 8, cmd_graphic_ctx.height - 8, color_white, color_dark, false, 
-        //      "VSYNC=%d HSYNC=%d", 1000000000 / rgbScannerGetVsyncNanoSec(), 1000000000 / rgbScannerGetHsyncNanoSec());
-        return true;
-    }
-#endif
-
 // ----------- Global register end ----------- 
 
 // *********** IRQ API CALL END   ************
@@ -226,11 +216,7 @@ int main() {
     gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT); 
     if (command_info_afe_error == 0) {
-        #ifdef PURCHASE_MODE
-            io_rw_16 final_height = GET_VIDEO_PROPS().height - GRAPHICS_FONT_SIZE;
-        #else
-            io_rw_16 final_height = GET_VIDEO_PROPS().height;
-        #endif
+        io_rw_16 final_height = GET_VIDEO_PROPS().height;
         command_info_scanner_error = rgbScannerSetup(
             RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, GET_VIDEO_PROPS().vertical_front_porch, final_height, scanLineTriggered);
         if (command_info_scanner_error > 0) {
@@ -249,11 +235,6 @@ int main() {
 
     // Show Version
     command_on_receive('v', NULL, false);
-
-    // Start Vsync / Hsync update
-    #ifdef PURCHASE_MODE
-        add_repeating_timer_ms(UI_VSYNC_HSYNC_REFRESH, ui_vsync_hsync_timer_callback, NULL, &ui_vsync_hsync_timer);
-    #endif 
 
     // Main Busy Loop
     command_line_loop();

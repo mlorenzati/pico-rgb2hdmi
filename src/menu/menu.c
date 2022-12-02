@@ -1,10 +1,16 @@
 #include "menu.h"
+#include "version.h"
+#include "rgbScan.h"
 #include "graphics.h"
 #include "videoAdjust.h"
+#include "security.h"
 #include "overlay.h"
+#include "commands.h"
 
 //System configuration includes
 #include "common_configs.h"
+
+#include "pico/stdlib.h"
 
 #if DVI_SYMBOLS_PER_WORD == 2
     const uint color_black      = 0b0000000000000000;
@@ -47,8 +53,13 @@ const gui_properties_t menu_common_nshared_props = {
     .border     = 1
 };
 
-const gui_properties_t menu_common_text_props = {
+const gui_properties_t menu_common_label_props = {
     .alignment  = gui_align_center,
+    .focusable  = 0
+};
+
+const gui_properties_t menu_common_text_props = {
+    .alignment  = gui_align_left_up,
     .focusable  = 0
 };
 
@@ -67,6 +78,7 @@ gui_object_t menu_left_buttons_group_elements[MENU_TOTAL_LEFT_BUTTONS];
 gui_list_t   menu_left_buttons_group_list;
 gui_object_t menu_left_buttons_group;
 
+struct repeating_timer menu_vsync_hsync_timer;
 // --------- Global register end --------- 
 
 // --------- KEYBOARD API CALL START --------- 
@@ -136,8 +148,32 @@ void menu_on_keyboard_event(keyboard_status_t keys) {
 }
 // ---------  KEYBOARD API CALL END  ---------
 
+// ---------- TIMER  CALLBACK START ----------
+bool menu_hvsync_timer_callback(struct repeating_timer *t) {
+    gui_object_t *label = (gui_object_t *) t->user_data;
+    if (label != NULL) {
+        gui_ref_draw(label);
+    }
+    
+    return true;
+}
+
+// ----------- TIMER CALLBACK  END -----------
+
+bool menu_change_view(gui_status_t status, gui_base_t *origin, menu_button_group_type type){
+    if (!status.activated && origin->status.activated) {
+        menu_left_buttons_group = menu_create_left_button_group(menu_nav_stack[menu_button_index - 1], type);
+        gui_obj_draw(menu_window);
+        gui_obj_draw(menu_left_buttons_group);
+        menu_focused_object = gui_focused(&menu_left_buttons_group_elements[0]);
+        //Once we consume this event, we dispose it due to new changes
+        return false;
+    }
+    return true;
+}
+
 // ---------  GUI EVENT SLOTS HANDLERS START  ---------
-bool on_exit_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+bool on_exit_button_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
     if (!status.activated && origin->status.activated) {
         video_overlay_enable(false);
         gui_disable(&menu_left_buttons_group);
@@ -145,21 +181,22 @@ bool on_exit_event(gui_status_t status, gui_base_t *origin, gui_object_t *destin
     return true;
 }
 
-bool on_alignment_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
-    if (!status.activated && origin->status.activated) {
-        menu_button_group_type previous = menu_nav_stack[menu_button_index - 1];
-        menu_button_group_type new = menu_button_group_alignment;
-        menu_left_buttons_group = menu_create_left_button_group(previous, new);
-        gui_obj_draw(menu_window);
-        gui_obj_draw(menu_left_buttons_group);
-        menu_focused_object = gui_focused(&menu_left_buttons_group_elements[0]);
-    }
-    return false;
+bool on_about_button_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+    return menu_change_view(status, origin, menu_button_group_about);
+}
+
+bool on_alignment_button_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+    return menu_change_view(status, origin, menu_button_group_alignment);
+}
+
+bool on_diagnostic_button_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+    return menu_change_view(status, origin, menu_button_group_diagnostic);
 }
 
 bool on_back_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
     if (!status.activated && origin->status.activated) {
         if (menu_button_index >= 2) {
+            cancel_repeating_timer(&menu_vsync_hsync_timer); //blindly stopping the timer for all back events for now
             menu_button_group_type previous = menu_nav_stack[menu_button_index - 1];
             menu_button_group_type new = menu_nav_stack[menu_button_index - 2];
             menu_button_index -= 2;
@@ -169,6 +206,7 @@ bool on_back_event(gui_status_t status, gui_base_t *origin, gui_object_t *destin
             menu_focused_object = gui_focused(&menu_left_buttons_group_elements[0]);
         }
     }
+    //Once we consume this event, we dispose it due to new changes
     return false;
 }
 
@@ -195,6 +233,18 @@ void menu_elements_copy_(const gui_object_t *src, gui_object_t *dst, uint8_t siz
     }
 }
 
+void menu_diagnostic_print(print_delegate_t printer) {
+	printer("%s v%s\n\nRes: %dx%d %dbits\nAFE code: %d\nScan code: %d\nId: %s\nLicense: %s",
+        PROJECT_NAME, PROJECT_VER, menu_graphic_ctx.width, menu_graphic_ctx.height, bppx_to_int(menu_graphic_ctx.bppx), 
+        command_info_afe_error, command_info_scanner_error, security_get_uid(),
+        command_is_license_valid() ? "valid" : "invalid, please register");
+};
+
+void menu_scan_print(print_delegate_t printer) {
+	printer("HSYNC %d, VSYNC %d", 1000000000 / rgbScannerGetVsyncNanoSec(), 1000000000 / rgbScannerGetHsyncNanoSec());
+};
+
+
 gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu_button_group_type new) {
     //First unsubscribe last objects
     gui_event_unsubscribe(&(menu_left_buttons_group.base), NULL);  
@@ -207,29 +257,34 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
     
     //Generate new objects and subscriptions
     menu_nav_stack[menu_button_index - 1] = new;
+    gui_status_t button_status = { .activated = 1 };
+    gui_status_t spinbox_status = { .activated = 1, .add = 1, .substract = 1};
+
     switch(new) {
         case menu_button_group_home: {
             gui_object_t elements[] = { 
                 gui_create_button(&menu_overlay_ctx,  0, 0, 120, 12, &menu_colors_list, menu_common_nshared_props, "Alignment"),
                 gui_create_button(&menu_overlay_ctx,  0, 0, 120, 12, &menu_colors_list, menu_common_nshared_props, "Diagnostics"),
                 gui_create_button(&menu_overlay_ctx,  0, 0, 120, 12, &menu_colors_list, menu_common_nshared_props, "Save & reboot"),
+                gui_create_button(&menu_overlay_ctx,  0, 0, 120, 12, &menu_colors_list, menu_common_nshared_props, "About"),
                 gui_create_button(&menu_overlay_ctx,  0, 0, 120, 12, &menu_colors_list, menu_common_nshared_props, "Exit")
             };
             menu_elements_copy(elements, menu_left_buttons_group_elements);
             gui_list_t group_list = initalizeGuiDynList(menu_left_buttons_group_elements, arraySize(elements));
             menu_left_buttons_group_list = group_list;
             
-            gui_status_t button_status = { .activated = 1 };
-            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_exit_event);
-            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[0], on_alignment_event);
+            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[0], on_alignment_button_event);
+            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[1].base, &menu_left_buttons_group_elements[1], on_diagnostic_button_event);
+            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_about_button_event);
+            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[4].base, &menu_left_buttons_group_elements[4], on_exit_button_event);
             }
             break;
 
         case menu_button_group_alignment: {
             gui_object_t elements[] = {
-                gui_create_text(&menu_overlay_ctx, 0, 0, 120, 12, &menu_colors_list, menu_common_text_props, "Horizontal"),
+                gui_create_text(&menu_overlay_ctx, 0, 0, 120, 12, &menu_colors_list, menu_common_label_props, "Horizontal"),
                 gui_create_spinbox(&menu_overlay_ctx, 0, 0, 120, 12, &menu_colors_list, menu_spinbox_props, &test1),
-                gui_create_text(&menu_overlay_ctx, 0, 0, 120, 12, &menu_colors_list, menu_common_text_props, "Vertical"),
+                gui_create_text(&menu_overlay_ctx, 0, 0, 120, 12, &menu_colors_list, menu_common_label_props, "Vertical"),
                 gui_create_spinbox(&menu_overlay_ctx, 0, 0, 120, 12, &menu_colors_list, menu_spinbox_props, &test2),
                 gui_create_button(&menu_overlay_ctx,  0, 0, 120, 12, &menu_colors_list, menu_common_nshared_props, "Back")
             };
@@ -237,13 +292,37 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             gui_list_t group_list = initalizeGuiDynList(menu_left_buttons_group_elements, arraySize(elements));
             menu_left_buttons_group_list = group_list;
             
-            gui_status_t button_status = { .activated = 1, .add = 1, .substract = 1};
             gui_event_subscribe(button_status, &menu_left_buttons_group_elements[4].base, &menu_left_buttons_group_elements[4], on_back_event);
-            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[1].base, &menu_left_buttons_group_elements[1], on_spinbox_event);
-            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_spinbox_event);
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[1].base, &menu_left_buttons_group_elements[1], on_spinbox_event);
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_spinbox_event);
             }
             break;
+        case menu_button_group_diagnostic: {
+            gui_object_t elements[] = {
+                gui_create_label(&menu_overlay_ctx, 0, 0, 200, 78, &menu_colors_list, menu_common_text_props, menu_diagnostic_print),
+                gui_create_label(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_text_props, menu_scan_print),
+                gui_create_button(&menu_overlay_ctx,  0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Back")
+            };
+            menu_elements_copy(elements, menu_left_buttons_group_elements);
+            gui_list_t group_list = initalizeGuiDynList(menu_left_buttons_group_elements, arraySize(elements));
+            menu_left_buttons_group_list = group_list;
             
+            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[2].base, &menu_left_buttons_group_elements[2], on_back_event);
+            add_repeating_timer_ms(MENU_HV_SYNC_REFRESH, menu_hvsync_timer_callback, &menu_left_buttons_group_elements[2], &menu_vsync_hsync_timer);
+            }
+            break;
+        case menu_button_group_about: {
+            gui_object_t elements[] = {
+                gui_create_window(&menu_overlay_ctx, 0, 0, 200, 90, &menu_colors_list, menu_common_label_props),
+                gui_create_button(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Back")
+            };
+            menu_elements_copy(elements, menu_left_buttons_group_elements);
+            gui_list_t group_list = initalizeGuiDynList(menu_left_buttons_group_elements, arraySize(elements));
+            menu_left_buttons_group_list = group_list;
+            
+            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[1].base, &menu_left_buttons_group_elements[1], on_back_event);
+            }
+            break;
         default: {
             gui_object_t elements[] = { gui_create_button(&menu_overlay_ctx,  0, 0, 100, 12, &menu_colors_list, menu_common_nshared_props, "Exit") };
             menu_elements_copy(elements, menu_left_buttons_group_elements);
