@@ -224,10 +224,16 @@ bool on_back_event(gui_status_t status, gui_base_t *origin, gui_object_t *destin
     //Once we consume this event, we dispose it due to new changes
     return false;
 }
+uint spinbox_vertical, spinbox_horizontal;
+uint color_slider_option, color_spinbox_red, color_spinbox_green, color_spinbox_blue;
 
-uint test1, test2, test3, slider_opt;
-bool on_spinbox_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
-    uint8_t *data = (uint8_t *) origin->data;
+void menu_setup_selected_color() {
+    uint index = color_slider_option * (menu_colors_list.size-1) / GUI_BAR_100PERCENT;
+    bppx_split_color(menu_graphic_ctx.bppx, menu_colors[index], &color_spinbox_red, &color_spinbox_green, &color_spinbox_blue);
+}
+
+bool on_alignment_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+    uint *data = (uint *) origin->data;
     if (!status.activated && origin->status.activated) {
         destination->base.status.navigable = !destination->base.status.navigable;
     } else if (status.add && *data < 100) {
@@ -241,7 +247,7 @@ bool on_spinbox_event(gui_status_t status, gui_base_t *origin, gui_object_t *des
 }
 
 bool on_palette_option_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
-    uint16_t *data = (uint16_t *) origin->data;
+    uint *data = (uint *) origin->data;
     if (!status.activated && origin->status.activated) {
         destination->base.status.navigable = !destination->base.status.navigable;
     } else if (status.add && *data < GUI_BAR_100PERCENT) {
@@ -250,19 +256,29 @@ bool on_palette_option_event(gui_status_t status, gui_base_t *origin, gui_object
         *data -= (GUI_BAR_100PERCENT/(menu_colors_list.size-1));
     }
     destination->base.status.data_changed = 1;
+    menu_setup_selected_color();
+    
     gui_obj_draw(menu_main_view_group);
     
     return true;
 }
 
 bool on_palette_color_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
-    uint8_t *data = (uint8_t *) origin->data;
+    uint *data = (uint *) origin->data;
+    if        (data == &color_spinbox_red) {
+        
+    } else if (data == &color_spinbox_green) {
+
+    } else if (data == &color_spinbox_blue) {
+
+    }
+
     if (!status.activated && origin->status.activated) {
         destination->base.status.navigable = !destination->base.status.navigable;
-    } else if (status.add && *data < 100) {
-        *data += 1;
+    } else if (status.add && *data < 255) {
+        *data += 8;
     } else if (status.substract && *data != 0) {
-        *data -= 1;
+        *data -= 8;
     }
     destination->base.status.data_changed = 1;
     
@@ -286,7 +302,7 @@ void menu_elements_copy_(const gui_object_t *src, gui_object_t *dst, uint8_t siz
 
 void menu_diagnostic_print(print_delegate_t printer) {
 	printer("%s v%s\n\nRes: %dx%d %dbits\nAFE code: %d\nScan code: %d\nId: %s\nLicense: %s",
-        PROJECT_NAME, PROJECT_VER, menu_graphic_ctx.width, menu_graphic_ctx.height, bppx_to_int(menu_graphic_ctx.bppx), 
+        PROJECT_NAME, PROJECT_VER, menu_graphic_ctx.width, menu_graphic_ctx.height, bppx_to_int(menu_graphic_ctx.bppx, color_part_all), 
         command_info_afe_error, command_info_scanner_error, security_get_uid(),
         command_is_license_valid() ? "valid" : "invalid, please register");
 };
@@ -296,7 +312,7 @@ void menu_scan_print(print_delegate_t printer) {
 };
 
 void menu_palette_opt_print(print_delegate_t printer) {
-    uint index = slider_opt * (menu_colors_list.size-1) / GUI_BAR_100PERCENT;
+    uint index = color_slider_option * (menu_colors_list.size-1) / GUI_BAR_100PERCENT;
     printer("%s", gui_colors_str[index]);
 }
 
@@ -319,9 +335,9 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
         case menu_button_group_alignment: {
             gui_object_t elements[] = {
                 gui_create_text(&menu_overlay_ctx, 0, 0, 100, 12, &menu_colors_list, menu_common_label_props, "Horizontal"),
-                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 100, 12, &menu_colors_list, menu_spinbox_props, &test1),
+                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 100, 12, &menu_colors_list, menu_spinbox_props, &spinbox_horizontal),
                 gui_create_text(&menu_overlay_ctx, 0, 0, 100, 12, &menu_colors_list, menu_common_label_props, "Vertical"),
-                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 100, 12, &menu_colors_list, menu_spinbox_props, &test2),
+                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 100, 12, &menu_colors_list, menu_spinbox_props, &spinbox_vertical),
                 gui_create_button(&menu_overlay_ctx,  0, 0, 100, 12, &menu_colors_list, menu_common_nshared_props, "Back")
             };
             menu_elements_copy(elements, menu_left_buttons_group_elements);
@@ -329,8 +345,8 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             menu_left_buttons_group_list = group_list;
             
             gui_event_subscribe(button_status, &menu_left_buttons_group_elements[4].base, &menu_left_buttons_group_elements[4], on_back_event);
-            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[1].base, &menu_left_buttons_group_elements[1], on_spinbox_event);
-            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_spinbox_event);
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[1].base, &menu_left_buttons_group_elements[1], on_alignment_event);
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_alignment_event);
             }
             break;
         case menu_button_group_diagnostic: {
@@ -349,19 +365,19 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             break;
         case menu_button_group_palette: {
             gui_object_t elements[] = {
-                gui_create_slider(&menu_overlay_ctx, 0, 0, 80, 12, &menu_colors_list, menu_spinbox_props, &slider_opt),
+                gui_create_slider(&menu_overlay_ctx, 0, 0, 80, 12, &menu_colors_list, menu_spinbox_props, &color_slider_option),
                 gui_create_text(&menu_overlay_ctx, 0, 0, 80, 12, &menu_colors_list, menu_common_label_props, "Red"),
-                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 80, 12, &menu_colors_list, menu_spinbox_props, &test1),
+                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 80, 12, &menu_colors_list, menu_spinbox_props, &color_spinbox_red),
                 gui_create_text(&menu_overlay_ctx, 0, 0, 80, 12, &menu_colors_list, menu_common_label_props, "Green"),
-                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 80, 12, &menu_colors_list, menu_spinbox_props, &test2),
+                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 80, 12, &menu_colors_list, menu_spinbox_props, &color_spinbox_green),
                 gui_create_text(&menu_overlay_ctx, 0, 0, 80, 12, &menu_colors_list, menu_common_label_props, "Blue"),
-                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 80, 12, &menu_colors_list, menu_spinbox_props, &test3),
+                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 80, 12, &menu_colors_list, menu_spinbox_props, &color_spinbox_blue),
                 gui_create_button(&menu_overlay_ctx, 0, 0, 80, 12, &menu_colors_list, menu_common_nshared_props, "Back")
             };
             menu_elements_copy(elements, menu_left_buttons_group_elements);
             gui_list_t group_list = initalizeGuiDynList(menu_left_buttons_group_elements, arraySize(elements));
             menu_left_buttons_group_list = group_list;
-            
+            menu_setup_selected_color();
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[0], on_palette_option_event);
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[2].base, &menu_left_buttons_group_elements[2], on_palette_color_event);
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[4].base, &menu_left_buttons_group_elements[4], on_palette_color_event);

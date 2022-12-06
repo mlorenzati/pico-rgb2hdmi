@@ -165,7 +165,7 @@ int command_on_receive(int option, const void *data, bool convert) {
 				}
                 break;
 			case 'c':
-				printf("Capture screen: %dx%d@%dbppx", cmd_graphic_ctx.width, cmd_graphic_ctx.height, bppx_to_int(cmd_graphic_ctx.bppx));
+				printf("Capture screen: %dx%d@%dbppx", cmd_graphic_ctx.width, cmd_graphic_ctx.height, bppx_to_int(cmd_graphic_ctx.bppx, color_part_all));
 				rgbScannerEnable(false);
 				for(int height=0; height < cmd_graphic_ctx.height; height++) {
 					printf("\n");
@@ -203,7 +203,7 @@ int command_on_receive(int option, const void *data, bool convert) {
                 printf("%s - Integration Test - version %s\n", PROJECT_NAME, PROJECT_VER);
 				break;
 			case 'm':
-                printf("%s %dx%d@%dbppx\n", PROJECT_NAME, cmd_graphic_ctx.width, cmd_graphic_ctx.height, bppx_to_int(cmd_graphic_ctx.bppx));
+                printf("%s %dx%d@%dbppx\n", PROJECT_NAME, cmd_graphic_ctx.width, cmd_graphic_ctx.height, bppx_to_int(cmd_graphic_ctx.bppx, color_part_all));
 				break;
 			case 'R':
 				printf("Software reboot requested\n");
