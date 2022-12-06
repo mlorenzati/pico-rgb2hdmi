@@ -21,7 +21,7 @@
     const uint color_white      = 0b1111111111111111;
     #define MENU_OVERLAY_BBPX    rgb_16
 #else
-    const uint color_black         = 0b00000000;
+    const uint color_black      = 0b00000000;
     const uint color_dark_gray  = 0b01001001;
     const uint color_mid_gray   = 0b10110110;
     const uint color_light_gray = 0b11011011;
@@ -44,6 +44,7 @@ static graphic_ctx_t menu_graphic_ctx = {
 static graphic_ctx_t menu_overlay_ctx;
 uint menu_colors[] = { color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green };
 gui_list_t menu_colors_list = initalizeGuiList(menu_colors);
+
 const gui_properties_t menu_common_nshared_props = {
     .focusable  = 1,
     .alignment  = gui_align_center,
@@ -77,6 +78,9 @@ gui_object_t menu_window;
 gui_object_t menu_left_buttons_group_elements[MENU_TOTAL_LEFT_BUTTONS];
 gui_list_t   menu_left_buttons_group_list;
 gui_object_t menu_left_buttons_group;
+gui_object_t menu_main_view_group_elements[MENU_TOTAL_MAIN_VIEW];
+gui_list_t   menu_main_view_group_list;
+gui_object_t menu_main_view_group;
 
 struct repeating_timer menu_vsync_hsync_timer;
 // --------- Global register end --------- 
@@ -165,6 +169,9 @@ bool menu_change_view(gui_status_t status, gui_base_t *origin, menu_button_group
         menu_left_buttons_group = menu_create_left_button_group(menu_nav_stack[menu_button_index - 1], type);
         gui_obj_draw(menu_window);
         gui_obj_draw(menu_left_buttons_group);
+        if (menu_main_view_group.base.status.visible) {
+           gui_obj_draw(menu_main_view_group);
+        }
         menu_focused_object = gui_focused(&menu_left_buttons_group_elements[0]);
         //Once we consume this event, we dispose it due to new changes
         return false;
@@ -243,6 +250,7 @@ bool on_palette_option_event(gui_status_t status, gui_base_t *origin, gui_object
         *data -= (GUI_BAR_100PERCENT/(menu_colors_list.size-1));
     }
     destination->base.status.data_changed = 1;
+    gui_obj_draw(menu_main_view_group);
     
     return true;
 }
@@ -287,10 +295,14 @@ void menu_scan_print(print_delegate_t printer) {
 	printer("HSYNC %d, VSYNC %d", 1000000000 / rgbScannerGetVsyncNanoSec(), 1000000000 / rgbScannerGetHsyncNanoSec());
 };
 
+void menu_palette_opt_print(print_delegate_t printer) {
+    uint index = slider_opt * (menu_colors_list.size-1) / GUI_BAR_100PERCENT;
+    printer("%s", gui_colors_str[index]);
+}
 
 gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu_button_group_type new) {
     //First unsubscribe last objects
-    gui_event_unsubscribe(&(menu_left_buttons_group.base), NULL);  
+    gui_event_unsubscribe(&(menu_left_buttons_group.base), NULL);
 
     // Avoid new button groups if stack is full
     if (menu_button_index > MENU_TOTAL_LEFT_BUTTONS) { 
@@ -409,7 +421,34 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
 		gui_sum(&menu_left_buttons_group_list, menu_common_nshared_props, gui_coord_width), 
 		gui_sum(&menu_left_buttons_group_list, menu_common_nshared_props, gui_coord_height), 
 		&menu_colors_list, menu_common_nshared_props , &menu_left_buttons_group_list);
+    
+    menu_main_view_group = menu_create_main_view_group(&(left_buttons_group.base), new);
+    
     return left_buttons_group;
+}
+
+gui_object_t menu_create_main_view_group(gui_base_t *left_group, menu_button_group_type type) {
+     //First unsubscribe last objects
+    gui_event_unsubscribe(&(menu_main_view_group.base), NULL);
+    menu_main_view_group.base.status.visible = false;
+
+    switch(type) {
+        case menu_button_group_palette: {
+            gui_object_t elements[] = { gui_create_label(&menu_overlay_ctx, 0, 0, 115, 11, &menu_colors_list, menu_common_label_props, menu_palette_opt_print) };
+            menu_elements_copy(elements, menu_main_view_group_elements);
+            gui_list_t group_list = initalizeGuiDynList(menu_main_view_group_elements, arraySize(elements));
+            menu_main_view_group_list = group_list;
+            }
+            break;
+        default:
+            return menu_main_view_group;
+    }
+    gui_object_t main_view_group = gui_create_group(&menu_overlay_ctx, left_group->width, 0,
+		gui_sum(&menu_main_view_group_list, menu_common_nshared_props, gui_coord_width), 
+		gui_sum(&menu_main_view_group_list, menu_common_nshared_props, gui_coord_height), 
+		&menu_colors_list, menu_common_nshared_props , &menu_main_view_group_list);
+
+    return main_view_group;
 }
 
 // --------- MENU INIT API CALL START --------- 

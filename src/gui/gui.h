@@ -120,6 +120,8 @@ typedef struct gui_event_subscription {
 #define initalizeGuiDynList(list, _size) { .elements = (void *)list, .size = _size }
 #define initalizeGuiList(list) { .elements = (void *)list, .size = arraySize(list) }
 
+extern const char *gui_colors_str[];
+
 // GUI Draw callbacks
 void gui_draw_window(gui_base_t *base);
 void gui_draw_focus(gui_base_t *base);
