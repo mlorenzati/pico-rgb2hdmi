@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include "color.h"
 
 #ifdef FONT_8X8
 #include "font_8x8.h"
@@ -40,12 +41,7 @@ void put_pixel(const graphic_ctx_t *ctx, uint x, uint y, uint color) {
     }
     #endif
 
-    void *buffer = get_buffer(ctx, x, y);
-    switch (ctx->bppx) {
-        case rgb_8:  *((uint8_t  *)buffer) = color & 0xFF;     break;
-        case rgb_16: *((uint16_t *)buffer) = color & 0xFFFF;   break;
-        case rgb_24: *((uint32_t *)buffer) = color & 0xFFFFFF; break;
-    }
+    bppx_put_color(ctx->bppx, get_buffer(ctx, x, y), color);
 }
 
 uint get_pixel(const graphic_ctx_t *ctx, uint x, uint y) {
@@ -55,13 +51,7 @@ uint get_pixel(const graphic_ctx_t *ctx, uint x, uint y) {
     }
     #endif
 
-    void *buffer = get_buffer(ctx, x, y);
-    switch (ctx->bppx) {
-        case rgb_8:  return *((uint8_t  *)buffer) & 0xFF;
-        case rgb_16: return *((uint16_t *)buffer) & 0xFFFF;
-        case rgb_24: return *((uint32_t *)buffer) & 0xFFFFFF;
-    }
-    return 0;
+    return bppx_get_color(ctx->bppx, get_buffer(ctx, x, y));
 }
 
 void draw_line(const graphic_ctx_t *ctx, uint x0, uint y0, uint x1, uint y1, uint color) {
@@ -250,14 +240,5 @@ void draw_flood(const graphic_ctx_t *ctx, uint x, uint y, uint fill_color, uint 
             }
             x = x1;
         }
-    }
-}
-
-uint8_t bppx_to_int(graphics_bppx bppx) {
-    switch (bppx) {
-        case rgb_8:  return 8;
-        case rgb_16: return 16;
-        case rgb_24: return 24;
-        default: return 0;
     }
 }

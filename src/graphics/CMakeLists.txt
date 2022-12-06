@@ -9,4 +9,5 @@ target_include_directories(graphics INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 
 target_link_libraries(graphics INTERFACE
     pico_base_headers
+    color
 )

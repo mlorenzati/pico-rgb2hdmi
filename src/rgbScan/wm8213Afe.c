@@ -1,7 +1,7 @@
 #include "wm8213Afe.h"
 #include "hardware/gpio.h"
 #include "wm8213Afe.pio.h"
-//#include "hardware/structs/bus_ctrl.h"
+#include "hardware/structs/bus_ctrl.h"
 
 //Local registers
 static uint        afe_cs = -1;
@@ -123,10 +123,10 @@ void wm8213_afe_capture_setup_from_global() {
     uint offset =  pio_add_program(wm8213_afe_capture_global.pio, program);
     afe_capture_program_init(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm, offset, wm8213_afe_capture_global.sampling_rate, op_pins, wm8213_afe_capture_global.control_pins, op_bits);
     
-    //Give DMA R/W priority over the Bus
+    // Give DMA R/W priority over the Bus
     //bus_ctrl_hw->priority = BUSCTRL_BUS_PRIORITY_DMA_W_BITS | BUSCTRL_BUS_PRIORITY_DMA_R_BITS;
 }
-void wm8213_afe_capture_setup(PIO pio, uint sm, uint sampling_rate, wm8213_afe_bppx bppx, uint op_pins, uint control_pins) {
+void wm8213_afe_capture_setup(PIO pio, uint sm, uint sampling_rate, color_bppx bppx, uint op_pins, uint control_pins) {
     //Setup OP and sample ports on PIO
     wm8213_afe_capture_global.pio = pio;
     wm8213_afe_capture_global.sm =  sm;
@@ -143,7 +143,7 @@ void wm8213_afe_capture_update_sampling_rate(uint sampling_rate) {
     wm8213_afe_capture_setup_from_global();
 }
 
-void wm8213_afe_capture_update_bppx(wm8213_afe_bppx bppx) {
+void wm8213_afe_capture_update_bppx(color_bppx bppx) {
     wm8213_afe_capture_setup_from_global();
 }
 

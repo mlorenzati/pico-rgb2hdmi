@@ -27,7 +27,7 @@ bool command_license_is_valid;
 const void *security_key_in_flash;
 
 #if DVI_SYMBOLS_PER_WORD == 2
-	#define COMMANDS_OVERLAY_BPPX rgb_16
+	#define COMMANDS_OVERLAY_BPPX rgb_16_565
 	// Colors                0brrrrrggggggbbbbb;
 	// uint color_white       = 0b1111111111111111;
 	// uint color_gray        = 0b0110001100101100;
@@ -37,7 +37,7 @@ const void *security_key_in_flash;
 	#define COMMAND_GETBUFFER GET_RGB16_BUFFER
 	#define COMMAND_PRINTF_WORD	"%04X%s"
 #else
-	#define COMMANDS_OVERLAY_BPPX rgb_8
+	#define COMMANDS_OVERLAY_BPPX rgb_8_332
 	// Colors                0brrrgggbb;
 	// uint color_white       = 0b11111111;
 	// uint color_gray        = 0b01101110;
@@ -165,7 +165,7 @@ int command_on_receive(int option, const void *data, bool convert) {
 				}
                 break;
 			case 'c':
-				printf("Capture screen: %dx%d@%sbppx", cmd_graphic_ctx.width, cmd_graphic_ctx.height, cmd_graphic_ctx.bppx == rgb_8 ? "8" : "16");
+				printf("Capture screen: %dx%d@%dbppx", cmd_graphic_ctx.width, cmd_graphic_ctx.height, bppx_to_int(cmd_graphic_ctx.bppx));
 				rgbScannerEnable(false);
 				for(int height=0; height < cmd_graphic_ctx.height; height++) {
 					printf("\n");
@@ -203,7 +203,7 @@ int command_on_receive(int option, const void *data, bool convert) {
                 printf("%s - Integration Test - version %s\n", PROJECT_NAME, PROJECT_VER);
 				break;
 			case 'm':
-                printf("%s %dx%d@%sbppx\n", PROJECT_NAME, cmd_graphic_ctx.width, cmd_graphic_ctx.height, cmd_graphic_ctx.bppx == rgb_8 ? "8" : "16");
+                printf("%s %dx%d@%dbppx\n", PROJECT_NAME, cmd_graphic_ctx.width, cmd_graphic_ctx.height, bppx_to_int(cmd_graphic_ctx.bppx));
 				break;
 			case 'R':
 				printf("Software reboot requested\n");

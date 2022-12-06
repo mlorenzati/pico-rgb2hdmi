@@ -19,7 +19,7 @@
     const uint color_light_gray = 0b1111100000000000;
     const uint color_green      = 0b0000011111100000;
     const uint color_white      = 0b1111111111111111;
-    #define MENU_OVERLAY_BBPX    rgb_16
+    #define MENU_OVERLAY_BBPX    rgb_16_565
 #else
     const uint color_black      = 0b00000000;
     const uint color_dark_gray  = 0b01001001;
@@ -27,7 +27,7 @@
     const uint color_light_gray = 0b11011011;
     const uint color_green      = 0b00011100;
     const uint color_white      = 0b11111111;
-    #define MENU_OVERLAY_BBPX    rgb_8
+    #define MENU_OVERLAY_BBPX    rgb_8_332
 #endif
 
 // --------- Global register start ---------

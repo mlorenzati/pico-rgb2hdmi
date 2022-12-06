@@ -1,16 +1,11 @@
 #ifndef _GRAPHICS_H
 #define _GRAPHICS_H
 #include "pico.h"
+#include "color.h"
 
 #define GRAPHICS_USE_SUB_WINDOW 1
 #define GRAPHICS_BOUNDARY_CHECK 1
 #define GRAPHICS_FONT_SIZE      8
-
-typedef enum {
-	rgb_8  = 1,
-    rgb_16 = 2,
-    rgb_24 = 3
-} graphics_bppx;
 
 #define GRAPHICS_FLOOD_DEPTH 128
 typedef struct graphic_flood_queue {
@@ -29,7 +24,7 @@ struct graphic_ctx {
     uint16_t             x;
     uint16_t             y;
     void                *video_buffer;
-    graphics_bppx        bppx;
+    color_bppx           bppx;
     const graphic_ctx_t *parent;
 };
 
@@ -38,7 +33,6 @@ struct graphic_ctx {
 
 graphic_ctx_t get_sub_graphic_ctx(const graphic_ctx_t *parent, uint x, uint y, uint width, uint height);
 
-uint8_t bppx_to_int(graphics_bppx bppx);
 void put_pixel(const graphic_ctx_t *ctx, uint x, uint y, uint color);
 uint get_pixel(const graphic_ctx_t *ctx, uint x, uint y);
 void draw_line(const graphic_ctx_t *ctx, uint x0, uint y0, uint x1, uint y1, uint color);
