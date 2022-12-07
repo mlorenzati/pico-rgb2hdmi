@@ -106,7 +106,6 @@ typedef void (*print_delegate_caller_t)(print_delegate_t printer);
 typedef struct gui_object {
    gui_base_t         base;
    gui_cb_draw_t      draw;
-   gui_cb_on_status_t status_handle;
    gui_object_t       *next, *previous;
 } gui_object_t;
 
@@ -114,6 +113,7 @@ typedef struct gui_event_subscription {
    gui_status_t  status;
    gui_base_t   *origin;
    gui_object_t *destination;
+   gui_cb_on_status_t status_handle;
 } gui_event_subscription_t;
 
 #define arraySize(list) (sizeof(list) / sizeof(list[0]))

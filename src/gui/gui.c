@@ -348,9 +348,7 @@ bool gui_event_subscribe(gui_status_t status, gui_base_t *origin, gui_object_t *
         sel_event ->status = status;
         sel_event->origin = origin;
         sel_event->destination = destination;
-        if (sel_event->destination != NULL) {
-            sel_event->destination->status_handle = status_cb;
-        }
+        sel_event->status_handle = status_cb;
         return true;
     }
     return false;
@@ -437,7 +435,7 @@ gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
         c_status_match.word = c_status_sub->word & c_status_changed.word;
 
         if (&origin->base == event->origin && c_status_match.word > 0) {
-            gui_cb_on_status_t status_handle = event->destination->status_handle;
+            gui_cb_on_status_t status_handle = event->status_handle;
             if (origin == event->destination) {
                 // need to update
             }
