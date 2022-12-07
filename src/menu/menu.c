@@ -229,8 +229,8 @@ uint color_slider_option, color_spinbox_red, color_spinbox_green, color_spinbox_
 
 void menu_setup_selected_color() {
     uint index = color_slider_option * (menu_colors_list.size-1) / GUI_BAR_100PERCENT;
-    bppx_split_color(menu_graphic_ctx.bppx, menu_colors[index], &color_spinbox_red, &color_spinbox_green, &color_spinbox_blue);
-}
+        bppx_split_color(menu_graphic_ctx.bppx, menu_colors[index], &color_spinbox_red, &color_spinbox_green, &color_spinbox_blue);
+    }
 
 bool on_alignment_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
     uint *data = (uint *) origin->data;
@@ -251,14 +251,13 @@ bool on_palette_option_event(gui_status_t status, gui_base_t *origin, gui_object
     if (!status.activated && origin->status.activated) {
         destination->base.status.navigable = !destination->base.status.navigable;
     } else if (status.add && *data < GUI_BAR_100PERCENT) {
-        *data += (GUI_BAR_100PERCENT/(menu_colors_list.size-1));
+        *data += (GUI_BAR_100PERCENT/(menu_colors_list.size - 1));
     } else if (status.substract && *data != 0) {
-        *data -= (GUI_BAR_100PERCENT/(menu_colors_list.size-1));
+        *data -= (GUI_BAR_100PERCENT/(menu_colors_list.size - 1));
     }
+
     destination->base.status.data_changed = 1;
     menu_setup_selected_color();
-    
-    gui_obj_draw(menu_main_view_group);
     
     return true;
 }
@@ -312,7 +311,7 @@ void menu_scan_print(print_delegate_t printer) {
 };
 
 void menu_palette_opt_print(print_delegate_t printer) {
-    uint index = color_slider_option * (menu_colors_list.size-1) / GUI_BAR_100PERCENT;
+    uint index = color_slider_option * (menu_colors_list.size - 1) / GUI_BAR_100PERCENT;
     printer("%s", gui_colors_str[index]);
 }
 
@@ -378,6 +377,10 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             gui_list_t group_list = initalizeGuiDynList(menu_left_buttons_group_elements, arraySize(elements));
             menu_left_buttons_group_list = group_list;
             menu_setup_selected_color();
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[2], NULL); //Redraw RED spinbox on option change
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[4], NULL); //Redraw GREEN spinbox on option change
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[6], NULL); //Redraw BLUE spinbox on option change
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_main_view_group_elements[0], NULL);    //Redraw text hint
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[0], on_palette_option_event);
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[2].base, &menu_left_buttons_group_elements[2], on_palette_color_event);
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[4].base, &menu_left_buttons_group_elements[4], on_palette_color_event);
