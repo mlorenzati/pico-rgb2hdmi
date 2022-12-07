@@ -76,12 +76,12 @@ gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint wi
         .previous = NULL
     };
 
-    bool fill_group(gui_object_t *object, void *data) {
+    uint fill_group(gui_object_t *object, void *data) {
         gui_object_t **previous = (gui_object_t **) data;
         (*previous)->next = object;
         object->previous = *previous;
         *previous = object;
-        return true;
+        return 1;
     }
 
     if (id == gui_id_group) { // We don't need a strcmp on known const keys
@@ -223,7 +223,7 @@ typedef struct gui_draw_group_data {
 } gui_draw_group_data_t;
 
 void gui_draw_group(gui_base_t *base) {
-    bool draw_group(gui_object_t *object, void *data) {
+    uint draw_group(gui_object_t *object, void *data) {
         gui_draw_group_data_t *groupdata = (gui_draw_group_data_t *) data;
         gui_base_t *sub_base = &(object->base);
         sub_base->x = groupdata->inc_pos_x;
@@ -247,7 +247,7 @@ void gui_draw_group(gui_base_t *base) {
             groupdata->inc_pos_y += sub_base->height + groupdata->padding;
         }
 
-        return true;
+        return 1;
     }
 
     gui_draw_group_data_t group_data = {
@@ -345,7 +345,7 @@ bool gui_event_subscribe(gui_status_t status, gui_base_t *origin, gui_object_t *
        }
     }
     if (sel_event != NULL) {
-        sel_event ->status = status;
+        sel_event->status = status;
         sel_event->origin = origin;
         sel_event->destination = destination;
         sel_event->status_handle = status_cb;
@@ -354,7 +354,7 @@ bool gui_event_subscribe(gui_status_t status, gui_base_t *origin, gui_object_t *
     return false;
 }
 
-bool gui_group_execute(gui_base_t *group, void *data, gui_cb_group_t group_cb, gui_cb_group_break_t break_cb) {
+uint gui_group_execute(gui_base_t *group, void *data, gui_cb_group_t group_cb, gui_cb_group_break_t break_cb) {
     if (group->id != gui_id_group) {
         return false;
     }
@@ -362,7 +362,7 @@ bool gui_group_execute(gui_base_t *group, void *data, gui_cb_group_t group_cb, g
     bool shared = group->properties.shared;
     gui_object_t **s_objects = (gui_object_t **)(list->elements);
     gui_object_t *objects = (gui_object_t *)(list->elements);
-    bool found = false;
+    uint found = 0;
     for (uint8_t cnt = 0; cnt < list->size; cnt++) {
         gui_object_t *object = shared ? s_objects[cnt] : &objects[cnt];
         if (break_cb != NULL) {
@@ -370,18 +370,19 @@ bool gui_group_execute(gui_base_t *group, void *data, gui_cb_group_t group_cb, g
                 return false;
             }
         }
-        found |= group_cb(object, data);
+        found += group_cb(object, data);
     }
     return found;
 }
 
-bool gui_event_unsubscribe(gui_base_t *origin, gui_object_t *destination) {
-    bool unsubscribe_group(gui_object_t *object, void *data) {
-        gui_object_t *destination = (gui_object_t *)data;
-        return gui_event_unsubscribe(&(object->base), destination);
+uint gui_event_unsubscribe(gui_base_t *origin, gui_object_t *destination) {
+    uint unsubscribe_group(gui_object_t *object, void *data) {
+        gui_object_t *_destination = (gui_object_t *)data;
+        return gui_event_unsubscribe(&(object->base), _destination);
     }
 
     //Search stored status
+    uint found = 0;
     for (uint cnt = 0; cnt < GUI_EVENT_HANDLING_MAX; cnt++) {
        gui_event_subscription_t *event = &event_subscriptions[cnt];
        gui_status_cast_t *status = (gui_status_cast_t *) &event->status;
@@ -389,12 +390,16 @@ bool gui_event_unsubscribe(gui_base_t *origin, gui_object_t *destination) {
             status->word = 0;
             event->origin = NULL;
             event->destination = NULL;
-            return true;
+            event->status_handle = NULL;
+            found++;
+            if (destination != NULL) {
+                return found;
+            }
        } else if (origin->id == gui_id_group) {
-            return gui_group_execute(origin, destination, unsubscribe_group, NULL);
+            found += gui_group_execute(origin, destination, unsubscribe_group, NULL);
        }
     }
-    return false;
+    return found;
 }
 
 gui_status_t gui_status_update(gui_object_t *object, gui_status_t status, bool set_clear) {

@@ -88,7 +88,7 @@ typedef struct gui_base {
 typedef struct gui_object gui_object_t ;
 
 //gui_cb_group_t is a callback to be executed on each element on a group iteratively
-typedef bool (*gui_cb_group_t)(gui_object_t *object, void *data);
+typedef uint (*gui_cb_group_t)(gui_object_t *object, void *data);
 typedef bool (*gui_cb_group_break_t)(gui_base_t *sub_base, gui_base_t *base);
 
 //gui_cb_draw_t is a drawing callback
@@ -138,7 +138,7 @@ void gui_draw_spinbox(gui_base_t *base);
 
 // GUI event and subscriber/unsubscriber
 bool gui_event_subscribe(gui_status_t status, gui_base_t *origin, gui_object_t *destination, gui_cb_on_status_t status_cb);
-bool gui_event_unsubscribe(gui_base_t *origin, gui_object_t *destination);
+uint gui_event_unsubscribe(gui_base_t *origin, gui_object_t *destination);
 gui_object_t *gui_event(gui_status_t status, gui_object_t *origin);
 
 // Event Status exports
@@ -198,5 +198,5 @@ extern const char* gui_id_spinbox;
 // GUI Utilities
 uint gui_sum(gui_list_t *group, gui_properties_t props, bool width_height);
 bool gui_object_overflow_group(gui_base_t *object, gui_base_t *group);
-bool gui_group_execute(gui_base_t *group, void *data, gui_cb_group_t group_cb, gui_cb_group_break_t break_cb);
+uint gui_group_execute(gui_base_t *group, void *data, gui_cb_group_t group_cb, gui_cb_group_break_t break_cb);
 #endif

@@ -377,15 +377,15 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             gui_list_t group_list = initalizeGuiDynList(menu_left_buttons_group_elements, arraySize(elements));
             menu_left_buttons_group_list = group_list;
             menu_setup_selected_color();
-            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[2], NULL); //Redraw RED spinbox on option change
-            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[4], NULL); //Redraw GREEN spinbox on option change
-            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[6], NULL); //Redraw BLUE spinbox on option change
-            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_main_view_group_elements[0], NULL);    //Redraw text hint
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[0], on_palette_option_event);
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[2].base, &menu_left_buttons_group_elements[2], on_palette_color_event);
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[4].base, &menu_left_buttons_group_elements[4], on_palette_color_event);
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[6].base, &menu_left_buttons_group_elements[6], on_palette_color_event);
-            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[7].base, &menu_left_buttons_group_elements[7], on_back_event);
+            gui_event_subscribe(button_status,  &menu_left_buttons_group_elements[7].base, &menu_left_buttons_group_elements[7], on_back_event);
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[2], NULL); //Redraw RED spinbox on option change
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[4], NULL); //Redraw GREEN spinbox on option change
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[6], NULL); //Redraw BLUE spinbox on option change
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_main_view_group_elements[0],    NULL); //Redraw text hint
             }
             break;
         case menu_button_group_about: {
@@ -448,7 +448,7 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
 
 gui_object_t menu_create_main_view_group(gui_base_t *left_group, menu_button_group_type type) {
      //First unsubscribe last objects
-    gui_event_unsubscribe(&(menu_main_view_group.base), NULL);
+    //gui_event_unsubscribe(&(menu_main_view_group.base), NULL);
     menu_main_view_group.base.status.visible = false;
 
     switch(type) {
