@@ -108,10 +108,6 @@ void menu_on_keyboard_event(keyboard_status_t keys) {
                     } else if (menu_focused_object != NULL) {
                         gui_object_t *old_focus = menu_focused_object;
                         gui_object_t *new_focus = gui_deactivate(menu_focused_object);
-                        //Fix when focused object changes outside the event system
-                        if (menu_focused_object != old_focus && new_focus == old_focus) {
-                            new_focus->base.status.focused = false;
-                        }
                     }
                 } else if (event->key_down && is_video_overlay_enabled() && menu_focused_object != NULL) {
                     menu_focused_object = gui_activate(menu_focused_object);
@@ -231,10 +227,13 @@ bool on_back_event(gui_status_t status, gui_base_t *origin, gui_object_t *destin
             gui_obj_draw(menu_window);
             gui_obj_draw(menu_left_buttons_group);
             menu_focused_object = gui_focused(&menu_left_buttons_group_elements[0]);
+
+             //Once we consume this event, we reequest no more propagations
+            return false;
         }
     }
-    //Once we consume this event, we dispose it due to new changes
-    return false;
+   
+    return true;
 }
 
 uint spinbox_vertical, spinbox_horizontal, spinbox_pix_width;

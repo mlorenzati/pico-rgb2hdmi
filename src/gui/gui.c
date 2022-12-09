@@ -66,7 +66,8 @@ gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint wi
             .status = {
                 .visible = 1,
                 .enabled = 1,
-                .navigable = 1
+                .navigable = 1,
+                .focused = 0
             },
             .properties = props,
             .data = data
@@ -433,6 +434,7 @@ gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
     uint subcribers_updates_cnt = 0;
     gui_status_cast_t subcribers_updates_status[GUI_EVENT_SUB_UPD_MAX];
     gui_object_t *subcribers_updates_destination[GUI_EVENT_SUB_UPD_MAX];
+    bool propagate = true;
     for (uint cnt = 0; cnt < GUI_EVENT_HANDLING_MAX; cnt++) {
         gui_event_subscription_t *event = &event_subscriptions[cnt];
         gui_status_cast_t *c_status_sub = (gui_status_cast_t *) &event->status;
@@ -446,7 +448,10 @@ gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
             }
             
             gui_status_cast_t dest_status_old = *((gui_status_cast_t *)(&event->destination->base.status));
-            if (status_handle == NULL || status_handle(status, &origin->base, event->destination)) {
+            if (status_handle != NULL) {
+                propagate &= status_handle(status, &origin->base, event->destination);
+            }
+            if (status_handle == NULL || propagate) {
                 if (origin != event->destination && event->destination != NULL) {
                     gui_ref_draw(event->destination);
                 }
@@ -459,6 +464,10 @@ gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
                     subcribers_updates_cnt++;
                 }
             }
+            if (!propagate) {
+                // The consumer of the event request no more propagation
+                break;
+            }
         }
     }
 
@@ -470,6 +479,11 @@ gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
 
     // Consumable events like Data updates have to be reset after
     c_status_old->word &= ~gui_status_consumable.word;
+
+    if (!propagate) {
+        // The consumer of the event request no more events due to this event
+        return origin;
+    }
 
     // Updates from subscriber events
     for (uint cnt = 0; cnt < subcribers_updates_cnt; cnt++) {
