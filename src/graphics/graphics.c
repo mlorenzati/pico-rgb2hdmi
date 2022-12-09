@@ -121,6 +121,11 @@ void draw_circle(const graphic_ctx_t *ctx, uint xc, uint yc, signed int radius, 
     }
 }
 
+void fill_circle(const graphic_ctx_t *ctx, uint xc, uint yc, signed int radius, uint fg_color, uint bg_color) {
+    draw_circle(ctx, xc, yc, radius, fg_color);
+    draw_flood(ctx, xc, yc, bg_color, fg_color, true);
+}
+
 void draw_text(const graphic_ctx_t *ctx, uint x0, uint y0, uint fg_color, uint bg_color, bool word_wrap, const char *text) {
     if (y0 >= ctx->height) { return; }
     uint y_max = (y0 + GRAPHICS_FONT_SIZE) >= ctx->height ? ctx->height - 1 : y0 + GRAPHICS_FONT_SIZE;

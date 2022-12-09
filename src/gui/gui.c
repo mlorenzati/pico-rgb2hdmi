@@ -53,7 +53,7 @@ const char *gui_colors_str[] = { "border enabled", "fill unfocused", "main disab
 
 // ---- Base object creation ----
 gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint width, uint height, const char* id, 
-    gui_list_t *colors, gui_properties_t props, const uint8_t *data, gui_cb_draw_t draw_cb) {
+    gui_list_t *colors, gui_properties_t props, const void *data, gui_cb_draw_t draw_cb) {
     gui_object_t obj = {
         .base = {
             .ctx = ctx,

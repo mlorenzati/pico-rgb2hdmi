@@ -43,7 +43,7 @@ void bppx_put_color(color_bppx bppx, void *buffer, uint color) {
     }
 }
 
-void bppx_split_color(color_bppx bppx, uint color, uint *red, uint *green, uint *blue) {
+void bppx_split_color(color_bppx bppx, uint color, uint *red, uint *green, uint *blue, bool normalized) {
     uint8_t b_red, b_green, b_blue;
     switch (bppx) {
         case rgb_8_332:  
@@ -57,12 +57,12 @@ void bppx_split_color(color_bppx bppx, uint color, uint *red, uint *green, uint 
             break;
         default: return;
     }
-    *red   = (color >> (b_green + b_blue)) & ((1 << b_red)   - 1);
-    *green = (color >> b_blue)             & ((1 << b_green) - 1);
-    *blue  = (color)                       & ((1 << b_blue)  - 1);
+    *red   = ((color >> (b_green + b_blue)) & ((1 << b_red)   - 1)) << (normalized ? 8 - b_red   : 0);
+    *green = ((color >> b_blue)             & ((1 << b_green) - 1)) << (normalized ? 8 - b_green : 0);
+    *blue  = ((color)                       & ((1 << b_blue)  - 1)) << (normalized ? 8 - b_blue  : 0);
 }
 
-uint bppx_merge_color(color_bppx bppx, uint8_t red, uint8_t green, uint8_t blue) {
+uint bppx_merge_color(color_bppx bppx, uint8_t red, uint8_t green, uint8_t blue, bool normalized) {
     uint8_t b_red = 0;
     uint8_t b_green = 0;
     uint8_t b_blue = 0;
@@ -77,6 +77,11 @@ uint bppx_merge_color(color_bppx bppx, uint8_t red, uint8_t green, uint8_t blue)
             b_red = 8; b_green = 8; b_blue = 8;
             break;
         default: return 0;
+    }
+    if (normalized) {
+        red   >>= 8 - b_red;
+        green >>= 8 - b_green;
+        blue  >>= 8 - b_blue;
     }
     return ((red&((1<<b_red) - 1))<<(b_green+b_blue))|((green&((1<<b_green) - 1))<<b_blue)|(blue&((1<<b_blue) - 1));
 }

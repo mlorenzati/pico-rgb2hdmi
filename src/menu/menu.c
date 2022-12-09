@@ -83,6 +83,10 @@ gui_list_t   menu_main_view_group_list;
 gui_object_t menu_main_view_group;
 
 struct repeating_timer menu_vsync_hsync_timer;
+
+const gui_status_t button_status = { .activated = 1 };
+const gui_status_t spinbox_status = { .activated = 1, .add = 1, .substract = 1};
+
 // --------- Global register end --------- 
 
 // --------- KEYBOARD API CALL START --------- 
@@ -170,7 +174,7 @@ bool menu_change_view(gui_status_t status, gui_base_t *origin, menu_button_group
         gui_obj_draw(menu_window);
         gui_obj_draw(menu_left_buttons_group);
         if (menu_main_view_group.base.status.visible) {
-           gui_obj_draw(menu_main_view_group);
+            gui_obj_draw(menu_main_view_group);
         }
         menu_focused_object = gui_focused(&menu_left_buttons_group_elements[0]);
         //Once we consume this event, we dispose it due to new changes
@@ -225,12 +229,13 @@ bool on_back_event(gui_status_t status, gui_base_t *origin, gui_object_t *destin
     return false;
 }
 uint spinbox_vertical, spinbox_horizontal;
-uint color_slider_option, color_spinbox_red, color_spinbox_green, color_spinbox_blue;
+uint color_slider_option, color_spinbox_red, color_spinbox_green, color_spinbox_blue, *color_slider_selected;
 
 void menu_setup_selected_color() {
     uint index = color_slider_option * (menu_colors_list.size-1) / GUI_BAR_100PERCENT;
-        bppx_split_color(menu_graphic_ctx.bppx, menu_colors[index], &color_spinbox_red, &color_spinbox_green, &color_spinbox_blue);
-    }
+    color_slider_selected = &menu_colors[index];
+    bppx_split_color(menu_overlay_ctx.bppx, menu_colors[index], &color_spinbox_red, &color_spinbox_green, &color_spinbox_blue, true);
+}
 
 bool on_alignment_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
     uint *data = (uint *) origin->data;
@@ -258,29 +263,26 @@ bool on_palette_option_event(gui_status_t status, gui_base_t *origin, gui_object
 
     destination->base.status.data_changed = 1;
     menu_setup_selected_color();
-    
+   
     return true;
 }
 
 bool on_palette_color_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
     uint *data = (uint *) origin->data;
-    if        (data == &color_spinbox_red) {
-        
-    } else if (data == &color_spinbox_green) {
-
-    } else if (data == &color_spinbox_blue) {
-
-    }
-
     if (!status.activated && origin->status.activated) {
         destination->base.status.navigable = !destination->base.status.navigable;
     } else if (status.add && *data < 255) {
         *data += 8;
+        destination->base.status.data_changed = 1;
     } else if (status.substract && *data != 0) {
         *data -= 8;
+        destination->base.status.data_changed = 1;
     }
-    destination->base.status.data_changed = 1;
-    
+
+    if (destination->base.status.data_changed) {
+        *color_slider_selected = bppx_merge_color(origin->ctx->bppx, color_spinbox_red, color_spinbox_green, color_spinbox_blue, true);
+    }
+  
     return true;
 }
 
@@ -289,6 +291,13 @@ bool on_save_reboot_event(gui_status_t status, gui_base_t *origin, gui_object_t 
         command_reboot();
     }
     return true;
+}
+
+void gui_draw_palette_choice(gui_base_t *base) {
+    uint **selected_color = (uint **) base->data;
+    uint *colors = (uint *)(base->colors->elements);
+    fill_rect(base->ctx, base->x + 1, base->y + 1, base->width - 2, base->height - 2, colors[1]);
+    fill_circle(base->ctx, base->x + base->width / 2, base->y + base->height / 2,  16, color_black, *(*selected_color));
 }
 
 // ----------  GUI EVENT SLOTS HANDLERS END  ---------- 
@@ -327,8 +336,6 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
     
     //Generate new objects and subscriptions
     menu_nav_stack[menu_button_index - 1] = new;
-    gui_status_t button_status = { .activated = 1 };
-    gui_status_t spinbox_status = { .activated = 1, .add = 1, .substract = 1};
 
     switch(new) {
         case menu_button_group_alignment: {
@@ -448,15 +455,22 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
 
 gui_object_t menu_create_main_view_group(gui_base_t *left_group, menu_button_group_type type) {
      //First unsubscribe last objects
-    //gui_event_unsubscribe(&(menu_main_view_group.base), NULL);
+    gui_event_unsubscribe(&(menu_main_view_group.base), NULL);
     menu_main_view_group.base.status.visible = false;
 
     switch(type) {
         case menu_button_group_palette: {
-            gui_object_t elements[] = { gui_create_label(&menu_overlay_ctx, 0, 0, 115, 11, &menu_colors_list, menu_common_label_props, menu_palette_opt_print) };
+            gui_object_t elements[] = { 
+                gui_create_label(&menu_overlay_ctx, 0, 0, 115, 11, &menu_colors_list, menu_common_label_props, menu_palette_opt_print),
+                gui_create_object(&menu_overlay_ctx, 0, 0, 115, 90, "circle_palette", &menu_colors_list, menu_common_label_props, &color_slider_selected, gui_draw_palette_choice)
+             };
             menu_elements_copy(elements, menu_main_view_group_elements);
             gui_list_t group_list = initalizeGuiDynList(menu_main_view_group_elements, arraySize(elements));
             menu_main_view_group_list = group_list;
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_main_view_group_elements[1], NULL); //Redraw on selection change
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[2].base, &menu_main_view_group_elements[1], NULL); //Redraw on color change
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[4].base, &menu_main_view_group_elements[1], NULL); //Redraw on color change
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[6].base, &menu_main_view_group_elements[1], NULL); //Redraw on color change
             }
             break;
         default:
@@ -496,7 +510,7 @@ int menu_initialize(uint *pins, menu_event_type *events, uint8_t count) {
     menu_overlay_ctx = get_sub_graphic_ctx(&menu_graphic_ctx, video_overlay_get_startx(), video_overlay_get_starty(), video_overlay.width, video_overlay.height);
 
     //Menu System initialize
-    menu_window = gui_create_window(&menu_graphic_ctx, 0, 0, menu_overlay_ctx.width, menu_overlay_ctx.height, &menu_colors_list, menu_common_nshared_props);
+    menu_window = gui_create_window(&menu_overlay_ctx, 0, 0, menu_overlay_ctx.width, menu_overlay_ctx.height, &menu_colors_list, menu_common_nshared_props);
     menu_left_buttons_group = menu_create_left_button_group(menu_button_group_none, menu_button_group_home);
     menu_left_buttons_group.base.status.enabled = false;
 

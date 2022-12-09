@@ -169,7 +169,7 @@ gui_status_t gui_status_update(gui_object_t *object, gui_status_t status, bool s
 
 // GUI Object creators
 gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint width, uint height, const char* id,
-   gui_list_t *colors, gui_properties_t props, const uint8_t *data, gui_cb_draw_t draw_cb);
+   gui_list_t *colors, gui_properties_t props, const void *data, gui_cb_draw_t draw_cb);
 
 // GUI Ids
 extern const char* gui_id_window;
