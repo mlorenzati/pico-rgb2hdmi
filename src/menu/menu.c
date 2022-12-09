@@ -271,12 +271,20 @@ bool on_palette_color_event(gui_status_t status, gui_base_t *origin, gui_object_
     uint *data = (uint *) origin->data;
     if (!status.activated && origin->status.activated) {
         destination->base.status.navigable = !destination->base.status.navigable;
-    } else if (status.add && *data < 255) {
+    } else {
+        if (*data == 255) {
+            *data = 256;
+        }
+        if (status.add && *data < 255) {
         *data += 8;
         destination->base.status.data_changed = 1;
-    } else if (status.substract && *data != 0) {
-        *data -= 8;
-        destination->base.status.data_changed = 1;
+        } else if (status.substract && *data != 0) {
+            *data -= 8;
+            destination->base.status.data_changed = 1;
+        }
+        if (*data == 256) {
+            *data = 255;
+        }
     }
 
     if (destination->base.status.data_changed) {
