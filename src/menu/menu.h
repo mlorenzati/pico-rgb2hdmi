@@ -3,37 +3,9 @@
 
 #include "hardware/address_mapped.h"
 #include "keyboard.h"
-#include "gui.h"
+#include "menuGlobals.h"
 
-#define MENU_TOTAL_LEFT_BUTTONS 8
-#define MENU_TOTAL_NAV_STACK    8
-#define MENU_TOTAL_MAIN_VIEW    4
 #define MENU_HV_SYNC_REFRESH    500
-
-typedef enum  {
-    menu_event_action = 0,
-    menu_event_next,
-    menu_event_previous,
-    menu_event_max
-} menu_event_type;
-
-typedef enum  {
-    menu_button_group_none = 0,
-    menu_button_group_home,
-    menu_button_group_alignment,
-    menu_button_group_diagnostic,
-    menu_button_group_gain_offset,
-    menu_button_group_save_reboot,
-    menu_button_group_factory_opts,
-    menu_button_group_palette,
-    menu_button_group_about
-} menu_button_group_type;
-
-typedef struct menu_event {
-   menu_event_type type;
-   uint8_t key_down:1;
-   uint8_t key_up:1;
-} menu_event_t;
 
 #define menu_elements_copy(src, dst) menu_elements_copy_(src, dst, sizeof(src) / sizeof(src[0]))
 int menu_initialize(uint *pins, menu_event_type *events, uint8_t count);

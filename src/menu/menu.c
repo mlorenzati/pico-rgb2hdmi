@@ -1,93 +1,13 @@
 #include "menu.h"
-#include "version.h"
-#include "rgbScan.h"
 #include "graphics.h"
 #include "videoAdjust.h"
-#include "security.h"
 #include "overlay.h"
-#include "commands.h"
+#include "menuGlobals.h"
+#include "menuCallback.h"
 
 //System configuration includes
 #include "common_configs.h"
-
 #include "pico/stdlib.h"
-
-#if DVI_SYMBOLS_PER_WORD == 2
-    const uint color_black      = 0b0000000000000000;
-    const uint color_dark_gray  = 0b0001100011100011;
-    const uint color_mid_gray   = 0b0000000000011111;
-    const uint color_light_gray = 0b1111100000000000;
-    const uint color_green      = 0b0000011111100000;
-    const uint color_white      = 0b1111111111111111;
-    #define MENU_OVERLAY_BBPX    rgb_16_565
-#else
-    const uint color_black      = 0b00000000;
-    const uint color_dark_gray  = 0b01001001;
-    const uint color_mid_gray   = 0b10110110;
-    const uint color_light_gray = 0b11011011;
-    const uint color_green      = 0b00011100;
-    const uint color_white      = 0b11111111;
-    #define MENU_OVERLAY_BBPX    rgb_8_332
-#endif
-
-// --------- Global register start ---------
-uint8_t menu_tot_events; 
-menu_event_t  menu_events[menu_event_max];
-menu_button_group_type menu_nav_stack[MENU_TOTAL_NAV_STACK];
-uint8_t menu_button_index = 0;
-
-static graphic_ctx_t menu_graphic_ctx = {
-    .bppx = MENU_OVERLAY_BBPX,
-    .parent = NULL
-};
-
-static graphic_ctx_t menu_overlay_ctx;
-uint menu_colors[] = { color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green };
-gui_list_t menu_colors_list = initalizeGuiList(menu_colors);
-
-const gui_properties_t menu_common_nshared_props = {
-    .focusable  = 1,
-    .alignment  = gui_align_center,
-    .horiz_vert = gui_orientation_vertical,
-    .padding    = 1,
-    .shared     = 0,
-    .border     = 1
-};
-
-const gui_properties_t menu_common_label_props = {
-    .alignment  = gui_align_center,
-    .focusable  = 0
-};
-
-const gui_properties_t menu_common_text_props = {
-    .alignment  = gui_align_left_up,
-    .focusable  = 0
-};
-
-const gui_properties_t menu_spinbox_props = {
-        .focusable  = 1,
-		.alignment  = gui_align_center,
-		.horiz_vert = gui_orientation_horizontal,
-		.padding    = 1,
-		.shared     = 0,
-		.border     = 1
-	};
-
-gui_object_t *menu_focused_object = NULL;
-gui_object_t menu_window;
-gui_object_t menu_left_buttons_group_elements[MENU_TOTAL_LEFT_BUTTONS];
-gui_list_t   menu_left_buttons_group_list;
-gui_object_t menu_left_buttons_group;
-gui_object_t menu_main_view_group_elements[MENU_TOTAL_MAIN_VIEW];
-gui_list_t   menu_main_view_group_list;
-gui_object_t menu_main_view_group;
-
-struct repeating_timer menu_vsync_hsync_timer;
-
-const gui_status_t button_status = { .activated = 1 };
-const gui_status_t spinbox_status = { .activated = 1, .add = 1, .substract = 1};
-
-// --------- Global register end --------- 
 
 // --------- KEYBOARD API CALL START --------- 
 void menu_on_keyboard_event(keyboard_status_t keys) {
@@ -166,7 +86,6 @@ bool menu_hvsync_timer_callback(struct repeating_timer *t) {
     
     return true;
 }
-
 // ----------- TIMER CALLBACK  END -----------
 
 bool menu_change_view(gui_status_t status, gui_base_t *origin, menu_button_group_type type){
@@ -184,15 +103,7 @@ bool menu_change_view(gui_status_t status, gui_base_t *origin, menu_button_group
     return true;
 }
 
-// ---------  GUI EVENT SLOTS HANDLERS START  ---------
-bool on_exit_button_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
-    if (!status.activated && origin->status.activated) {
-        video_overlay_enable(false);
-        gui_disable(&menu_left_buttons_group);
-    }
-    return true;
-}
-
+// ---------  MENU BASED GUI EVENT SLOTS HANDLERS START  ---------
 bool on_palette_button_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
     return menu_change_view(status, origin, menu_button_group_palette);
 }
@@ -240,139 +151,13 @@ bool on_back_event(gui_status_t status, gui_base_t *origin, gui_object_t *destin
    
     return true;
 }
+// ---------  MENU BASED GUI EVENT SLOTS HANDLERS END  ---------- 
 
-bool on_automatic_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
-    if (!status.activated && origin->status.activated) {
-        // Here we use information of HSYNC / VSYNC and HLINES to calculate pix width
-    }
-    return true;
-}
-
-
-uint spinbox_vertical, spinbox_horizontal, spinbox_pix_width;
-uint spinbox_gain, spinbox_offset;
-uint color_slider_option, color_spinbox_red, color_spinbox_green, color_spinbox_blue, *color_slider_selected;
-
-void menu_setup_selected_color() {
-    uint index = color_slider_option * (menu_colors_list.size-1) / GUI_BAR_100PERCENT;
-    color_slider_selected = &menu_colors[index];
-    bppx_split_color(menu_overlay_ctx.bppx, menu_colors[index], &color_spinbox_red, &color_spinbox_green, &color_spinbox_blue, true);
-}
-
-bool on_alignment_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
-    uint *data = (uint *) origin->data;
-    if (!status.activated && origin->status.activated) {
-        destination->base.status.navigable = !destination->base.status.navigable;
-    } else if (status.add && *data < 100) {
-        *data += 1;
-    } else if (status.substract && *data != 0) {
-        *data -= 1;
-    }
-    destination->base.status.data_changed = 1;
-    
-    return true;
-}
-
-bool on_gain_offset_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
-    uint *data = (uint *) origin->data;
-    if (!status.activated && origin->status.activated) {
-        destination->base.status.navigable = !destination->base.status.navigable;
-    } else if (status.add && *data < 100) {
-        *data += 1;
-    } else if (status.substract && *data != 0) {
-        *data -= 1;
-    }
-    destination->base.status.data_changed = 1;
-    
-    return true;
-}
-
-bool on_palette_option_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
-    uint *data = (uint *) origin->data;
-    if (!status.activated && origin->status.activated) {
-        destination->base.status.navigable = !destination->base.status.navigable;
-    } else if (status.add && *data < GUI_BAR_100PERCENT) {
-        *data += (GUI_BAR_100PERCENT/(menu_colors_list.size - 1));
-    } else if (status.substract && *data != 0) {
-        *data -= (GUI_BAR_100PERCENT/(menu_colors_list.size - 1));
-    }
-
-    destination->base.status.data_changed = 1;
-    menu_setup_selected_color();
-   
-    return true;
-}
-
-bool on_palette_color_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
-    uint *data = (uint *) origin->data;
-    if (!status.activated && origin->status.activated) {
-        destination->base.status.navigable = !destination->base.status.navigable;
-    } else {
-        if (*data == 255) {
-            *data = 256;
-        }
-        if (status.add && *data < 255) {
-        *data += 8;
-        destination->base.status.data_changed = 1;
-        } else if (status.substract && *data != 0) {
-            *data -= 8;
-            destination->base.status.data_changed = 1;
-        }
-        if (*data == 256) {
-            *data = 255;
-        }
-    }
-
-    if (destination->base.status.data_changed) {
-        *color_slider_selected = bppx_merge_color(origin->ctx->bppx, color_spinbox_red, color_spinbox_green, color_spinbox_blue, true);
-    }
-  
-    return true;
-}
-
-bool on_save_reboot_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
-    if (!status.activated && origin->status.activated) {
-        command_reboot();
-    }
-    return true;
-}
-
-bool on_factory_reboot_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
-    if (!status.activated && origin->status.activated) {
-        command_reboot();
-    }
-    return true;
-}
-
-void gui_draw_palette_choice(gui_base_t *base) {
-    uint **selected_color = (uint **) base->data;
-    uint *colors = (uint *)(base->colors->elements);
-    fill_rect(base->ctx, base->x + 1, base->y + 1, base->width - 2, base->height - 2, colors[1]);
-    fill_circle(base->ctx, base->x + base->width / 2, base->y + base->height / 2,  16, color_black, *(*selected_color));
-}
-
-// ----------  GUI EVENT SLOTS HANDLERS END  ---------- 
-
+// --------- MENU API CALL START --------- 
 void menu_elements_copy_(const gui_object_t *src, gui_object_t *dst, uint8_t size) {
     for (uint8_t cnt = 0; cnt < size; cnt++) {
         dst[cnt] = src[cnt];
     }
-}
-
-void menu_diagnostic_print(print_delegate_t printer) {
-	printer("%s v%s\n\nRes: %dx%d %dbits\nAFE code: %d\nScan code: %d\nId: %s\nLicense: %s",
-        PROJECT_NAME, PROJECT_VER, menu_graphic_ctx.width, menu_graphic_ctx.height, bppx_to_int(menu_graphic_ctx.bppx, color_part_all), 
-        command_info_afe_error, command_info_scanner_error, security_get_uid(),
-        command_is_license_valid() ? "valid" : "invalid, please register");
-};
-
-void menu_scan_print(print_delegate_t printer) {
-	printer("HSYNC %d, VSYNC %d\nHLines %d", 1000000000 / rgbScannerGetVsyncNanoSec(), 1000000000 / rgbScannerGetHsyncNanoSec(), rgbScannerGetHorizontalLines());
-};
-
-void menu_palette_opt_print(print_delegate_t printer) {
-    uint index = color_slider_option * (menu_colors_list.size - 1) / GUI_BAR_100PERCENT;
-    printer("%s", gui_colors_str[index]);
 }
 
 gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu_button_group_type new) {
@@ -574,7 +359,6 @@ gui_object_t menu_create_main_view_group(gui_base_t *left_group, menu_button_gro
     return main_view_group;
 }
 
-// --------- MENU INIT API CALL START --------- 
 int menu_initialize(uint *pins, menu_event_type *events, uint8_t count) {
     if (count > KEYBOARD_MAX_COUNT) { return 1; }
     if (count > menu_event_max) { return 2; }
@@ -606,4 +390,4 @@ int menu_initialize(uint *pins, menu_event_type *events, uint8_t count) {
 
     return 0;
 }
-// --------- MENU INIT API CALL END  ---------  
+// --------- MENU API CALL END  ---------  
