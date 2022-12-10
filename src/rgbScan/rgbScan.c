@@ -14,9 +14,10 @@ float         nanoSecPerTick;
 uint _vsyncGPIO, _hsyncGPIO;
 unsigned long tickVsync;
 unsigned int  tickHsync;
-unsigned int  hsyncCounter;
+unsigned int  hsyncCounter, hsyncTotalLines;
 unsigned int  tickCsyncPulse, hsyncRstValue;
 bool          isHsyncLine, isVsync;
+
 scanlineCallback rgbScannerScanlineCallback = NULL;
 volatile unsigned int     rgbScannerScanlineTriggerFrontPorch = 0;   
 volatile unsigned int     rgbScannerScanlineTriggerlastLine   = 0; 
@@ -63,6 +64,7 @@ static void __not_in_flash_func(rgb_scanner_gpio_irq_handler)(void) {
             tickVsync = systick_delta(lastVsyncTick, onEventTick);
             lastVsyncTick = onEventTick;
             tickHsync = (unsigned int)(tickVsync / (hsyncCounter - 1));
+            hsyncTotalLines = hsyncCounter;
         }
         hsyncCounter = hsyncRstValue;
     }
@@ -124,4 +126,8 @@ void rgbScannerUpdateData(uint frontPorch, uint height) {
     rgbScannerScanlineTriggerFrontPorch = frontPorch;
     rgbScannerScanlineTriggerlastLine = frontPorch + height;
     rgbScannerEnable(wasRgbScannerEnabled);
+}
+
+unsigned int rgbScannerGetHorizontalLines() {
+    return hsyncTotalLines;
 }

@@ -13,11 +13,15 @@ Version: 0.4.0
     - navigation on navigable object improvement
     - Added about, palette, save & reboot, diagnostics and alignment menues
         - Palette menu changes active colors
+    - Factory option
+    - Gain & offset, automatic option
 - group unsubscribe improvement
 - group loop callback tool with break condition and count of results
 - focus change fix
 - color api for RGB in different modes
 - event fix to support multiple subscribers and destination with diferent actions
+- event non propagation fix
+- scanner provides number of hsync lines
 
 -------------------------------------------------------------------------
 Date: 2022/11/13

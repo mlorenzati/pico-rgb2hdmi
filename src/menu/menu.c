@@ -108,6 +108,11 @@ void menu_on_keyboard_event(keyboard_status_t keys) {
                     } else if (menu_focused_object != NULL) {
                         gui_object_t *old_focus = menu_focused_object;
                         gui_object_t *new_focus = gui_deactivate(menu_focused_object);
+                        if (menu_focused_object != old_focus && new_focus == old_focus) {
+                            //Fix corner cases when focused object changes outside the event system
+                            new_focus->base.status.focused = false;
+                        }
+
                     }
                 } else if (event->key_down && is_video_overlay_enabled() && menu_focused_object != NULL) {
                     menu_focused_object = gui_activate(menu_focused_object);
@@ -236,6 +241,14 @@ bool on_back_event(gui_status_t status, gui_base_t *origin, gui_object_t *destin
     return true;
 }
 
+bool on_automatic_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+    if (!status.activated && origin->status.activated) {
+        // Here we use information of HSYNC / VSYNC and HLINES to calculate pix width
+    }
+    return true;
+}
+
+
 uint spinbox_vertical, spinbox_horizontal, spinbox_pix_width;
 uint spinbox_gain, spinbox_offset;
 uint color_slider_option, color_spinbox_red, color_spinbox_green, color_spinbox_blue, *color_slider_selected;
@@ -354,7 +367,7 @@ void menu_diagnostic_print(print_delegate_t printer) {
 };
 
 void menu_scan_print(print_delegate_t printer) {
-	printer("HSYNC %d, VSYNC %d", 1000000000 / rgbScannerGetVsyncNanoSec(), 1000000000 / rgbScannerGetHsyncNanoSec());
+	printer("HSYNC %d, VSYNC %d\nHLines %d", 1000000000 / rgbScannerGetVsyncNanoSec(), 1000000000 / rgbScannerGetHsyncNanoSec(), rgbScannerGetHorizontalLines());
 };
 
 void menu_palette_opt_print(print_delegate_t printer) {
@@ -384,6 +397,7 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
                 gui_create_spinbox(&menu_overlay_ctx, 0, 0, 100, 12, &menu_colors_list, menu_spinbox_props, &spinbox_vertical),
                 gui_create_text(&menu_overlay_ctx, 0, 0, 100, 12, &menu_colors_list, menu_common_label_props, "Pixel width"),
                 gui_create_spinbox(&menu_overlay_ctx, 0, 0, 100, 12, &menu_colors_list, menu_spinbox_props, &spinbox_pix_width),
+                gui_create_button(&menu_overlay_ctx,  0, 0, 100, 12, &menu_colors_list, menu_common_nshared_props, "Automatic"),
                 gui_create_button(&menu_overlay_ctx,  0, 0, 100, 12, &menu_colors_list, menu_common_nshared_props, "Back")
             };
             menu_elements_copy(elements, menu_left_buttons_group_elements);
@@ -393,7 +407,8 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[1].base, &menu_left_buttons_group_elements[1], on_alignment_event);
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_alignment_event);
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[5].base, &menu_left_buttons_group_elements[5], on_alignment_event);
-            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[6].base, &menu_left_buttons_group_elements[6], on_back_event);
+            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[6].base, &menu_left_buttons_group_elements[6], on_automatic_event);
+            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[7].base, &menu_left_buttons_group_elements[7], on_back_event);
             }
             break;
         case menu_button_group_gain_offset: {
@@ -415,8 +430,8 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             break;
         case menu_button_group_diagnostic: {
             gui_object_t elements[] = {
-                gui_create_label(&menu_overlay_ctx, 0, 0, 200, 78, &menu_colors_list, menu_common_text_props, menu_diagnostic_print),
-                gui_create_label(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_text_props, menu_scan_print),
+                gui_create_label(&menu_overlay_ctx, 0, 0, 200, 66, &menu_colors_list, menu_common_text_props, menu_diagnostic_print),
+                gui_create_label(&menu_overlay_ctx, 0, 0, 200, 24, &menu_colors_list, menu_common_text_props, menu_scan_print),
                 gui_create_button(&menu_overlay_ctx,  0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Back")
             };
             menu_elements_copy(elements, menu_left_buttons_group_elements);
