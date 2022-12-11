@@ -2,6 +2,7 @@
 #include "pico/stdlib.h"
 
 #if DVI_SYMBOLS_PER_WORD == 2
+    // Colors                     0brrrrrggggggbbbbb;
     const uint color_black      = 0b0000000000000000;
     const uint color_dark_gray  = 0b0001100011100011;
     const uint color_mid_gray   = 0b0000000000011111;
@@ -9,6 +10,7 @@
     const uint color_green      = 0b0000011111100000;
     const uint color_white      = 0b1111111111111111;
 #else
+    // Colors                     0brrrgggbb;
     const uint color_black      = 0b00000000;
     const uint color_dark_gray  = 0b01001001;
     const uint color_mid_gray   = 0b10110110;

@@ -4,6 +4,7 @@
 #include "overlay.h"
 #include "menuGlobals.h"
 #include "menuCallback.h"
+#include "commands.h"
 
 //System configuration includes
 #include "common_configs.h"
@@ -213,6 +214,19 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_gain_offset_event);
             }
             break;
+        case menu_button_group_startup_info: {
+            gui_object_t elements[] = {
+                gui_create_label(&menu_overlay_ctx, 0, 0, 200, 66, &menu_colors_list, menu_common_text_props, menu_diagnostic_print),
+                gui_create_label(&menu_overlay_ctx, 0, 0, 200, 24, &menu_colors_list, menu_common_text_props, menu_scan_print),
+                gui_create_text(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_label_props, command_is_license_valid() ? "Thanks for collaborating!": "Invalid License, register")
+            };
+            menu_elements_copy(elements, menu_left_buttons_group_elements);
+            gui_list_t group_list = initalizeGuiDynList(menu_left_buttons_group_elements, arraySize(elements));
+            menu_left_buttons_group_list = group_list;
+            
+            add_repeating_timer_ms(MENU_HV_SYNC_REFRESH, menu_hvsync_timer_callback, &menu_left_buttons_group_elements[2], &menu_vsync_hsync_timer);
+            }
+            break;
         case menu_button_group_diagnostic: {
             gui_object_t elements[] = {
                 gui_create_label(&menu_overlay_ctx, 0, 0, 200, 66, &menu_colors_list, menu_common_text_props, menu_diagnostic_print),
@@ -390,4 +404,19 @@ int menu_initialize(uint *pins, menu_event_type *events, uint8_t count) {
 
     return 0;
 }
-// --------- MENU API CALL END  ---------  
+// --------- MENU API CALL END  ---------
+
+// Implementation of the command method
+void command_show_info(bool value) {
+    video_overlay_enable(value);
+    menu_button_index = 0;
+    cancel_repeating_timer(&menu_vsync_hsync_timer);
+    menu_left_buttons_group = menu_create_left_button_group(menu_button_group_none, value ? menu_button_group_startup_info : menu_button_group_home);
+    
+    if (!value) {
+        menu_left_buttons_group.base.status.enabled = false;
+        cancel_repeating_timer(&menu_vsync_hsync_timer);
+        gui_obj_draw(menu_window);
+    }
+    gui_obj_draw(menu_left_buttons_group);
+}

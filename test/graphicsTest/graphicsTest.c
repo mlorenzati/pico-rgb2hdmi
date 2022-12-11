@@ -49,11 +49,7 @@ static graphic_ctx_t graphic_ctx = {
 	.width = FRAME_WIDTH,
 	.height = FRAME_HEIGHT,
 	.video_buffer = framebuf,
-	#if DVI_SYMBOLS_PER_WORD == 2
-	.bppx = rgb_16_565,
-	#else
-	.bppx = rgb_8_332,
-	#endif
+	.bppx = afec_cfg.bppx,
 	.parent = NULL
 };
 

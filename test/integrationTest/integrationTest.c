@@ -48,8 +48,8 @@
 #define V_BACK_PORCH    54
 
 #define REFRESH_RATE    50
-#define VREG_VSEL         VREG_VOLTAGE_1_20
-#define DVI_TIMING         dvi_timing_640x480p_60hz
+#define VREG_VSEL       VREG_VOLTAGE_1_20
+#define DVI_TIMING      dvi_timing_640x480p_60hz
 
 // --------- Global register start --------- 
 struct dvi_inst     dvi0;
@@ -77,7 +77,6 @@ cmd_parser_option_t options[] =
     {"reboot",  FALSE, NULL,  'R'},
     {NULL,      TRUE, NULL,    0 }
 };
-
 // ----------- Global register end ----------- 
 
 // *********** IRQ API CALL END   ************
@@ -173,9 +172,6 @@ int main() {
     #else
         afec_cfg_2.bppx = rgb_8_332;
     #endif
-
-    // Prepare render video Overlay & graphics context
-    //command_prepare_graphics();
     
     // Configure AFE Capture System
     command_info_afe_error = wm8213_afe_setup(&afec_cfg_2);
@@ -193,10 +189,6 @@ int main() {
     dvi0.ser_cfg = DVI_DEFAULT_SERIAL_CONFIG;
     dvi0.scanline_callback = core1_scanline_callback;
     dvi_init(&dvi0, next_striped_spin_lock_num(), next_striped_spin_lock_num());
-
-    // Prepare first start image
-    // command_fill_blank();
-    // command_show_info(true);
 
     // Prepare DVI for the first time the two initial lines, passing core 1 the framebuffer
     // Start the Core1, dedicated for DVI
@@ -224,6 +216,9 @@ int main() {
         }
     }
 
+    // Prepare first start image
+    command_show_info(true);
+
     // Wait some seconds with visual report
     for (int i = 5; i > 0; i--) {
         sleep_ms(1000);
@@ -231,7 +226,7 @@ int main() {
     }
 
     // Remove info screen if license is valid
-    //command_show_info(!command_is_license_valid());
+    command_show_info(!command_is_license_valid());
 
     // Show Version
     command_on_receive('v', NULL, false);

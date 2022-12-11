@@ -9,7 +9,8 @@
 // ---------  GUI EVENT SLOTS HANDLERS START  ---------
 bool on_exit_button_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
     if (!status.activated && origin->status.activated) {
-        video_overlay_enable(false);
+        // Only remove overlay if license is valid
+        video_overlay_enable(!command_is_license_valid());
         gui_disable(&menu_left_buttons_group);
     }
     return true;
@@ -120,7 +121,7 @@ void menu_diagnostic_print(print_delegate_t printer) {
 	printer("%s v%s\n\nRes: %dx%d %dbits\nAFE code: %d\nScan code: %d\nId: %s\nLicense: %s",
         PROJECT_NAME, PROJECT_VER, menu_graphic_ctx.width, menu_graphic_ctx.height, bppx_to_int(menu_graphic_ctx.bppx, color_part_all), 
         command_info_afe_error, command_info_scanner_error, security_get_uid(),
-        command_is_license_valid() ? "valid" : "invalid, please register");
+        command_is_license_valid() ? "valid" : "invalid");
 };
 
 void menu_scan_print(print_delegate_t printer) {

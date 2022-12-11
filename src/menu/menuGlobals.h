@@ -28,6 +28,7 @@ typedef enum  {
     menu_button_group_home,
     menu_button_group_alignment,
     menu_button_group_diagnostic,
+    menu_button_group_startup_info,
     menu_button_group_gain_offset,
     menu_button_group_save_reboot,
     menu_button_group_factory_opts,

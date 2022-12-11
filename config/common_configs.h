@@ -121,7 +121,11 @@
         .pin_base_afe_op = AFE_OP,
         .pin_base_afe_ctrl = AFE_VSMP,
         .sampling_rate_afe = AFE_SAMPLING_RATE,
+        #if DVI_SYMBOLS_PER_WORD == 2
         .bppx = rgb_16_565
+        #else
+        .bppx = rgb_8_332
+        #endif
     };
 #endif
 
