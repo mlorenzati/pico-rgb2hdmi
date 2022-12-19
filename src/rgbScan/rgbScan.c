@@ -17,10 +17,12 @@ unsigned int  tickHsync;
 unsigned int  hsyncCounter, hsyncTotalLines;
 unsigned int  tickCsyncPulse, hsyncRstValue;
 bool          isHsyncLine, isVsync;
+signed int    syncTypeCnt = 0;
 
 scanlineCallback rgbScannerScanlineCallback = NULL;
 volatile unsigned int     rgbScannerScanlineTriggerFrontPorch = 0;   
-volatile unsigned int     rgbScannerScanlineTriggerlastLine   = 0; 
+volatile unsigned int     rgbScannerScanlineTriggerlastLine   = 0;
+const char *rgbsynctypeStr[rgbscan_sync_max] = { "none", "hvsync", "csync"};
 
 static inline void rgb_scanner_gpio_acknowledge_irq(uint gpio, uint32_t events) {
     iobank0_hw->intr[gpio / 8] = events << 4 * (gpio % 8);
@@ -40,6 +42,9 @@ static void __not_in_flash_func(rgb_scanner_gpio_irq_handler)(void) {
             isHsyncLine = tickCsyncPulse > RGB_SCANNER_CSYNC_TIMING;
             if (isVsync) {
                 hsyncRstValue = RGB_SCANNER_CSYNC_CNT;
+                if (syncTypeCnt < RGB_SCANNER_SYNC_TYPE_CNT) {
+                    syncTypeCnt++;
+                }
             }
         } else {
             if (isHsyncLine) {
@@ -57,6 +62,9 @@ static void __not_in_flash_func(rgb_scanner_gpio_irq_handler)(void) {
         rgb_scanner_gpio_acknowledge_irq(_vsyncGPIO, events_vsync);
         isVsync = true;
         hsyncRstValue = 0;
+        if (syncTypeCnt > -RGB_SCANNER_SYNC_TYPE_CNT) {
+            syncTypeCnt--;
+        }
     }
 
     if (isVsync) {
@@ -130,4 +138,18 @@ void rgbScannerUpdateData(uint frontPorch, uint height) {
 
 unsigned int rgbScannerGetHorizontalLines() {
     return hsyncTotalLines;
+}
+
+rgbscan_sync_type rgbScannerGetSyncType() {
+    if (syncTypeCnt >= RGB_SCANNER_SYNC_TYPE_TRIG) {
+        return rgbscan_sync_c;
+    } else if (syncTypeCnt <= -RGB_SCANNER_SYNC_TYPE_TRIG) {
+        return rgbscan_sync_hv;
+    } else {
+        return rgbscan_sync_none;
+    }
+}
+
+const char* rgbScannerGetSyncTypeStr() {
+    return rgbsynctypeStr[rgbScannerGetSyncType()];
 }

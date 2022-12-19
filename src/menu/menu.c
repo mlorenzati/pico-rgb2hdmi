@@ -225,7 +225,7 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             gui_list_t group_list = initalizeGuiDynList(menu_left_buttons_group_elements, arraySize(elements));
             menu_left_buttons_group_list = group_list;
             
-            add_repeating_timer_ms(MENU_HV_SYNC_REFRESH, menu_hvsync_timer_callback, &menu_left_buttons_group_elements[2], &menu_vsync_hsync_timer);
+            add_repeating_timer_ms(MENU_HV_SYNC_REFRESH, menu_hvsync_timer_callback, &menu_left_buttons_group_elements[1], &menu_vsync_hsync_timer);
             }
             break;
         case menu_button_group_diagnostic: {
@@ -239,7 +239,7 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             menu_left_buttons_group_list = group_list;
             
             gui_event_subscribe(button_status, &menu_left_buttons_group_elements[2].base, &menu_left_buttons_group_elements[2], on_back_event);
-            add_repeating_timer_ms(MENU_HV_SYNC_REFRESH, menu_hvsync_timer_callback, &menu_left_buttons_group_elements[2], &menu_vsync_hsync_timer);
+            add_repeating_timer_ms(MENU_HV_SYNC_REFRESH, menu_hvsync_timer_callback, &menu_left_buttons_group_elements[1], &menu_vsync_hsync_timer);
             }
             break;
         case menu_button_group_palette: {

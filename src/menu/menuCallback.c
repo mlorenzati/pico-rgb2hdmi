@@ -164,7 +164,7 @@ void menu_diagnostic_print(print_delegate_t printer) {
 };
 
 void menu_scan_print(print_delegate_t printer) {
-	printer("HSYNC %d, VSYNC %d\nHLines %d", 1000000000 / rgbScannerGetVsyncNanoSec(), 1000000000 / rgbScannerGetHsyncNanoSec(), rgbScannerGetHorizontalLines());
+	printer("HSYNC %d, VSYNC %d\nHLines %d, Type %s", 1000000000 / rgbScannerGetVsyncNanoSec(), 1000000000 / rgbScannerGetHsyncNanoSec(), rgbScannerGetHorizontalLines(), rgbScannerGetSyncTypeStr());
 };
 
 void menu_palette_opt_print(print_delegate_t printer) {
