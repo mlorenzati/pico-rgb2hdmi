@@ -19,7 +19,13 @@ void set_video_props(
     video_props.width = width;
     video_props.height = height;
     video_props.refresh_rate = refresh_rate;
+    update_sampling_rate();
+    video_props.video_buffer = video_buffer;
+}
+
+void update_sampling_rate() {
     video_props.sampling_rate = 
-        (horizontal_front_porch + width + horizontal_back_porch) * (vertical_front_porch + height + vertical_back_porch) * refresh_rate;
-     video_props.video_buffer = video_buffer;
+        (video_props.horizontal_front_porch + video_props.width + video_props.horizontal_back_porch) * 
+        (video_props.vertical_front_porch + video_props.height + video_props.vertical_back_porch) * 
+        video_props.refresh_rate;
 }

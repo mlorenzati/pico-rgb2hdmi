@@ -5,6 +5,7 @@
 #include "version.h"
 #include "security.h"
 #include "rgbScan.h"
+#include "wm8213Afe.h"
 
 // ---------  GUI EVENT SLOTS HANDLERS START  ---------
 bool on_exit_button_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
@@ -24,14 +25,52 @@ bool on_automatic_event(gui_status_t status, gui_base_t *origin, gui_object_t *d
 }
 
 bool on_alignment_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
-    uint *data = (uint *) origin->data;
+    uint     *o_data = (uint *) origin->data;
+    io_rw_16 *data   = NULL;
+    io_rw_16 *n_data = NULL;
+    io_rw_16 *s_data = NULL;
+
+    
     if (!status.activated && origin->status.activated) {
         destination->base.status.navigable = !destination->base.status.navigable;
-    } else if (status.add && *data < 100) {
-        *data += 1;
-    } else if (status.substract && *data != 0) {
-        *data -= 1;
+    } else {
+        if (o_data == &spinbox_horizontal) {
+            data   = &(GET_VIDEO_PROPS().horizontal_front_porch);
+            n_data = &(GET_VIDEO_PROPS().horizontal_back_porch);
+        } else if (o_data == &spinbox_vertical) {
+            data   = &(GET_VIDEO_PROPS().vertical_front_porch);
+            n_data = &(GET_VIDEO_PROPS().vertical_back_porch);
+        } else if (o_data == &spinbox_pix_width) {
+            data   = &(GET_VIDEO_PROPS().horizontal_front_porch);
+            s_data = &(GET_VIDEO_PROPS().horizontal_back_porch);
+        }
+        if (status.add && *n_data != 0) {
+            *data   += 1;
+            if (n_data != NULL) {
+                *n_data -= 1;
+            } else if (s_data != NULL) {
+                *s_data += 1;
+            }
+        } else if (status.substract && *data != 0) {
+            *data   -= 1;
+            if (n_data != NULL) {
+                *n_data += 1;
+            } else if (s_data != NULL) {
+                *s_data -= 1;
+            }
+        }
+        if (spinbox_vertical != GET_VIDEO_PROPS().vertical_front_porch) {
+            rgbScannerUpdateData(GET_VIDEO_PROPS().vertical_front_porch, 0);
+        }
+        if (spinbox_pix_width != GET_VIDEO_PROPS().horizontal_front_porch + GET_VIDEO_PROPS().horizontal_back_porch) {
+            update_sampling_rate();
+            //wm8213_afe_capture_update_sampling_rate(GET_VIDEO_PROPS().sampling_rate);
+        }
+        spinbox_horizontal = GET_VIDEO_PROPS().horizontal_front_porch;
+        spinbox_vertical = GET_VIDEO_PROPS().vertical_front_porch;
+        spinbox_pix_width = GET_VIDEO_PROPS().horizontal_front_porch + GET_VIDEO_PROPS().horizontal_back_porch;
     }
+
     destination->base.status.data_changed = 1;
     
     return true;

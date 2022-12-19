@@ -193,6 +193,7 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[1].base, &menu_left_buttons_group_elements[1], on_alignment_event);
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_alignment_event);
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[5].base, &menu_left_buttons_group_elements[5], on_alignment_event);
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[5].base, &menu_left_buttons_group_elements[1], NULL); // The pixel with updates the horiz front and back porch
             gui_event_subscribe(button_status, &menu_left_buttons_group_elements[6].base, &menu_left_buttons_group_elements[6], on_automatic_event);
             gui_event_subscribe(button_status, &menu_left_buttons_group_elements[7].base, &menu_left_buttons_group_elements[7], on_back_event);
             }
@@ -381,7 +382,7 @@ int menu_initialize(uint *pins, menu_event_type *events, uint8_t count) {
     menu_tot_events = count;
     for (uint8_t cnt = 0; cnt < menu_tot_events; cnt++) {
         menu_events[cnt].type = events[cnt];
-     }
+    }
 
     // Initialize Keyboard
     keyboard_initialize(pins, count, KEYBOARD_REFRESH_RATE_MS, KEYBOARD_REPEAT_RATE_MS, menu_on_keyboard_event);
@@ -401,6 +402,11 @@ int menu_initialize(uint *pins, menu_event_type *events, uint8_t count) {
     menu_window = gui_create_window(&menu_overlay_ctx, 0, 0, menu_overlay_ctx.width, menu_overlay_ctx.height, &menu_colors_list, menu_common_nshared_props);
     menu_left_buttons_group = menu_create_left_button_group(menu_button_group_none, menu_button_group_home);
     menu_left_buttons_group.base.status.enabled = false;
+
+    //Variables mapping (since spinboxes uses uints)
+    spinbox_horizontal = GET_VIDEO_PROPS().horizontal_front_porch;
+    spinbox_vertical = GET_VIDEO_PROPS().vertical_front_porch;
+    spinbox_pix_width = GET_VIDEO_PROPS().horizontal_front_porch + GET_VIDEO_PROPS().horizontal_back_porch;
 
     return 0;
 }
