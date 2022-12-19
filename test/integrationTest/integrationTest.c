@@ -210,7 +210,7 @@ int main() {
     if (command_info_afe_error == 0) {
         io_rw_16 final_height = GET_VIDEO_PROPS().height;
         command_info_scanner_error = rgbScannerSetup(
-            RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, GET_VIDEO_PROPS().vertical_front_porch, final_height, scanLineTriggered);
+            RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, GET_VIDEO_PROPS().vertical_front_porch, final_height, scanLineTriggered, menu_no_signal_callback, NULL);
         if (command_info_scanner_error > 0) {
             printf("rgbScannerSetup failed with code %d\n", command_info_scanner_error);
         }

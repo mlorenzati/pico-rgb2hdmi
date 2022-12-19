@@ -21,6 +21,11 @@ static void __not_in_flash_func(scanLineTriggered)(unsigned int render_line_numb
      blink = !blink;
 }
 
+uint noSignaltestData = 10;
+void noSignalCallback(void *data) {
+    printf("No signal!, data %d\n", (uint*) data);
+}
+
 int main() {
     vreg_set_voltage(VREG_VOLTAGE_1_20);
 	sleep_ms(10);
@@ -31,7 +36,7 @@ int main() {
     gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
     int error;
-    if (error = rgbScannerSetup(RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, frontPorch, height, &scanLineTriggered) > 0) {
+    if (error = rgbScannerSetup(RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, frontPorch, height, &scanLineTriggered, noSignalCallback, &noSignaltestData) > 0) {
         printf("rgbScannerSetup failed with code %d\n", error);
     }
 

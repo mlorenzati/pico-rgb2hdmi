@@ -23,6 +23,8 @@ scanlineCallback rgbScannerScanlineCallback = NULL;
 volatile unsigned int     rgbScannerScanlineTriggerFrontPorch = 0;   
 volatile unsigned int     rgbScannerScanlineTriggerlastLine   = 0;
 const char *rgbsynctypeStr[rgbscan_sync_max] = { "none", "hvsync", "csync"};
+struct  repeating_timer rgbScanner_timer;
+rgbscanSyncNoSignalCallback rgbscanSyncNoSignalCallbackPtr = NULL;
 
 static inline void rgb_scanner_gpio_acknowledge_irq(uint gpio, uint32_t events) {
     iobank0_hw->intr[gpio / 8] = events << 4 * (gpio % 8);
@@ -79,11 +81,30 @@ static void __not_in_flash_func(rgb_scanner_gpio_irq_handler)(void) {
     lastEventTick = onEventTick;  
 }
 
-int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height, scanlineCallback callback) {
-    if (callback == NULL) {
+
+bool rgbScanner_timer_callback(struct repeating_timer *t) {
+    bool shouldTrigger = false;
+    if (syncTypeCnt > 0) {
+        syncTypeCnt--;
+        shouldTrigger = true;
+    } else if (syncTypeCnt < 0) {
+        syncTypeCnt++;
+        shouldTrigger = true;
+    }
+    if (rgbscanSyncNoSignalCallbackPtr != NULL && shouldTrigger && syncTypeCnt == 0) {
+        rgbscanSyncNoSignalCallbackPtr(t->user_data);
+    }
+    return true;
+}
+
+int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height, scanlineCallback scanCallback, rgbscanSyncNoSignalCallback noSignalCallback, void *noSignalData) {
+    if (scanCallback == NULL) {
         return 1;
     }
-    rgbScannerScanlineCallback = callback;
+    //blindly stopping the timer if the api is called consecutively
+    cancel_repeating_timer(&rgbScanner_timer);
+
+    rgbScannerScanlineCallback = scanCallback;
     rgbScannerUpdateData(frontPorch, height);
     _vsyncGPIO = vsyncGPIO;
     _hsyncGPIO = hsyncGPIO;
@@ -104,6 +125,12 @@ int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height
     
     //Set the highest priority to the GPIO
     irq_set_priority(IO_IRQ_BANK0, 0);
+
+    rgbscanSyncNoSignalCallbackPtr = NULL;
+    if (noSignalCallback != NULL) {
+        rgbscanSyncNoSignalCallbackPtr = noSignalCallback;
+        add_repeating_timer_ms(RGB_SCANNER_NO_SIGNAL_TICK, rgbScanner_timer_callback, NULL, &rgbScanner_timer);
+    }
     
     return 0;
 }

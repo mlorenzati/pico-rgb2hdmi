@@ -87,6 +87,18 @@ bool menu_hvsync_timer_callback(struct repeating_timer *t) {
     
     return true;
 }
+
+void menu_no_signal_callback(void *data) {
+    fill_rect(&menu_graphic_ctx, 0, 0, menu_graphic_ctx.width, menu_graphic_ctx.height, color_black);
+    draw_textf(&menu_graphic_ctx, menu_graphic_ctx.width / 2 - 36, menu_graphic_ctx.height / 2 - 4, color_white, color_white, false, "NO SIGNAL");
+    if (is_video_overlay_enabled()) {
+        gui_obj_draw(menu_window);
+        gui_obj_draw(menu_left_buttons_group);
+        if (menu_main_view_group.base.status.visible) {
+            gui_obj_draw(menu_main_view_group);
+        }
+    }
+}
 // ----------- TIMER CALLBACK  END -----------
 
 bool menu_change_view(gui_status_t status, gui_base_t *origin, menu_button_group_type type){

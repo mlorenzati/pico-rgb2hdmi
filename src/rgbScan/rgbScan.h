@@ -6,8 +6,9 @@
 
 #define RGB_SCANNER_CSYNC_TIMING    9000
 #define RGB_SCANNER_CSYNC_CNT       5
-#define RGB_SCANNER_SYNC_TYPE_CNT   200
 #define RGB_SCANNER_SYNC_TYPE_TRIG  50
+#define RGB_SCANNER_SYNC_TYPE_CNT   2 * RGB_SCANNER_SYNC_TYPE_TRIG
+#define RGB_SCANNER_NO_SIGNAL_TICK  200
 
 typedef enum {
 	rgbscan_sync_none = 0,
@@ -17,8 +18,9 @@ typedef enum {
 } rgbscan_sync_type;
 
 typedef void (*scanlineCallback)(unsigned int render_line_number);
+typedef void (*rgbscanSyncNoSignalCallback)(void *data);
 
-int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height, scanlineCallback callback);
+int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height, scanlineCallback scanCallback, rgbscanSyncNoSignalCallback noSignalCallback, void *noSignalData);
 unsigned long rgbScannerGetVsyncNanoSec();
 unsigned int rgbScannerGetHsyncNanoSec();
 unsigned int rgbScannerGetHorizontalLines();

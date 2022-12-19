@@ -15,6 +15,9 @@ Version: 0.4.0
         - Palette menu changes active colors
     - Factory option
     - Gain & offset, automatic option
+    - license show and start image
+    - alignment control connection to ui
+    - diagnostics shows sync type
 - group unsubscribe improvement
 - group loop callback tool with break condition and count of results
 - focus change fix
@@ -22,7 +25,7 @@ Version: 0.4.0
 - event fix to support multiple subscribers and destination with diferent actions
 - event non propagation fix
 - scanner provides number of hsync lines
-
+- scanner sync type detection and show on screen
 -------------------------------------------------------------------------
 Date: 2022/11/13
 Version: 0.3.4
