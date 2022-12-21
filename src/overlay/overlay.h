@@ -60,4 +60,8 @@ inline void video_overlay_enable(bool value) {
     video_overlay.enabled = value;
 }
 
+inline bool is_video_overlay_enabled() {
+    return video_overlay.enabled;
+}
+
 #endif

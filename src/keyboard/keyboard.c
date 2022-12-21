@@ -113,3 +113,12 @@ bool keyboard_get_current_value(uint8_t index) {
 void keyboard_stop_service() {
      cancel_repeating_timer(&keyboard_timer);
 }
+
+bool keyboard_get_key_status(const keyboard_status_t *status, bool up_down, uint8_t key_id) {
+    if (key_id >= KEYBOARD_MAX_COUNT) {
+        return false;
+    }
+    keyboard_status_cast_t *status_cast = (keyboard_status_cast_t *) status;
+
+    return (status_cast->int_status >> ((up_down ? KEYBOARD_MAX_COUNT : 0) + key_id)) & 0x1;
+}

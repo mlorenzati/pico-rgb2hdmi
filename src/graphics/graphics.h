@@ -1,16 +1,11 @@
 #ifndef _GRAPHICS_H
 #define _GRAPHICS_H
 #include "pico.h"
+#include "color.h"
 
 #define GRAPHICS_USE_SUB_WINDOW 1
 #define GRAPHICS_BOUNDARY_CHECK 1
 #define GRAPHICS_FONT_SIZE      8
-
-typedef enum {
-	rgb_8  = 1,
-    rgb_16 = 2,
-    rgb_24 = 3
-} graphics_bppx;
 
 #define GRAPHICS_FLOOD_DEPTH 128
 typedef struct graphic_flood_queue {
@@ -29,7 +24,7 @@ struct graphic_ctx {
     uint16_t             x;
     uint16_t             y;
     void                *video_buffer;
-    graphics_bppx        bppx;
+    color_bppx           bppx;
     const graphic_ctx_t *parent;
 };
 
@@ -44,6 +39,7 @@ void draw_line(const graphic_ctx_t *ctx, uint x0, uint y0, uint x1, uint y1, uin
 void draw_rect(const graphic_ctx_t *ctx, uint x0, uint y0, uint width, uint height, uint color);
 void fill_rect(const graphic_ctx_t *ctx, uint x0, uint y0, uint width, uint height, uint color);
 void draw_circle(const graphic_ctx_t *ctx, uint xc, uint yc, signed int radius, uint color);
+void fill_circle(const graphic_ctx_t *ctx, uint xc, uint yc, signed int radius, uint fg_color, uint bg_color);
 void draw_text(const graphic_ctx_t *ctx, uint x0, uint y0, uint fg_color, uint bg_color, bool word_wrap, const char *text);
 void draw_textf(const graphic_ctx_t *ctx, uint x0, uint y0, uint fg_color, uint bg_color, bool word_wrap, const char *fmt, ...);
 void draw_flood(const graphic_ctx_t *ctx, uint x, uint y, uint fill_color, uint logic_color, bool invert);

@@ -30,10 +30,12 @@
 	//With 2 repeated symbols per word, we go for 320 pixels width and 16 bits per pixel
 	#define FRAME_WIDTH 320
 	uint16_t framebuf[FRAME_HEIGHT][FRAME_WIDTH];
+    #define GUI_OVERLAY_BBPX    rgb_16_565
 #else
 	//With no repeated symbols per word, we go for 640 pixels width and 8 bits per pixel
 	#define FRAME_WIDTH 640
 	uint8_t framebuf[FRAME_HEIGHT][FRAME_WIDTH];
+    #define GUI_OVERLAY_BBPX    rgb_8_332
 #endif
 
 #define REFRESH_RATE 50
@@ -50,28 +52,26 @@ static graphic_ctx_t graphic_ctx = {
 	.width = FRAME_WIDTH,
 	.height = FRAME_HEIGHT,
 	.video_buffer = framebuf,
-	#if DVI_SYMBOLS_PER_WORD == 2
-	.bppx = rgb_16,
-	#else
-	.bppx = rgb_8,
-	#endif
+	.bppx = GUI_OVERLAY_BBPX,
 	.parent = NULL
 };
 
 #if DVI_SYMBOLS_PER_WORD == 2
-	uint color_black      = 0b0000000000000000;
-	uint color_dark_gray  = 0b0001100011100011;
-	uint color_mid_gray   = 0b0000000000011111;
-	uint color_light_gray = 0b1111100000000000;
-	uint color_green      = 0b0000011111100000;
-	uint color_white      = 0b1111111111111111;
+    // Colors                     0brrrrrggggggbbbbb;
+    const uint color_black      = 0b0000000000000000;
+    const uint color_dark_gray  = 0b0001100011100011;
+    const uint color_mid_gray   = 0b1010010100010000;
+    const uint color_light_gray = 0b1100011000011000; 
+    const uint color_green      = 0b0000011111100000;
+    const uint color_white      = 0b1111111111111111;
 #else
-	uint color_black =      0b00000000;
-	uint color_dark_gray = 	0b01001001;
-	uint color_mid_gray =   0b10110110;
-	uint color_light_gray = 0b11011011;
-	uint color_green =      0b00011100;
-	uint color_white =      0b11111111;
+    // Colors                     0brrrgggbb;
+    const uint color_black      = 0b00000000;
+    const uint color_dark_gray  = 0b01001001;
+    const uint color_mid_gray   = 0b10110110;
+    const uint color_light_gray = 0b11011011;
+    const uint color_green      = 0b00011100;
+    const uint color_white      = 0b11111111;
 #endif
 
 gui_object_t *focused_object = NULL;

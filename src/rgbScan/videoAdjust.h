@@ -30,4 +30,5 @@ void set_video_props(
     void        *video_buffer
     );
 
+void update_sampling_rate();
 #endif

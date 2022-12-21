@@ -14,12 +14,17 @@ float         nanoSecPerTick;
 uint _vsyncGPIO, _hsyncGPIO;
 unsigned long tickVsync;
 unsigned int  tickHsync;
-unsigned int  hsyncCounter;
+unsigned int  hsyncCounter, hsyncTotalLines;
 unsigned int  tickCsyncPulse, hsyncRstValue;
 bool          isHsyncLine, isVsync;
+signed int    syncTypeCnt = 0;
+
 scanlineCallback rgbScannerScanlineCallback = NULL;
 volatile unsigned int     rgbScannerScanlineTriggerFrontPorch = 0;   
-volatile unsigned int     rgbScannerScanlineTriggerlastLine   = 0; 
+volatile unsigned int     rgbScannerScanlineTriggerlastLine   = 0;
+const char *rgbsynctypeStr[rgbscan_sync_max] = { "none", "hvsync", "csync"};
+struct  repeating_timer rgbScanner_timer;
+rgbscanSyncNoSignalCallback rgbscanSyncNoSignalCallbackPtr = NULL;
 
 static inline void rgb_scanner_gpio_acknowledge_irq(uint gpio, uint32_t events) {
     iobank0_hw->intr[gpio / 8] = events << 4 * (gpio % 8);
@@ -39,6 +44,9 @@ static void __not_in_flash_func(rgb_scanner_gpio_irq_handler)(void) {
             isHsyncLine = tickCsyncPulse > RGB_SCANNER_CSYNC_TIMING;
             if (isVsync) {
                 hsyncRstValue = RGB_SCANNER_CSYNC_CNT;
+                if (syncTypeCnt < RGB_SCANNER_SYNC_TYPE_CNT) {
+                    syncTypeCnt++;
+                }
             }
         } else {
             if (isHsyncLine) {
@@ -56,6 +64,9 @@ static void __not_in_flash_func(rgb_scanner_gpio_irq_handler)(void) {
         rgb_scanner_gpio_acknowledge_irq(_vsyncGPIO, events_vsync);
         isVsync = true;
         hsyncRstValue = 0;
+        if (syncTypeCnt > -RGB_SCANNER_SYNC_TYPE_CNT) {
+            syncTypeCnt--;
+        }
     }
 
     if (isVsync) {
@@ -63,17 +74,37 @@ static void __not_in_flash_func(rgb_scanner_gpio_irq_handler)(void) {
             tickVsync = systick_delta(lastVsyncTick, onEventTick);
             lastVsyncTick = onEventTick;
             tickHsync = (unsigned int)(tickVsync / (hsyncCounter - 1));
+            hsyncTotalLines = hsyncCounter;
         }
         hsyncCounter = hsyncRstValue;
     }
     lastEventTick = onEventTick;  
 }
 
-int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height, scanlineCallback callback) {
-    if (callback == NULL) {
+
+bool rgbScanner_timer_callback(struct repeating_timer *t) {
+    bool shouldTrigger = false;
+    if (syncTypeCnt > 0) {
+        syncTypeCnt--;
+        shouldTrigger = true;
+    } else if (syncTypeCnt < 0) {
+        syncTypeCnt++;
+        shouldTrigger = true;
+    }
+    if (rgbscanSyncNoSignalCallbackPtr != NULL && shouldTrigger && syncTypeCnt == 0) {
+        rgbscanSyncNoSignalCallbackPtr(t->user_data);
+    }
+    return true;
+}
+
+int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height, scanlineCallback scanCallback, rgbscanSyncNoSignalCallback noSignalCallback, void *noSignalData) {
+    if (scanCallback == NULL) {
         return 1;
     }
-    rgbScannerScanlineCallback = callback;
+    //blindly stopping the timer if the api is called consecutively
+    cancel_repeating_timer(&rgbScanner_timer);
+
+    rgbScannerScanlineCallback = scanCallback;
     rgbScannerUpdateData(frontPorch, height);
     _vsyncGPIO = vsyncGPIO;
     _hsyncGPIO = hsyncGPIO;
@@ -94,6 +125,12 @@ int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height
     
     //Set the highest priority to the GPIO
     irq_set_priority(IO_IRQ_BANK0, 0);
+
+    rgbscanSyncNoSignalCallbackPtr = NULL;
+    if (noSignalCallback != NULL) {
+        rgbscanSyncNoSignalCallbackPtr = noSignalCallback;
+        add_repeating_timer_ms(RGB_SCANNER_NO_SIGNAL_TICK, rgbScanner_timer_callback, NULL, &rgbScanner_timer);
+    }
     
     return 0;
 }
@@ -112,6 +149,9 @@ void rgbScannerEnable(bool value) {
     gpio_set_irq_enabled(_hsyncGPIO,  GPIO_IRQ_EDGE_RISE, value);
     gpio_set_irq_enabled(_hsyncGPIO,  GPIO_IRQ_EDGE_FALL, value);
     rgbScannerEnabled = value;
+    if (!value) {
+        busy_wait_us(500);
+    }
 }
 
 void rgbScannerUpdateData(uint frontPorch, uint height) {
@@ -124,4 +164,22 @@ void rgbScannerUpdateData(uint frontPorch, uint height) {
     rgbScannerScanlineTriggerFrontPorch = frontPorch;
     rgbScannerScanlineTriggerlastLine = frontPorch + height;
     rgbScannerEnable(wasRgbScannerEnabled);
+}
+
+unsigned int rgbScannerGetHorizontalLines() {
+    return hsyncTotalLines;
+}
+
+rgbscan_sync_type rgbScannerGetSyncType() {
+    if (syncTypeCnt >= RGB_SCANNER_SYNC_TYPE_TRIG) {
+        return rgbscan_sync_c;
+    } else if (syncTypeCnt <= -RGB_SCANNER_SYNC_TYPE_TRIG) {
+        return rgbscan_sync_hv;
+    } else {
+        return rgbscan_sync_none;
+    }
+}
+
+const char* rgbScannerGetSyncTypeStr() {
+    return rgbsynctypeStr[rgbScannerGetSyncType()];
 }

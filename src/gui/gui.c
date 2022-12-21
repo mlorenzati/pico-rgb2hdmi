@@ -10,11 +10,13 @@
 const char* gui_id_window  = "window";
 const char* gui_id_button  = "button";
 const char* gui_id_slider  = "slider";
+const char* gui_id_text    = "text";
 const char* gui_id_label   = "label";
 const char* gui_id_group   = "group";
 const char* gui_id_spinbox = "spinbox";
 
 // GUI events
+const gui_status_t      gui_status_enabled      = { .enabled = 1 };
 const gui_status_t      gui_status_focused      = { .focused = 1 };
 const gui_status_t      gui_status_go_next      = { .go_next = 1 };
 const gui_status_t      gui_status_go_previous  = { .go_previous = 1 };
@@ -46,9 +48,12 @@ const gui_status_cast_t gui_status_updateable = { .bits = {
     .navigable = 1
 }};
 
+const char *gui_colors_str[] = { "border enabled", "fill unfocused", "main disabled", 
+    "text enabled", "fill activated", "fill focused" };
+
 // ---- Base object creation ----
 gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint width, uint height, const char* id, 
-    gui_list_t *colors, gui_properties_t props, const uint8_t *data, gui_cb_draw_t draw_cb) {
+    gui_list_t *colors, gui_properties_t props, const void *data, gui_cb_draw_t draw_cb) {
     gui_object_t obj = {
         .base = {
             .ctx = ctx,
@@ -59,8 +64,10 @@ gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint wi
             .height = height,
             .colors = colors,
             .status = {
+                .visible = 1,
                 .enabled = 1,
-                .navigable = 1
+                .navigable = 1,
+                .focused = 0
             },
             .properties = props,
             .data = data
@@ -69,19 +76,22 @@ gui_object_t gui_create_object(const graphic_ctx_t *ctx, uint x, uint y, uint wi
         .next = NULL,
         .previous = NULL
     };
+
+    uint fill_group(gui_object_t *object, void *data) {
+        gui_object_t **previous = (gui_object_t **) data;
+        (*previous)->next = object;
+        object->previous = *previous;
+        *previous = object;
+        return 1;
+    }
+
     if (id == gui_id_group) { // We don't need a strcmp on known const keys
         gui_list_t *list = (gui_list_t *) data;
         gui_object_t **s_objects = (gui_object_t **)(list->elements);
         gui_object_t *objects = (gui_object_t *)(list->elements);
-
         gui_object_t *previous = props.shared ? s_objects[list->size - 1] : &objects[list->size - 1];
-        for (uint8_t cnt = 0; cnt < list->size; cnt++) {
-            gui_object_t *object = props.shared ? s_objects[cnt] : &objects[cnt];
-            uint8_t next = (cnt + 1) % list->size;
-            object->next = props.shared ? s_objects[next] : &objects[next];
-            object->previous = previous;
-            previous = object;
-        }
+        
+        gui_group_execute(&(obj.base), &previous, fill_group, NULL);
     }
     return obj;
 }
@@ -106,7 +116,7 @@ void gui_draw_window(gui_base_t *base) {
 void gui_draw_focus(gui_base_t *base) {
     uint *colors = (uint *)(base->colors->elements);
     uint color_bg = base->status.activated ?
-        colors[4] : base->status.focused ? colors[5] : colors[1];
+        colors[4] : (base->status.focused && base->properties.focusable) ? colors[5] : colors[1];
     fill_rect(base->ctx, base->x, base->y, base->width, base->height, color_bg);
 }
 
@@ -194,7 +204,7 @@ void gui_draw_label(gui_base_t *base) {
     gui_base_t labelBase = *base;
     
     void printer(const char * fmt, ...) {
-        char buff[128];
+        char buff[GUI_PRINT_VARG_LABEL_MAX];
         va_list args;
         va_start(args, fmt);
         vsnprintf(buff, sizeof(buff), fmt, args);
@@ -206,43 +216,60 @@ void gui_draw_label(gui_base_t *base) {
     print_caller(printer);
 }
 
+typedef struct gui_draw_group_data {
+   uint16_t inc_pos_x, inc_pos_y;
+   uint8_t  padding;
+   bool horiz_vert;
+   bool enabled;
+} gui_draw_group_data_t;
+
 void gui_draw_group(gui_base_t *base) {
-    gui_list_t *list = (gui_list_t *) base->data;
-    gui_object_t **s_objects = (gui_object_t **)(list->elements);
-    gui_object_t *objects = (gui_object_t *)(list->elements);
-    uint inc_pos_x = base->x;
-    uint inc_pos_y = base->y;
-    uint padding = base->properties.padding;
-    bool shared = base->properties.shared;
-
-    if (base->properties.border) {
-        gui_draw_window(base);
-        inc_pos_x += 1;
-        inc_pos_y += 1;
-    }
-
-    for (uint8_t cnt = 0; cnt < list->size; cnt++) {
-        gui_object_t *object = shared ? s_objects[cnt] : &objects[cnt];
+    uint draw_group(gui_object_t *object, void *data) {
+        gui_draw_group_data_t *groupdata = (gui_draw_group_data_t *) data;
         gui_base_t *sub_base = &(object->base);
-        sub_base->x = inc_pos_x;
-        sub_base->y = inc_pos_y;
+        sub_base->x = groupdata->inc_pos_x;
+        sub_base->y = groupdata->inc_pos_y;
+        gui_status_t sub_base_cached_status = sub_base->status;
 
-        if (gui_object_overflow_group(sub_base, base)) {
-            return;
+        //Cache status
+        if (!groupdata->enabled) {
+            sub_base->status.enabled = false;
+            sub_base->status.focused = false;
         }
 
         gui_ref_draw(object);
+        
+        //Restore draw status changes from parent
+        sub_base->status = sub_base_cached_status;
 
-        if (base->properties.horiz_vert) {
-            inc_pos_x += sub_base->width + padding;
+        if (groupdata->horiz_vert) {
+            groupdata->inc_pos_x += sub_base->width + groupdata->padding;
         } else {
-            inc_pos_y += sub_base->height + padding;
+            groupdata->inc_pos_y += sub_base->height + groupdata->padding;
         }
-    } 
+
+        return 1;
+    }
+
+    gui_draw_group_data_t group_data = {
+        .inc_pos_x  = base->x,
+        .inc_pos_y  = base->y,
+        .padding    = base->properties.padding,
+        .horiz_vert = base->properties.horiz_vert,
+        .enabled    = base->status.enabled
+    };
+
+    if (base->properties.border) {
+        gui_draw_window(base);
+        group_data.inc_pos_x += 1;
+        group_data.inc_pos_y += 1;
+    }
+
+    gui_group_execute(base, &group_data, draw_group, gui_object_overflow_group);
 }
 
 bool gui_object_overflow_group(gui_base_t *object, gui_base_t *group) {
-    return object->y + object->height >= group->y + group->height || object->x + object->width >= group->x + group->width;
+    return object->y + object->height > group->y + group->height || object->x + object->width > group->x + group->width;
 }
 
 void gui_draw_spinbox(gui_base_t *base) {
@@ -298,7 +325,7 @@ void gui_draw_spinbox(gui_base_t *base) {
 
 // -- GUI event and subscriber --
 gui_event_subscription_t event_subscriptions[GUI_EVENT_HANDLING_MAX];
-bool gui_event_subscribe(gui_status_t status, gui_base_t *origin, gui_object_t *destination, gui_cb_on_status_t status_cv) {
+bool gui_event_subscribe(gui_status_t status, gui_base_t *origin, gui_object_t *destination, gui_cb_on_status_t status_cb) {
     //Check the first available event slot
     gui_event_subscription_t *sel_event = NULL;
     gui_status_cast_t *n_status = (gui_status_cast_t *) &status;
@@ -319,30 +346,61 @@ bool gui_event_subscribe(gui_status_t status, gui_base_t *origin, gui_object_t *
        }
     }
     if (sel_event != NULL) {
-        sel_event ->status = status;
+        sel_event->status = status;
         sel_event->origin = origin;
         sel_event->destination = destination;
-        if (sel_event->destination != NULL) {
-            sel_event->destination->status_handle = status_cv;
-        }
+        sel_event->status_handle = status_cb;
         return true;
     }
     return false;
 }
 
-bool gui_event_unsubscribe(gui_base_t *origin, gui_object_t *destination) {
+uint gui_group_execute(gui_base_t *group, void *data, gui_cb_group_t group_cb, gui_cb_group_break_t break_cb) {
+    if (group->id != gui_id_group) {
+        return false;
+    }
+    gui_list_t *list = (gui_list_t *) group->data;
+    bool shared = group->properties.shared;
+    gui_object_t **s_objects = (gui_object_t **)(list->elements);
+    gui_object_t *objects = (gui_object_t *)(list->elements);
+    uint found = 0;
+    for (uint8_t cnt = 0; cnt < list->size; cnt++) {
+        gui_object_t *object = shared ? s_objects[cnt] : &objects[cnt];
+        if (break_cb != NULL) {
+            if (break_cb(&(object->base), group)) {
+                return false;
+            }
+        }
+        found += group_cb(object, data);
+    }
+    return found;
+}
+
+uint gui_event_unsubscribe(gui_base_t *origin, gui_object_t *destination) {
+    uint unsubscribe_group(gui_object_t *object, void *data) {
+        gui_object_t *_destination = (gui_object_t *)data;
+        return gui_event_unsubscribe(&(object->base), _destination);
+    }
+
     //Search stored status
+    uint found = 0;
     for (uint cnt = 0; cnt < GUI_EVENT_HANDLING_MAX; cnt++) {
        gui_event_subscription_t *event = &event_subscriptions[cnt];
        gui_status_cast_t *status = (gui_status_cast_t *) &event->status;
-       if (origin == event->origin && destination == event->destination) {
+       if (origin == event->origin && (destination == event->destination || destination == NULL)) {
             status->word = 0;
             event->origin = NULL;
             event->destination = NULL;
-            return true;
+            event->status_handle = NULL;
+            found++;
+            if (destination != NULL) {
+                return found;
+            }
+       } else if (origin->id == gui_id_group) {
+            found += gui_group_execute(origin, destination, unsubscribe_group, NULL);
        }
     }
-    return false;
+    return found;
 }
 
 gui_status_t gui_status_update(gui_object_t *object, gui_status_t status, bool set_clear) {
@@ -353,6 +411,9 @@ gui_status_t gui_status_update(gui_object_t *object, gui_status_t status, bool s
 }
 
 gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
+    if (origin == NULL) {
+        return NULL;
+    }
     //Update self
     gui_status_cast_t *c_status_new = (gui_status_cast_t *) &status;
     gui_status_cast_t *c_status_old = (gui_status_cast_t *) &origin->base.status;
@@ -373,6 +434,7 @@ gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
     uint subcribers_updates_cnt = 0;
     gui_status_cast_t subcribers_updates_status[GUI_EVENT_SUB_UPD_MAX];
     gui_object_t *subcribers_updates_destination[GUI_EVENT_SUB_UPD_MAX];
+    bool propagate = true;
     for (uint cnt = 0; cnt < GUI_EVENT_HANDLING_MAX; cnt++) {
         gui_event_subscription_t *event = &event_subscriptions[cnt];
         gui_status_cast_t *c_status_sub = (gui_status_cast_t *) &event->status;
@@ -380,14 +442,17 @@ gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
         c_status_match.word = c_status_sub->word & c_status_changed.word;
 
         if (&origin->base == event->origin && c_status_match.word > 0) {
-            gui_cb_on_status_t status_handle = event->destination->status_handle;
+            gui_cb_on_status_t status_handle = event->status_handle;
             if (origin == event->destination) {
                 // need to update
             }
             
             gui_status_cast_t dest_status_old = *((gui_status_cast_t *)(&event->destination->base.status));
-            if (status_handle == NULL || status_handle(status, &origin->base, event->destination)) {
-                if (origin != event->destination) {
+            if (status_handle != NULL) {
+                propagate &= status_handle(status, &origin->base, event->destination);
+            }
+            if (status_handle == NULL || propagate) {
+                if (origin != event->destination && event->destination != NULL) {
                     gui_ref_draw(event->destination);
                 }
                 // If it was a status change of the status due the even callback, trigger and event
@@ -398,6 +463,10 @@ gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
                     subcribers_updates_destination[subcribers_updates_cnt] = event->destination;
                     subcribers_updates_cnt++;
                 }
+            }
+            if (!propagate) {
+                // The consumer of the event request no more propagation
+                break;
             }
         }
     }
@@ -411,6 +480,11 @@ gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
     // Consumable events like Data updates have to be reset after
     c_status_old->word &= ~gui_status_consumable.word;
 
+    if (!propagate) {
+        // The consumer of the event request no more events due to this event
+        return origin;
+    }
+
     // Updates from subscriber events
     for (uint cnt = 0; cnt < subcribers_updates_cnt; cnt++) {
         gui_object_t *update_dest = subcribers_updates_destination[cnt]; 
@@ -419,17 +493,34 @@ gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
         gui_event(update_status.bits, update_dest);
     }
 
+    // Check if it was a focus request and it's not focusable
+    // WARNING: Request focus over a list of chained elements with at least one focusable
+    if (status.focused && !origin->base.properties.focusable && !status.go_next & !status.go_previous) {
+        status.go_next = 1;
+    }
+
     // Check focus change
     gui_object_t *next_focused = origin;
+
     if (status.go_next ^ status.go_previous) {
-        if (status.go_next && (origin->next != NULL)) {
-            status.go_next = 0;
-            next_focused = origin->next;
+        gui_object_t *test_focused = origin;
+        for (uint cnt = 0; cnt < GUI_FOCUSABLE_SEARCH_MAX; cnt++) {
+             if (status.go_next && (test_focused->next != NULL)) {
+                test_focused = test_focused->next;
+            }
+
+            if (status.go_previous && (test_focused->previous != NULL)) {
+                test_focused = test_focused->previous;
+            }
+
+            if (test_focused->base.properties.focusable) {
+                status.go_next = 0;
+                status.go_previous = 0;
+                next_focused = test_focused;
+                break;
+            }
         }
-        if (status.go_previous && (origin->previous != NULL)) {
-            status.go_previous = 0;
-            next_focused = origin->previous;
-        }
+
         if(next_focused != origin) {
             gui_unfocused(origin);
             gui_focused(next_focused);
@@ -455,6 +546,7 @@ uint gui_sum(gui_list_t *group, gui_properties_t props, bool width_height) {
         height = orientation ? (object->base.height > height ? object->base.height : height) : (height + object->base.height + padding);
         padding = props.padding;
     }
+    
     if (props.border) {
         width += 2;
         height += 2;

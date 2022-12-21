@@ -2,7 +2,31 @@ Release Notes:
 pico rgb2hdmi
 
 An rpi pico microprocessed rgb 2 hdmi plus rgb 2 usb on the fly converter
-
+-------------------------------------------------------------------------
+Date: 2022/12/08
+Version: 0.4.0
+- Included menu support based on an event based GUI
+    - 8 object in left button groups
+    - 8 objects in main view
+    - show hide overlay with buttons
+    - mapping of keys with event types
+    - navigation on navigable object improvement
+    - Added about, palette, save & reboot, diagnostics and alignment menues
+        - Palette menu changes active colors
+    - Factory option
+    - Gain & offset, automatic option
+    - license show and start image
+    - alignment control connection to ui with pixel width
+    - diagnostics shows sync type
+- group unsubscribe improvement
+- group loop callback tool with break condition and count of results
+- focus change fix
+- color api for RGB in different modes
+- event fix to support multiple subscribers and destination with diferent actions
+- event non propagation fix
+- scanner provides number of hsync lines
+- scanner sync type detection and show on screen
+- scanner and afe can restart capture
 -------------------------------------------------------------------------
 Date: 2022/11/13
 Version: 0.3.4

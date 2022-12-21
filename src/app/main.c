@@ -72,7 +72,7 @@ void __not_in_flash("main") core1_main() {
 		 gpio_put(LED_PIN, true);
     }
 
-	int error = rgbScannerSetup(RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, vFrontPorch, FRAME_HEIGHT, scanLineTriggered);
+	int error = rgbScannerSetup(RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, vFrontPorch, FRAME_HEIGHT, scanLineTriggered, NULL, NULL);
 	if (error > 0) {
         printf("rgbScannerSetup failed with code %d\n", error);
 		gpio_put(LED_PIN, false);
