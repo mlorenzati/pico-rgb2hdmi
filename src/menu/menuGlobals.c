@@ -5,8 +5,8 @@
     // Colors                     0brrrrrggggggbbbbb;
     const uint color_black      = 0b0000000000000000;
     const uint color_dark_gray  = 0b0001100011100011;
-    const uint color_mid_gray   = 0b0000000000011111;
-    const uint color_light_gray = 0b1111100000000000;
+    const uint color_mid_gray   = 0b1010010100010000;
+    const uint color_light_gray = 0b1100011000011000; 
     const uint color_green      = 0b0000011111100000;
     const uint color_white      = 0b1111111111111111;
 #else
