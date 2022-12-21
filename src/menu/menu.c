@@ -79,7 +79,7 @@ void menu_on_keyboard_event(keyboard_status_t keys) {
 // ---------  KEYBOARD API CALL END  ---------
 
 // ---------- TIMER  CALLBACK START ----------
-bool menu_hvsync_timer_callback(struct repeating_timer *t) {
+bool menu_update_timer_callback(struct repeating_timer *t) {
     gui_object_t *label = (gui_object_t *) t->user_data;
     if (label != NULL) {
         gui_ref_draw(label);
@@ -237,7 +237,7 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             gui_list_t group_list = initalizeGuiDynList(menu_left_buttons_group_elements, arraySize(elements));
             menu_left_buttons_group_list = group_list;
             
-            add_repeating_timer_ms(MENU_HV_SYNC_REFRESH, menu_hvsync_timer_callback, &menu_left_buttons_group_elements[1], &menu_vsync_hsync_timer);
+            add_repeating_timer_ms(MENU_HV_SYNC_REFRESH, menu_update_timer_callback, &menu_left_buttons_group_elements[1], &menu_vsync_hsync_timer);
             }
             break;
         case menu_button_group_diagnostic: {
@@ -251,7 +251,7 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             menu_left_buttons_group_list = group_list;
             
             gui_event_subscribe(button_status, &menu_left_buttons_group_elements[2].base, &menu_left_buttons_group_elements[2], on_back_event);
-            add_repeating_timer_ms(MENU_HV_SYNC_REFRESH, menu_hvsync_timer_callback, &menu_left_buttons_group_elements[1], &menu_vsync_hsync_timer);
+            add_repeating_timer_ms(MENU_HV_SYNC_REFRESH, menu_update_timer_callback, &menu_left_buttons_group_elements[1], &menu_vsync_hsync_timer);
             }
             break;
         case menu_button_group_palette: {
@@ -281,14 +281,15 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             }
             break;
         case menu_button_group_about: {
+            menu_about_scroll_str = menu_about_str;
             gui_object_t elements[] = {
-                gui_create_window(&menu_overlay_ctx, 0, 0, 200, 90, &menu_colors_list, menu_common_label_props),
+                gui_create_label(&menu_overlay_ctx, 0, 0, 200, 89, &menu_colors_list, menu_common_text_props, menu_about_print),
                 gui_create_button(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Back")
             };
             menu_elements_copy(elements, menu_left_buttons_group_elements);
             gui_list_t group_list = initalizeGuiDynList(menu_left_buttons_group_elements, arraySize(elements));
             menu_left_buttons_group_list = group_list;
-            
+            add_repeating_timer_ms(MENU_ABOUT_REFRESH, menu_update_timer_callback, &menu_left_buttons_group_elements[0], &menu_vsync_hsync_timer);
             gui_event_subscribe(button_status, &menu_left_buttons_group_elements[1].base, &menu_left_buttons_group_elements[1], on_back_event);
             }
             break;

@@ -6,6 +6,7 @@
 #include "security.h"
 #include "rgbScan.h"
 #include "wm8213Afe.h"
+#include <string.h>
 
 // ---------  GUI EVENT SLOTS HANDLERS START  ---------
 bool on_exit_button_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
@@ -167,11 +168,25 @@ void menu_diagnostic_print(print_delegate_t printer) {
         PROJECT_NAME, PROJECT_VER, menu_graphic_ctx.width, menu_graphic_ctx.height, bppx_to_int(menu_graphic_ctx.bppx, color_part_all), 
         command_info_afe_error, command_info_scanner_error, security_get_uid(),
         command_is_license_valid() ? "valid" : "invalid");
-};
+}
+
+void menu_about_print(print_delegate_t printer) {
+    static int on_start_wait_cnt = 0;
+    printer("%s", menu_about_scroll_str);
+    if (menu_about_scroll_str != menu_about_str || ++on_start_wait_cnt >= 4) {
+        on_start_wait_cnt = 0;
+        menu_about_scroll_str = strchr(menu_about_scroll_str, '\n');
+        if (menu_about_scroll_str == NULL) {
+            menu_about_scroll_str = menu_about_str;
+        } else {
+            menu_about_scroll_str++;
+        }
+    }
+}
 
 void menu_scan_print(print_delegate_t printer) {
 	printer("VSYNC %d, HSYNC %d\nHLines %d, Type %s", 1000000000 / rgbScannerGetVsyncNanoSec(), 1000000000 / rgbScannerGetHsyncNanoSec(), rgbScannerGetHorizontalLines(), rgbScannerGetSyncTypeStr());
-};
+}
 
 void menu_palette_opt_print(print_delegate_t printer) {
     uint index = color_slider_option * (menu_colors_list.size - 1) / GUI_BAR_100PERCENT;

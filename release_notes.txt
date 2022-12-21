@@ -16,7 +16,7 @@ Version: 0.4.0
     - Factory option
     - Gain & offset, automatic option
     - license show and start image
-    - alignment control connection to ui
+    - alignment control connection to ui with pixel width
     - diagnostics shows sync type
 - group unsubscribe improvement
 - group loop callback tool with break condition and count of results
@@ -26,6 +26,7 @@ Version: 0.4.0
 - event non propagation fix
 - scanner provides number of hsync lines
 - scanner sync type detection and show on screen
+- scanner and afe can restart capture
 -------------------------------------------------------------------------
 Date: 2022/11/13
 Version: 0.3.4

@@ -6,7 +6,7 @@
 #define GUI_EVENT_HANDLING_MAX   32
 #define GUI_EVENT_SUB_UPD_MAX    16
 #define GUI_FOCUSABLE_SEARCH_MAX 16
-
+#define GUI_PRINT_VARG_LABEL_MAX 400
 enum gui_colors {
    gui_color_bg     = 0,
    gui_color_fg     = 1,

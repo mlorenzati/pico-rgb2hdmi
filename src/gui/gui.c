@@ -204,7 +204,7 @@ void gui_draw_label(gui_base_t *base) {
     gui_base_t labelBase = *base;
     
     void printer(const char * fmt, ...) {
-        char buff[128];
+        char buff[GUI_PRINT_VARG_LABEL_MAX];
         va_list args;
         va_start(args, fmt);
         vsnprintf(buff, sizeof(buff), fmt, args);

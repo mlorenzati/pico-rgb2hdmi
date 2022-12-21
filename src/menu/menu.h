@@ -6,6 +6,7 @@
 #include "menuGlobals.h"
 
 #define MENU_HV_SYNC_REFRESH    500
+#define MENU_ABOUT_REFRESH     1500
 
 #define menu_elements_copy(src, dst) menu_elements_copy_(src, dst, sizeof(src) / sizeof(src[0]))
 int menu_initialize(uint *pins, menu_event_type *events, uint8_t count);
