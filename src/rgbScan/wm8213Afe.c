@@ -119,9 +119,14 @@ void wm8213_afe_capture_setup_from_global() {
             assert(false);
             break;
     }
+    if (wm8213_afe_capture_global.pio_offset != 0) {
+        pio_sm_set_enabled(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm, false);
+        pio_remove_program(wm8213_afe_capture_global.pio, program, wm8213_afe_capture_global.pio_offset);
+        pio_sm_restart(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm);
+    }
 
-    uint offset =  pio_add_program(wm8213_afe_capture_global.pio, program);
-    afe_capture_program_init(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm, offset, wm8213_afe_capture_global.sampling_rate, op_pins, wm8213_afe_capture_global.control_pins, op_bits);
+    wm8213_afe_capture_global.pio_offset = pio_add_program(wm8213_afe_capture_global.pio, program);
+    afe_capture_program_init(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm, wm8213_afe_capture_global.pio_offset, wm8213_afe_capture_global.sampling_rate, op_pins, wm8213_afe_capture_global.control_pins, op_bits);
     
     // Give DMA R/W priority over the Bus
     //bus_ctrl_hw->priority = BUSCTRL_BUS_PRIORITY_DMA_W_BITS | BUSCTRL_BUS_PRIORITY_DMA_R_BITS;

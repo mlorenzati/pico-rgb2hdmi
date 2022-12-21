@@ -161,6 +161,7 @@ typedef struct wm8213_afe_capture {
     uint sampling_rate;
     color_bppx bppx;
     uint op_pins, control_pins;
+    uint pio_offset;
 } wm8213_afe_capture_t;
 
 extern wm8213_afe_capture_t wm8213_afe_capture_global;

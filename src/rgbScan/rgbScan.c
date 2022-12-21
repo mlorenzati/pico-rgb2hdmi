@@ -149,6 +149,9 @@ void rgbScannerEnable(bool value) {
     gpio_set_irq_enabled(_hsyncGPIO,  GPIO_IRQ_EDGE_RISE, value);
     gpio_set_irq_enabled(_hsyncGPIO,  GPIO_IRQ_EDGE_FALL, value);
     rgbScannerEnabled = value;
+    if (!value) {
+        busy_wait_us(500);
+    }
 }
 
 void rgbScannerUpdateData(uint frontPorch, uint height) {
