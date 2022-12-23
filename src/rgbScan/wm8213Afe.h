@@ -149,7 +149,6 @@ typedef struct wm8213_afe_config {
 	uint                sm_afe_cp;
     uint                pin_base_afe_op;
     uint                pin_base_afe_ctrl;
-    uint                sampling_rate_afe;
     color_bppx          bppx;
 } wm8213_afe_config_t;
 
@@ -166,7 +165,7 @@ typedef struct wm8213_afe_capture {
 
 extern wm8213_afe_capture_t wm8213_afe_capture_global;
 
-int  wm8213_afe_setup(const wm8213_afe_config_t* config);
+int  wm8213_afe_setup(const wm8213_afe_config_t* config, uint sampling_rate);
 
 static inline void afe_capture_rx_fifo_drain(PIO  pio, uint sm) {
     for (int i = 0; i < AFE_PIO_FIFO_FORCE_DUMP; i++) pio_sm_get(pio, sm);

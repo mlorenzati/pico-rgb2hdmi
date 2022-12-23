@@ -188,13 +188,13 @@ void afe_dma_prepare(PIO pio, uint sm) {
 }
 
 //AFE Main calls
-int wm8213_afe_setup(const wm8213_afe_config_t* config)
+int wm8213_afe_setup(const wm8213_afe_config_t* config, uint sampling_rate)
 {
     int res = wm8213_afe_spi_setup(config);
 
     if (res > 0) { return res; }
 
-    wm8213_afe_capture_setup(config->pio, config->sm_afe_cp, config->sampling_rate_afe, config->bppx, config->pin_base_afe_op, config->pin_base_afe_ctrl);
+    wm8213_afe_capture_setup(config->pio, config->sm_afe_cp, sampling_rate, config->bppx, config->pin_base_afe_op, config->pin_base_afe_ctrl);
     afe_dma_prepare(config->pio, config->sm_afe_cp);
 
     return res;
