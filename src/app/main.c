@@ -35,7 +35,6 @@ bool blink = true;
 
 struct dvi_inst dvi0;
 struct semaphore dvi_start_sem;
-wm8213_afe_config_t afec_cfg_2 = afec_cfg;
 uint16_t framebuf[FRAME_HEIGHT / 3][FRAME_WIDTH];
 
 int vFrontPorch =  28;
@@ -62,9 +61,7 @@ void __not_in_flash("main") core1_main() {
 	sem_acquire_blocking(&dvi_start_sem);
 	dvi_start(&dvi0);
 
- 	afec_cfg_2.sampling_rate_afe = samplingRate;
-
-	if (wm8213_afe_setup(&afec_cfg_2) > 0) {
+	if (wm8213_afe_setup(&afec_cfg, samplingRate) > 0) {
          printf("AFE initialize failed \n");
 		 gpio_put(LED_PIN, false);
     } else {

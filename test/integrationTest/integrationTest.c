@@ -53,7 +53,6 @@
 
 // --------- Global register start --------- 
 struct dvi_inst     dvi0;
-wm8213_afe_config_t afec_cfg_2    = afec_cfg;
 static uint         hdmi_scanline = 2;
 const uint          LED_PIN       = PICO_DEFAULT_LED_PIN;
 uint                keyboard_gpio_pins[KEYBOARD_N_PINS] = { KEYBOARD_PIN_UP, KEYBOARD_PIN_DOWN, KEYBOARD_PIN_ACTION };
@@ -166,15 +165,9 @@ int main() {
 
     // Configure scan video properties
     set_video_props(V_FRONT_PORCH, V_BACK_PORCH, HSYNC_FRONT_PORCH, HSYNC_BACK_PORCH, FRAME_WIDTH, FRAME_HEIGHT, REFRESH_RATE, framebuf);
-    afec_cfg_2.sampling_rate_afe = GET_VIDEO_PROPS().sampling_rate;
-    #if DVI_SYMBOLS_PER_WORD == 2
-        afec_cfg_2.bppx = rgb_16_565;
-    #else
-        afec_cfg_2.bppx = rgb_8_332;
-    #endif
     
     // Configure AFE Capture System
-    command_info_afe_error = wm8213_afe_setup(&afec_cfg_2);
+    command_info_afe_error = wm8213_afe_setup(&afec_cfg, GET_VIDEO_PROPS().sampling_rate);
     if ( command_info_afe_error > 0) {
          printf("AFE initialize failed with error %d\n", command_info_afe_error);
     } else {

@@ -420,6 +420,8 @@ int menu_initialize(uint *pins, menu_event_type *events, uint8_t count) {
     spinbox_horizontal = GET_VIDEO_PROPS().horizontal_front_porch;
     spinbox_vertical = GET_VIDEO_PROPS().vertical_front_porch;
     spinbox_pix_width = GET_VIDEO_PROPS().horizontal_front_porch + GET_VIDEO_PROPS().horizontal_back_porch;
+    spinbox_offset = wm8213_afe_get_offset(color_part_all);
+    spinbox_gain = wm8213_afe_get_gain(color_part_all);
 
     return 0;
 }

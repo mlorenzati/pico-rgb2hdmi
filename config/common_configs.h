@@ -41,7 +41,6 @@
     //MCLK ____|‾‾‾‾|____|‾‾‾‾|____|‾‾‾‾|____|‾‾‾‾|____|‾‾‾‾|____|‾‾‾‾|____
     //OP   ===>.<===R===>.<===G===>.<===B===>.<===R===>.<===G===>.<===B===>
 
-    #define AFE_SAMPLING_RATE (320+25+25)*(240+35+35)*50
     #define AFE_PGA_GAIN_RGB  60
     #define AFE_RLC_DAC_NEG   1
 	#define AFE_OFFSET_DAC    0   // Common config
@@ -120,7 +119,6 @@
         .sm_afe_cp = 0,
         .pin_base_afe_op = AFE_OP,
         .pin_base_afe_ctrl = AFE_VSMP,
-        .sampling_rate_afe = AFE_SAMPLING_RATE,
         #if DVI_SYMBOLS_PER_WORD == 2
         .bppx = rgb_16_565
         #else

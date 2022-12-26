@@ -4,6 +4,12 @@ pico rgb2hdmi
 An rpi pico microprocessed rgb 2 hdmi plus rgb 2 usb on the fly converter
 -------------------------------------------------------------------------
 Date: 2022/12/08
+Version: 0.4.1
+- Support and menu connection of gain and offset control
+- Sampling rate removed from config, is calculated based on video settings
+
+-------------------------------------------------------------------------
+Date: 2022/12/08
 Version: 0.4.0
 - Included menu support based on an event based GUI
     - 8 object in left button groups
