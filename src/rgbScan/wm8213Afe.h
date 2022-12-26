@@ -53,6 +53,13 @@
 
 #define AFE_SAMPLING_LIMIT           7600000 //Should be 8MSPS but proben to be less, After this value RSMP / VSMP has to be flipped
 #define AFE_PIO_FIFO_FORCE_DUMP      8
+#define WM8213_GAIN_BITS             (1 << 9)
+#define WM8213_GAIN_MAX              (WM8213_GAIN_BITS - 1)
+#define WM8213_POS_OFFSET_BITS       (1 << 8)
+#define WM8213_POS_OFFSET_MAX        (WM8213_POS_OFFSET_BITS - 1)
+#define WM8213_NEG_OFFSET_BITS       (1 << 4)
+#define WM8213_NEG_OFFSET_MAX        (WM8213_NEG_OFFSET_BITS - 1)
+
 
 typedef struct wm8213_afe_setup_1 {
     io_rw_8  enable:1;
@@ -161,6 +168,7 @@ typedef struct wm8213_afe_capture {
     color_bppx bppx;
     uint op_pins, control_pins;
     uint pio_offset;
+    wm8213_afe_config_t config;
 } wm8213_afe_capture_t;
 
 extern wm8213_afe_capture_t wm8213_afe_capture_global;
@@ -194,5 +202,11 @@ void wm8213_afe_capture_stop();
 void wm8213_afe_capture_wait();
 void wm8213_afe_capture_update_sampling_rate(uint sampling_rate);
 void wm8213_afe_capture_update_bppx(color_bppx bppx);
+void wm8213_afe_update_gain(uint16_t red, uint16_t green, uint16_t blue, bool commit);
+uint16_t wm8213_afe_get_gain(color_part part); 
+void wm8213_afe_update_offset(uint8_t red, uint8_t green, uint8_t blue, bool commit);
+uint8_t wm8213_afe_get_offset(color_part part);
+void wm8213_afe_update_negative_offset(uint8_t value, bool commit);
+uint8_t wm8213_afe_get_negative_offset();
 
 #endif

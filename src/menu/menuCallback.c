@@ -84,16 +84,29 @@ bool on_alignment_event(gui_status_t status, gui_base_t *origin, gui_object_t *d
 }
 
 bool on_gain_offset_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
-    uint *data = (uint *) origin->data;
+    uint *o_data = (uint *) origin->data;
+    
     if (!status.activated && origin->status.activated) {
         destination->base.status.navigable = !destination->base.status.navigable;
-    } else if (status.add && *data < 100) {
-        *data += 1;
-    } else if (status.substract && *data != 0) {
-        *data -= 1;
+    } else {
+        if (o_data == &spinbox_offset) {
+            if (status.add && spinbox_offset < WM8213_POS_OFFSET_MAX) {
+                spinbox_offset++;
+            } else if (status.substract && spinbox_offset != 0) {
+                spinbox_offset--;
+            }
+            wm8213_afe_update_offset(spinbox_offset, spinbox_offset, spinbox_offset, true);
+       } else if (o_data == &spinbox_gain) {
+            if (status.add && spinbox_gain < WM8213_GAIN_MAX) {
+                spinbox_gain++;
+            } else if (status.substract && spinbox_gain != 0) {
+                spinbox_gain--;
+            }
+            wm8213_afe_update_gain(spinbox_gain, spinbox_gain, spinbox_gain, true);
+       }
     }
     destination->base.status.data_changed = 1;
-    
+
     return true;
 }
 
