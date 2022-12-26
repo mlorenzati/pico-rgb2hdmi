@@ -5,6 +5,7 @@
 #include "menuGlobals.h"
 #include "menuCallback.h"
 #include "commands.h"
+#include "wm8213Afe.h"
 
 //System configuration includes
 #include "common_configs.h"
