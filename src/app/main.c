@@ -17,7 +17,7 @@
 #include "dvi.h"
 #include "dvi_serialiser.h"
 #include "rgbScan.h"
-#include "wm8213Afe.h"
+#include "wm8xxxAfe.h"
 
 //System configuration includes
 #include "version.h"
@@ -49,7 +49,7 @@ static inline void prepare_scanline(const uint32_t *colourbuf, uint32_t *tmdsbuf
 }
 
 static inline void scanLineTriggered(unsigned int render_line_number) {
-    wm8213_afe_capture_run(hFrontPorch, (uintptr_t)&framebuf[2*render_line_number/3], 640);
+    wm8xxx_afe_capture_run(hFrontPorch, (uintptr_t)&framebuf[2*render_line_number/3], 640);
 	gpio_put(LED_PIN, blink);
     blink = !blink;
 }
@@ -61,7 +61,7 @@ void __not_in_flash("main") core1_main() {
 	sem_acquire_blocking(&dvi_start_sem);
 	dvi_start(&dvi0);
 
-	if (wm8213_afe_setup(&afec_cfg, samplingRate) > 0) {
+	if (wm8xxx_afe_setup(&afec_cfg, samplingRate) > 0) {
          printf("AFE initialize failed \n");
 		 gpio_put(LED_PIN, false);
     } else {

@@ -4,7 +4,8 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
-#include "wm8213Afe.h"
+#include "wm8xxxAfe.h"
+#include "color.h"
 
 //System configuration includes
 #include "version.h"
@@ -18,7 +19,7 @@ uint16_t test_buf[32];
 int main() {
     stdio_init_all();
     printf("AFE initial test \n");
-    if (wm8213_afe_setup(&afec_cfg, 20000000) > 0) {
+    if (wm8xxx_afe_setup(&afec_cfg, 5000000) > 0) {
          printf("AFE initialize failed \n");
     } else {
          printf("AFE initialize succeded \n");
@@ -40,14 +41,16 @@ int main() {
         sleep_ms(500);
         gpio_put(LED_PIN, 0);
         sleep_ms(500);
-        wm8213_afe_capture_run(1, (uintptr_t)test_buf, 32);
-        wm8213_afe_capture_wait();
+        wm8xxx_afe_capture_run(1, (uintptr_t)test_buf, 32);
+        wm8xxx_afe_capture_wait();
         printf("RED\tGREEN\tBLUE\n");
         for (int cnt = 0; cnt < 32; cnt++) {
-            int b = test_buf[cnt] & 0x1F; 
-            int g = (test_buf[cnt]>>5) & 0x3F;
-            int r = (test_buf[cnt]>>11) & 0x1F;
-            printf("%f\t%f\t%f\n",(float)r*3.3/31, (float)g*3.3/63, (float)b*3.3/31);
+            uint red   = 0;
+            uint green = 0;
+            uint blue  = 0;
+            bppx_split_color(afec_cfg.bppx, test_buf[cnt], &red, &green, &blue, true);
+           
+            printf("%d\t%d\t%d\n",red, green, blue);
         }
         printf("\n");
     }

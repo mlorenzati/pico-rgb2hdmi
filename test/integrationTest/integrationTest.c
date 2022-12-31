@@ -14,7 +14,7 @@
 #include "dvi.h"
 #include "dvi_serialiser.h"
 #include "rgbScan.h"
-#include "wm8213Afe.h"
+#include "wm8xxxAfe.h"
 #include "videoAdjust.h"
 #include "overlay.h"
 #include "graphics.h"
@@ -112,7 +112,7 @@ static inline void core1_scanline_callback() {
 // ---------  RGB SCAN API CALL START  --------- 
 static void __not_in_flash_func(scanLineTriggered)(unsigned int render_line_number) {
     gpio_put(LED_PIN, true);
-    if (wm8213_afe_capture_run(VIDEO_OVERLAY_GET_COMPUTED_FRONT_PORCH(), (uintptr_t)&framebuf[render_line_number][VIDEO_OVERLAY_GET_COMPUTED_OFFSET()], VIDEO_OVERLAY_GET_COMPUTED_WIDTH())) {
+    if (wm8xxx_afe_capture_run(VIDEO_OVERLAY_GET_COMPUTED_FRONT_PORCH(), (uintptr_t)&framebuf[render_line_number][VIDEO_OVERLAY_GET_COMPUTED_OFFSET()], VIDEO_OVERLAY_GET_COMPUTED_WIDTH())) {
         //Nothing is done here so far
     }
     video_overlay_scanline_prepare(render_line_number);
@@ -167,7 +167,7 @@ int main() {
     set_video_props(V_FRONT_PORCH, V_BACK_PORCH, HSYNC_FRONT_PORCH, HSYNC_BACK_PORCH, FRAME_WIDTH, FRAME_HEIGHT, REFRESH_RATE, framebuf);
     
     // Configure AFE Capture System
-    command_info_afe_error = wm8213_afe_setup(&afec_cfg, GET_VIDEO_PROPS().sampling_rate);
+    command_info_afe_error = wm8xxx_afe_setup(&afec_cfg, GET_VIDEO_PROPS().sampling_rate);
     if ( command_info_afe_error > 0) {
          printf("AFE initialize failed with error %d\n", command_info_afe_error);
     } else {

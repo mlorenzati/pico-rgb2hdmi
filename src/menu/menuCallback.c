@@ -5,7 +5,7 @@
 #include "version.h"
 #include "security.h"
 #include "rgbScan.h"
-#include "wm8213Afe.h"
+#include "wm8xxxAfe.h"
 #include <string.h>
 
 // ---------  GUI EVENT SLOTS HANDLERS START  ---------
@@ -70,7 +70,7 @@ bool on_alignment_event(gui_status_t status, gui_base_t *origin, gui_object_t *d
         if (spinbox_pix_width != GET_VIDEO_PROPS().horizontal_front_porch + GET_VIDEO_PROPS().horizontal_back_porch) {
             update_sampling_rate();
             rgbScannerEnable(false);
-            wm8213_afe_capture_update_sampling_rate(GET_VIDEO_PROPS().sampling_rate);
+            wm8xxx_afe_capture_update_sampling_rate(GET_VIDEO_PROPS().sampling_rate);
             rgbScannerEnable(true);
         }
         spinbox_horizontal = GET_VIDEO_PROPS().horizontal_front_porch;
@@ -90,19 +90,19 @@ bool on_gain_offset_event(gui_status_t status, gui_base_t *origin, gui_object_t 
         destination->base.status.navigable = !destination->base.status.navigable;
     } else {
         if (o_data == &spinbox_offset) {
-            if (status.add && spinbox_offset < WM8213_POS_OFFSET_MAX) {
+            if (status.add && spinbox_offset < WM8XXX_POS_OFFSET_MAX) {
                 spinbox_offset++;
             } else if (status.substract && spinbox_offset != 0) {
                 spinbox_offset--;
             }
-            wm8213_afe_update_offset(spinbox_offset, spinbox_offset, spinbox_offset, true);
+            wm8xxx_afe_update_offset(spinbox_offset, spinbox_offset, spinbox_offset, true);
        } else if (o_data == &spinbox_gain) {
-            if (status.add && spinbox_gain < WM8213_GAIN_MAX) {
+            if (status.add && spinbox_gain < wm8xxx_afe_get_gain_max()) {
                 spinbox_gain++;
             } else if (status.substract && spinbox_gain != 0) {
                 spinbox_gain--;
             }
-            wm8213_afe_update_gain(spinbox_gain, spinbox_gain, spinbox_gain, true);
+            wm8xxx_afe_update_gain(spinbox_gain, spinbox_gain, spinbox_gain, true);
        }
     }
     destination->base.status.data_changed = 1;
@@ -177,9 +177,9 @@ void gui_draw_palette_choice(gui_base_t *base) {
 };
 
 void menu_diagnostic_print(print_delegate_t printer) {
-	printer("%s v%s\n\nRes: %dx%d %dbits\nAFE code: %d\nScan code: %d\nId: %s\nLicense: %s",
+	printer("%s v%s\n\nRes: %dx%d %dbits\nAFE(%s) code: %d\nScan code: %d\nId: %s\nLicense: %s",
         PROJECT_NAME, PROJECT_VER, menu_graphic_ctx.width, menu_graphic_ctx.height, bppx_to_int(menu_graphic_ctx.bppx, color_part_all), 
-        command_info_afe_error, command_info_scanner_error, security_get_uid(),
+        wm8xxx_afe_get_current_family_str(), command_info_afe_error, command_info_scanner_error, security_get_uid(),
         command_is_license_valid() ? "valid" : "invalid");
 }
 

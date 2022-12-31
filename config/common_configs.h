@@ -23,7 +23,7 @@
 #endif 
 
 //AFE (Analog Front End) Specific Config
-#ifdef _WM8213_AFE_H
+#ifdef _WM8XXX_AFE_H
     //AFE SPI Pins
     #define AFE_SDO  16
     #define AFE_CS   17
@@ -46,71 +46,122 @@
 	#define AFE_OFFSET_DAC    0   // Common config
 	//#define AFE_OFFSET_DAC    230   // SOG config
 
-    static const wm8213_afe_config_t afec_cfg = {
+    static const wm8xxx_afe_config_t afec_cfg = {
         .spi = spi0,
         .baudrate = 1 * MHZ,
         .pins_spi = {AFE_SCK, AFE_SDI, AFE_SDO, AFE_CS},
         .setups = {
-            .setup1 = {
-                .enable = 1,
-                .cds= 0,
-                .mono = 0,
-                .two_chan = 0,
-                .pgafs = 3,
-                .mode_4_legacy = 0,
-                .legacy = 0
-            },
-            .setup2 = {
-                .opp_form = 1,
-                .invop = 0,
-                .opd = 0,
-                .low_refs = 0,
-                .rlc_dac_rng = 0,
-                .del = 0
-            },
-            .setup3 = {
-                .rlc_dac = AFE_RLC_DAC_NEG,
-                .cds_ref = 0,
-                .chan = 0
-            },
-            .setup4 = {
-                .line_by_line = 0,
-                .acyc =  0,
-                .intm = 0
-            },
-            .setup5 = {
-                .red_pd = 0,
-                .green_pd = 0,
-                .blue_pd = 0,
-                .adc_pd = 0,
-                .vrlc_dac_pd = 0,
-                .vrx_pd = 0
-            },
-            .setup6 = {
-                .vsm_pdet = 0,
-                .vdel = 0,
-                .posn_neg = 0,
-                .rlc_en = 0,
-                .clamp_ctrl = 0
-            },
-            .offset_dac = {
-                .red = AFE_OFFSET_DAC,
-				.green = AFE_OFFSET_DAC,         // Common config
-				//.green = (1 * AFE_OFFSET_DAC) / 5, // SOG config
-                .blue = AFE_OFFSET_DAC
-            },
-            .pga_gain = {
-                .red = {
-                    .lsb =  AFE_PGA_GAIN_RGB & 0x01,
-                    .msb = (AFE_PGA_GAIN_RGB >> 1) & 0xFF
+            .wm821x = {
+                .setup1 = {
+                    .enable = 1,
+                    .cds= 0,
+                    .mono = 0,
+                    .two_chan = 0,
+                    .pgafs = 3,
+                    .mode_4_legacy = 0,
+                    .legacy = 0
                 },
-                .green = {
-                    .lsb =  AFE_PGA_GAIN_RGB & 0x01,
-                    .msb = (AFE_PGA_GAIN_RGB >> 1) & 0xFF
+                .setup2 = {
+                    .opp_form = 1,
+                    .invop = 0,
+                    .opd = 0,
+                    .low_refs = 0,
+                    .rlc_dac_rng = 0,
+                    .del = 0
                 },
-                .blue = {
-                    .lsb =  AFE_PGA_GAIN_RGB & 0x01,
-                    .msb = (AFE_PGA_GAIN_RGB >> 1) & 0xFF
+                .setup3 = {
+                    .rlc_dac = AFE_RLC_DAC_NEG,
+                    .cds_ref = 0,
+                    .chan = 0
+                },
+                .setup4 = {
+                    .line_by_line = 0,
+                    .acyc =  0,
+                    .intm = 0
+                },
+                .setup5 = {
+                    .red_pd = 0,
+                    .green_pd = 0,
+                    .blue_pd = 0,
+                    .adc_pd = 0,
+                    .vrlc_dac_pd = 0,
+                    .vrx_pd = 0
+                },
+                .setup6 = {
+                    .vsm_pdet = 0,
+                    .vdel = 0,
+                    .posn_neg = 0,
+                    .rlc_en = 0,
+                    .clamp_ctrl = 0
+                },
+                .offset_dac = {
+                    .red = AFE_OFFSET_DAC,
+                    .green = AFE_OFFSET_DAC,         // Common config
+                    //.green = (1 * AFE_OFFSET_DAC) / 5, // SOG config
+                    .blue = AFE_OFFSET_DAC
+                },
+                .pga_gain = {
+                    .red = {
+                        .lsb =  AFE_PGA_GAIN_RGB & 0x01,
+                        .msb = (AFE_PGA_GAIN_RGB >> 1) & 0xFF
+                    },
+                    .green = {
+                        .lsb =  AFE_PGA_GAIN_RGB & 0x01,
+                        .msb = (AFE_PGA_GAIN_RGB >> 1) & 0xFF
+                    },
+                    .blue = {
+                        .lsb =  AFE_PGA_GAIN_RGB & 0x01,
+                        .msb = (AFE_PGA_GAIN_RGB >> 1) & 0xFF
+                    }
+                }
+            },
+            .wm819x = {
+                .setup1 = {
+                    .enable = 1,
+                    .cds = 0,
+                    .mono = 0,
+                    .selpd = 0,
+                    .pgafs = 3,
+                    .mode_4 = 0
+                },
+                .setup2 = {
+                    .muxop = 1,
+                    .invop = 0,
+                    .vrlcext = 0, 
+                    .rlc_dac_rng = 0,
+                    .del = 0
+                },
+                .setup3 = {
+                    .rlc_dac = AFE_RLC_DAC_NEG,
+                    .cds_ref = 0,
+                    .chan = 0
+                },
+                .setup4 = {
+                    .line_by_line = 0,
+                    .acycnrlc = 0,
+                    .fme = 0, 
+                    .rlcint = 0,
+                    .intm = 0,
+                    .fm = 0
+                },
+                .setup5 = {
+                    .vsmpdet = 0,
+                    .vdel = 0,
+                    .posneg = 0
+                },
+                .setup6 = {
+                    .seldis = 0
+                },
+                .offset_dac = {
+                    .red = AFE_OFFSET_DAC,
+                    .green = AFE_OFFSET_DAC,         // Common config
+                    //.green = (1 * AFE_OFFSET_DAC) / 5, // SOG config
+                    .blue = AFE_OFFSET_DAC
+                },
+                .pga_gain = {
+                    .red   = (AFE_PGA_GAIN_RGB >> 1) & 0xFF,
+                    .green = (AFE_PGA_GAIN_RGB >> 1) & 0xFF,
+                    .blue  = (AFE_PGA_GAIN_RGB >> 1) & 0xFF
                 }
             }
         },
