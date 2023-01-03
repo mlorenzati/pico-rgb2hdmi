@@ -7,7 +7,7 @@
 // Setup registers
 #define WM819X_REG_REV_NUM           0x07
 #define WM819X_REG_SETUP5            0x08
-#define wm819x_REG_SETUP6            0x09
+#define WM819X_REG_SETUP6            0x09
 
 // Bit sizes and maximum values
 #define WM819X_GAIN_BITS             (1 << 8)
@@ -46,9 +46,9 @@ typedef struct wm819x_afe_setup_4 {
 
 typedef struct wm819x_afe_setup_5 {
     io_rw_8  vsmpdet:1;
-    io_rw_8  vdel:2;         // VSMP delay
+    io_rw_8  vdel:3;         // VSMP delay
     io_rw_8  posneg:1;       // 0: negative edge on VSMP 1: positive
-    io_rw_8  reserved:4;
+    io_rw_8  reserved:3;
 } wm819x_afe_setup_5_t;
 
 typedef struct wm819x_afe_setup_6 {
