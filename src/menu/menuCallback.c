@@ -166,6 +166,16 @@ bool on_factory_reboot_event(gui_status_t status, gui_base_t *origin, gui_object
     }
     return true;
 }
+
+bool on_usb_enable_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+    if (!status.activated && origin->status.activated) {
+        menu_usb_enabled = !menu_usb_enabled;
+        command_enable_usb(menu_usb_enabled);
+        destination->base.data = (void *) menu_get_usb_button_txt(menu_usb_enabled);
+        destination->base.status.data_changed = true;
+    }
+    return true;
+}
 // ----------  GUI EVENT SLOTS HANDLERS END  ----------
 
 // ---------  GUI Callbacks START  ---------
@@ -212,5 +222,9 @@ void menu_setup_selected_color() {
     uint index = color_slider_option * (menu_colors_list.size-1) / GUI_BAR_100PERCENT;
     color_slider_selected = &menu_colors[index];
     bppx_split_color(menu_overlay_ctx.bppx, menu_colors[index], &color_spinbox_red, &color_spinbox_green, &color_spinbox_blue, true);
+}
+
+const char *menu_get_usb_button_txt(bool status) {
+    return status ? "Reboot" : "Enable USB";
 }
 // ----------- RELATED UTILS END -----------

@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include "pico/stdlib.h"
 #include <stdio.h>
 #include <string.h>
 #include "commands.h"
@@ -62,6 +63,21 @@ void command_validate_license() {
 void command_reboot() {
 	printf("Rebooting\n");
 	watchdog_reboot(0, SRAM_END, 10);
+}
+
+void command_enable_usb(bool status) {
+    static bool first_time = true;
+    if (first_time) {
+        if (status) {
+            stdio_init_all();
+            first_time = false;
+        }
+    } else {
+        // tiny USB implementation does not disables or allows to disable low level IRQs, so reboot
+        //stdio_set_driver_enabled(&stdio_usb, status);
+        //irq_set_enabled(low_priority_irq_num, status);
+        command_reboot();
+    }
 }
 
 int command_on_receive(int option, const void *data, bool convert) {

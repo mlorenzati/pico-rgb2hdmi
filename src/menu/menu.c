@@ -243,15 +243,16 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             break;
         case menu_button_group_diagnostic: {
             gui_object_t elements[] = {
-                gui_create_label(&menu_overlay_ctx, 0, 0, 200, 66, &menu_colors_list, menu_common_text_props, menu_diagnostic_print),
-                gui_create_label(&menu_overlay_ctx, 0, 0, 200, 24, &menu_colors_list, menu_common_text_props, menu_scan_print),
-                gui_create_button(&menu_overlay_ctx,  0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Back")
+                gui_create_label(&menu_overlay_ctx, 0, 0, 200, 59, &menu_colors_list, menu_common_text_props, menu_diagnostic_print),
+                gui_create_label(&menu_overlay_ctx, 0, 0, 200, 17, &menu_colors_list, menu_common_text_props, menu_scan_print),
+                gui_create_button(&menu_overlay_ctx,  0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, menu_get_usb_button_txt(menu_usb_enabled)),
+                gui_create_button(&menu_overlay_ctx,  0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Back"),
             };
             menu_elements_copy(elements, menu_left_buttons_group_elements);
             gui_list_t group_list = initalizeGuiDynList(menu_left_buttons_group_elements, arraySize(elements));
             menu_left_buttons_group_list = group_list;
-            
-            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[2].base, &menu_left_buttons_group_elements[2], on_back_event);
+            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[2].base, &menu_left_buttons_group_elements[2], on_usb_enable_event);
+            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_back_event);
             add_repeating_timer_ms(MENU_HV_SYNC_REFRESH, menu_update_timer_callback, &menu_left_buttons_group_elements[1], &menu_vsync_hsync_timer);
             }
             break;

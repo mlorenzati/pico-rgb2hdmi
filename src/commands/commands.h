@@ -12,4 +12,5 @@ void command_validate_license();
 void command_show_info(bool value);
 bool command_is_license_valid();
 void command_reboot();
+void command_enable_usb(bool status);
 #endif
