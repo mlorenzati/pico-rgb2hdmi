@@ -3,6 +3,10 @@ pico rgb2hdmi
 
 An rpi pico microprocessed rgb 2 hdmi plus rgb 2 usb on the fly converter
 -------------------------------------------------------------------------
+Date: 2023/02/25
+Version: 0.4.2
+- Added missing enable USB button on diagnostic for Command line on serial
+-------------------------------------------------------------------------
 Date: 2022/12/08
 Version: 0.4.1
 - Support and menu connection of gain and offset control
