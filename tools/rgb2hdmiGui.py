@@ -1,4 +1,3 @@
-#!/Users/marcelo.lorenzati/.pyenv/shims/python3
 from datetime import *
 from threading import *
 import sys, os, time
@@ -231,7 +230,7 @@ def checkSerial():
             setDeviceId(res[1].split("Device is: ",1)[1])
         res = serialCmd.sendCommand(serial_port, "mode")
         if res[0]:
-            setDeviceResolution(res[1].split("pico_rgb2hdmi ",1)[1])
+            setDeviceResolution(res[1].split("pico-rgb2hdmi ",1)[1])
         setStatusLabel()
         disableButtons(False)
         while (serialCmd.isConnected(serial_port) and serial_thread_running):

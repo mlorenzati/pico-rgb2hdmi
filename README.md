@@ -19,6 +19,13 @@ brew install md5sha1sum
 sha1sum <file>
 echo -n "<device_salt><device_uid>" | sha1sum -b
 ```
+## Tools
+Tools were developed for sake of simplicity, focus is on firmware. 
+It is required to install python3, pip and the following packages
+
+```
+pip install pyserial numpy pillow pyinstaller
+```
 
 ## converting CSV captures from serial port to images
 ```
@@ -32,6 +39,16 @@ This generates as output image.png
 
 ## Using packtiles to generate sprites
 ./packtiles -sdf rgab5515 -m  images/commodore.png cbm.h
+
+## Running the python gui app
+```
+python .\rgb2hdmiGui.py
+```
+
+## Packaging the python app as a native app
+```
+pyinstaller -w -F rgb2hdmiGui.py
+```
 
 # Build
 ```

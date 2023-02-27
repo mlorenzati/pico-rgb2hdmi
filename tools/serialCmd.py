@@ -1,4 +1,3 @@
-#!/Users/marcelo.lorenzati/.pyenv/shims/python3
 import sys
 import glob
 import time

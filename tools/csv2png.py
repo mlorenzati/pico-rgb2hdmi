@@ -1,4 +1,3 @@
-#!/Users/marcelo.lorenzati/.pyenv/shims/python3
 import numpy as np
 from PIL import Image
 import sys
