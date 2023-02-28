@@ -10,12 +10,15 @@
 #include "security.h"
 #include "version.h"
 #include "hardware/watchdog.h"
+#include "dvi.h"
 
 #ifdef TEST_MODE
 #define TEST_MODE_STR	"\nTest Mode!!"
 #else
 #define TEST_MODE_STR	""
 #endif
+
+extern struct dvi_inst dvi0;
 
 int command_info_afe_error;
 int command_info_scanner_error;
@@ -166,6 +169,16 @@ int command_on_receive(int option, const void *data, bool convert) {
 			case 'R':
 				printf("Software reboot requested\n");
 				command_reboot();
+				break;
+            case 'D': {
+                bool current_state = dvi_is_started(&dvi0);
+                    if (bool_value) {
+                        dvi_start(&dvi0);
+                    } else {
+                        dvi_stop(&dvi0);
+                    }
+                    printf("DVI request to %s while %s\n", bool_value ? "start": "stop", current_state ? "active" : "inactive");
+                }
 				break;
             default:  return 1;
     }

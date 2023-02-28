@@ -74,6 +74,7 @@ cmd_parser_option_t options[] =
     {"keyget",  FALSE, NULL,  'K'},
 #endif
     {"reboot",  FALSE, NULL,  'R'},
+    {"display", TRUE,  NULL,  'D'},
     {NULL,      TRUE, NULL,    0 }
 };
 // ----------- Global register end ----------- 
