@@ -176,6 +176,15 @@ bool on_usb_enable_event(gui_status_t status, gui_base_t *origin, gui_object_t *
     }
     return true;
 }
+
+bool on_shutdown_display_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+    if (!status.activated && origin->status.activated) {
+        menu_shutdown_enabled = !menu_shutdown_enabled;
+        destination->base.data = (void *) menu_get_shutdown_opt_txt(menu_shutdown_enabled);
+        destination->base.status.data_changed = true;
+    }
+    return true;
+}
 // ----------  GUI EVENT SLOTS HANDLERS END  ----------
 
 // ---------  GUI Callbacks START  ---------
@@ -226,5 +235,9 @@ void menu_setup_selected_color() {
 
 const char *menu_get_usb_button_txt(bool status) {
     return status ? "Reboot" : "Enable USB";
+}
+
+const char *menu_get_shutdown_opt_txt(bool status) {
+    return status ? "Display auto shutdown" : "Display allways on";
 }
 // ----------- RELATED UTILS END -----------

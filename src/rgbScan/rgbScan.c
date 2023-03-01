@@ -17,14 +17,16 @@ unsigned int  tickHsync;
 unsigned int  hsyncCounter, hsyncTotalLines;
 unsigned int  tickCsyncPulse, hsyncRstValue;
 bool          isHsyncLine, isVsync;
-signed int    syncTypeCnt = 0;
+signed int    syncTypeCnt = RGB_SCANNER_SYNC_TYPE_TRIG;
+int           shutdownCnt = 0;
 
 scanlineCallback rgbScannerScanlineCallback = NULL;
 volatile unsigned int     rgbScannerScanlineTriggerFrontPorch = 0;   
 volatile unsigned int     rgbScannerScanlineTriggerlastLine   = 0;
 const char *rgbsynctypeStr[rgbscan_sync_max] = { "none", "hvsync", "csync"};
 struct  repeating_timer rgbScanner_timer;
-rgbscanSyncNoSignalCallback rgbscanSyncNoSignalCallbackPtr = NULL;
+rgbscanSyncSignalCallback rgbscanSyncNoSignalCallbackPtr = NULL;
+rgbscan_signal_event_type rgbscan_signal_event_last = rgbscan_signal_none;
 
 static inline void rgb_scanner_gpio_acknowledge_irq(uint gpio, uint32_t events) {
     iobank0_hw->intr[gpio / 8] = events << 4 * (gpio % 8);
@@ -84,20 +86,37 @@ static void __not_in_flash_func(rgb_scanner_gpio_irq_handler)(void) {
 
 bool rgbScanner_timer_callback(struct repeating_timer *t) {
     bool shouldTrigger = false;
+    rgbscan_signal_event_type newEvent = rgbscan_signal_none;
+    
     if (syncTypeCnt > 0) {
+        shutdownCnt = 0;
         syncTypeCnt--;
         shouldTrigger = true;
     } else if (syncTypeCnt < 0) {
+        shutdownCnt = 0;
         syncTypeCnt++;
         shouldTrigger = true;
+    } else if (shutdownCnt++ >= RGB_SCANNER_SHUTDOWN_CNT) {
+        shutdownCnt = RGB_SCANNER_SHUTDOWN_CNT;
+        newEvent = rgbscan_signal_shutdown;
+        shouldTrigger = true;
     }
-    if (rgbscanSyncNoSignalCallbackPtr != NULL && shouldTrigger && syncTypeCnt == 0) {
-        rgbscanSyncNoSignalCallbackPtr(t->user_data);
+    if (rgbscanSyncNoSignalCallbackPtr != NULL && shouldTrigger) {
+        if (syncTypeCnt == 0 && newEvent != rgbscan_signal_shutdown) {
+            newEvent = rgbscan_signal_stopped;
+        } else if (syncTypeCnt >= RGB_SCANNER_SYNC_TYPE_TRIG || syncTypeCnt <= -RGB_SCANNER_SYNC_TYPE_TRIG) {
+            newEvent = rgbscan_signal_started;
+        }
+
+        if (newEvent != rgbscan_signal_event_last) {
+            rgbscan_signal_event_last = newEvent;
+            rgbscanSyncNoSignalCallbackPtr(newEvent);
+        }
     }
     return true;
 }
 
-int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height, scanlineCallback scanCallback, rgbscanSyncNoSignalCallback noSignalCallback, void *noSignalData) {
+int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height, scanlineCallback scanCallback, rgbscanSyncSignalCallback signalCallback, void *noSignalData) {
     if (scanCallback == NULL) {
         return 1;
     }
@@ -127,8 +146,8 @@ int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height
     irq_set_priority(IO_IRQ_BANK0, 0);
 
     rgbscanSyncNoSignalCallbackPtr = NULL;
-    if (noSignalCallback != NULL) {
-        rgbscanSyncNoSignalCallbackPtr = noSignalCallback;
+    if (signalCallback != NULL) {
+        rgbscanSyncNoSignalCallbackPtr = signalCallback;
         add_repeating_timer_ms(RGB_SCANNER_NO_SIGNAL_TICK, rgbScanner_timer_callback, NULL, &rgbScanner_timer);
     }
     

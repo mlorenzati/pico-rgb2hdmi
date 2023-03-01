@@ -25,15 +25,17 @@ typedef enum  {
 
 typedef enum  {
     menu_button_group_none = 0,
-    menu_button_group_home,
-    menu_button_group_alignment,
-    menu_button_group_diagnostic,
-    menu_button_group_startup_info,
-    menu_button_group_gain_offset,
-    menu_button_group_save_reboot,
-    menu_button_group_factory_opts,
-    menu_button_group_palette,
-    menu_button_group_about
+    menu_button_main_group_home,
+    menu_button_main_group_startup_info,
+    menu_button_main_group_display,
+    menu_button_main_group_config,
+    menu_button_sub_group_alignment,
+    menu_button_sub_group_diagnostic,
+    menu_button_sub_group_gain_offset,
+    menu_button_sub_group_save_reboot,
+    menu_button_sub_group_factory_opts,
+    menu_button_sub_group_palette,
+    menu_button_sub_group_about
 } menu_button_group_type;
 
 typedef struct menu_event {
@@ -82,4 +84,5 @@ extern uint color_slider_option, color_spinbox_red, color_spinbox_green, color_s
 extern const char* menu_about_scroll_str;
 extern const char* menu_about_str;
 extern bool menu_usb_enabled;
+extern bool menu_shutdown_enabled;
 #endif

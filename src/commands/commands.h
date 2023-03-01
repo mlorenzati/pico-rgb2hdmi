@@ -2,7 +2,9 @@
 #define _COMMANDS_H
 #include "pico.h"
 #include "graphics.h"
+#include "dvi.h"
 
+extern struct dvi_inst dvi0;
 extern int command_info_afe_error;
 extern int command_info_scanner_error;
 int  command_on_receive(int option, const void *data, bool convert);

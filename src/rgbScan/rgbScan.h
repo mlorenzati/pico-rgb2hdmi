@@ -8,6 +8,7 @@
 #define RGB_SCANNER_CSYNC_CNT       5
 #define RGB_SCANNER_SYNC_TYPE_TRIG  50
 #define RGB_SCANNER_SYNC_TYPE_CNT   2 * RGB_SCANNER_SYNC_TYPE_TRIG
+#define RGB_SCANNER_SHUTDOWN_CNT    RGB_SCANNER_SYNC_TYPE_TRIG
 #define RGB_SCANNER_NO_SIGNAL_TICK  200
 
 typedef enum {
@@ -17,10 +18,17 @@ typedef enum {
     rgbscan_sync_max
 } rgbscan_sync_type;
 
-typedef void (*scanlineCallback)(unsigned int render_line_number);
-typedef void (*rgbscanSyncNoSignalCallback)(void *data);
+typedef enum {
+    rgbscan_signal_none = 0,
+    rgbscan_signal_started,
+    rgbscan_signal_stopped,
+    rgbscan_signal_shutdown
+} rgbscan_signal_event_type;
 
-int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height, scanlineCallback scanCallback, rgbscanSyncNoSignalCallback noSignalCallback, void *noSignalData);
+typedef void (*scanlineCallback)(unsigned int render_line_number);
+typedef void (*rgbscanSyncSignalCallback)(rgbscan_signal_event_type event_type);
+
+int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height, scanlineCallback scanCallback, rgbscanSyncSignalCallback noSignalCallback, void *noSignalData);
 unsigned long rgbScannerGetVsyncNanoSec();
 unsigned int rgbScannerGetHsyncNanoSec();
 unsigned int rgbScannerGetHorizontalLines();

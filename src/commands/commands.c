@@ -10,15 +10,12 @@
 #include "security.h"
 #include "version.h"
 #include "hardware/watchdog.h"
-#include "dvi.h"
 
 #ifdef TEST_MODE
 #define TEST_MODE_STR	"\nTest Mode!!"
 #else
 #define TEST_MODE_STR	""
 #endif
-
-extern struct dvi_inst dvi0;
 
 int command_info_afe_error;
 int command_info_scanner_error;

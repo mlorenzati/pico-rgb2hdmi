@@ -22,8 +22,8 @@ static void __not_in_flash_func(scanLineTriggered)(unsigned int render_line_numb
 }
 
 uint noSignaltestData = 10;
-void noSignalCallback(void *data) {
-    printf("No signal!, data %d\n", (uint*) data);
+void signalCallback(rgbscan_signal_event_type type) {
+    printf("video signal update received, type %d\n", type);
 }
 
 int main() {
@@ -36,7 +36,7 @@ int main() {
     gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
     int error;
-    if (error = rgbScannerSetup(RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, frontPorch, height, &scanLineTriggered, noSignalCallback, &noSignaltestData) > 0) {
+    if (error = rgbScannerSetup(RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, frontPorch, height, &scanLineTriggered, signalCallback, &noSignaltestData) > 0) {
         printf("rgbScannerSetup failed with code %d\n", error);
     }
 
