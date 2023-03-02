@@ -17,6 +17,8 @@ target_sources(libdvi INTERFACE
 	${CMAKE_CURRENT_LIST_DIR}/tmds_table.h
 	${CMAKE_CURRENT_LIST_DIR}/tmds_table_fullres.h
 	${CMAKE_CURRENT_LIST_DIR}/util_queue_u32_inline.h
+    ${CMAKE_CURRENT_LIST_DIR}/data_packet.c
+    ${CMAKE_CURRENT_LIST_DIR}/data_packet.h
 	)
 
 target_include_directories(libdvi INTERFACE ${CMAKE_CURRENT_LIST_DIR})
