@@ -71,10 +71,10 @@ void computeHeaderParity(data_packet_t *data_packet);
 void computeSubPacketParity(data_packet_t *data_packet, int i);
 void computeParity(data_packet_t *data_packet);
 void computeInfoFrameCheckSum(data_packet_t *data_packet);
-void encodeHeader(data_packet_t *data_packet, uint32_t *dst, int hv, bool firstPacket);
-void encodeSubPacket(data_packet_t *data_packet, uint32_t *dst1, uint32_t *dst2);
+void encodeHeader(const data_packet_t *data_packet, uint32_t *dst, int hv, bool firstPacket);
+void encodeSubPacket(const data_packet_t *data_packet, uint32_t *dst1, uint32_t *dst2);
 void setNull(data_packet_t *data_packet);
-int  setAudioSample(data_packet_t *data_packet, const int16_t *p, int n, int frameCt);
+int  setAudioSample(data_packet_t *data_packet, const int16_t **p, int n, int frameCt);
 void setAudioClockRegeneration(data_packet_t *data_packet, int CTS, int N);
 void setAudioInfoFrame(data_packet_t *data_packet, int freq);
 void setAVIInfoFrame(data_packet_t *data_packet, ScanInfo s, PixelFormat y, Colorimetry c, PixtureAspectRatio m,

@@ -1,4 +1,5 @@
 #include "data_packet.h"
+#include <string.h>
 
 // Compute 8 Parity Start
 // Parity table is build statically with the following code
@@ -146,38 +147,171 @@ void __not_in_flash_func(computeParity)(data_packet_t *data_packet) {
 }
 
 void __not_in_flash_func(computeInfoFrameCheckSum)(data_packet_t *data_packet) {
-
+    int s = 0;
+    for (int i = 0; i < 3; ++i)
+    {
+        s += data_packet->header[i];
+    }
+    int n = data_packet->header[2] + 1;
+    for (int j = 0; j < 4; ++j)
+    {
+        for (int i = 0; i < 7 && n; ++i, --n)
+        {
+            s += data_packet->subpacket[j][i];
+        }
+    }
+    data_packet->subpacket[0][0] = -s;
 }
 
-void __not_in_flash_func(encodeHeader)(data_packet_t *data_packet, uint32_t *dst, int hv, bool firstPacket) {
-
+void __not_in_flash_func(encodeHeader)(const data_packet_t *data_packet, uint32_t *dst, int hv, bool firstPacket) {
+    int hv1 = hv | 8;
+    if (!firstPacket) { 
+        hv = hv1;
+    }
+    for (int i = 0; i < 4; ++i) {
+        uint8_t h = data_packet->header[i];
+        dst[0] = makeTERC4x2Char_2(((h << 2) & 4) | hv,  ((h << 1) & 4) | hv1);
+        dst[1] = makeTERC4x2Char_2((h & 4) | hv1,        ((h >> 1) & 4) | hv1);
+        dst[2] = makeTERC4x2Char_2(((h >> 2) & 4) | hv1, ((h >> 3) & 4) | hv1);
+        dst[3] = makeTERC4x2Char_2(((h >> 4) & 4) | hv1, ((h >> 5) & 4) | hv1);
+        dst += 4;
+        hv = hv1;
+    }
 }
 
-void __not_in_flash_func(encodeSubPacket)(data_packet_t *data_packet, uint32_t *dst1, uint32_t *dst2) {
-
+void __not_in_flash_func(encodeSubPacket)(const data_packet_t *data_packet, uint32_t *dst1, uint32_t *dst2) {
+    for (int i = 0; i < 8; ++i) {
+        uint32_t v = (data_packet->subpacket[0][i] << 0)  | (data_packet->subpacket[1][i] << 8) |
+                     (data_packet->subpacket[2][i] << 16) | (data_packet->subpacket[3][i] << 24);
+        uint32_t t = (v ^ (v >> 7)) & 0x00aa00aa;
+        v = v ^ t ^ (t << 7);
+        t = (v ^ (v >> 14)) & 0x0000cccc;
+        v = v ^ t ^ (t << 14);
+        // 01234567 89abcdef ghijklmn opqrstuv
+        // 08go4cks 19hp5dlt 2aiq6emu 3bjr7fnv
+        dst1[0] = makeTERC4x2Char_2((v >> 0) & 15,  (v >> 16) & 15);
+        dst1[1] = makeTERC4x2Char_2((v >> 4) & 15,  (v >> 20) & 15);
+        dst2[0] = makeTERC4x2Char_2((v >> 8) & 15,  (v >> 24) & 15);
+        dst2[1] = makeTERC4x2Char_2((v >> 12) & 15, (v >> 28) & 15);
+        dst1 += 2;
+        dst2 += 2;
+    }
 }
 
 void __not_in_flash_func(setNull)(data_packet_t *data_packet) {
-
+    memset(data_packet, 0, sizeof(data_packet_t));
 }
 
-int  __not_in_flash_func(setAudioSample)(data_packet_t *data_packet, const int16_t *p, int n, int frameCt) {
-    return 0;
+int  __not_in_flash_func(setAudioSample)(data_packet_t *data_packet, const int16_t **p, int n, int frameCt) {
+    const int layout = 0;
+    const int samplePresent = (1 << n) - 1;
+    const int B = frameCt < 4 ? 1 << frameCt : 0;
+    data_packet->header[0] = 2;
+    data_packet->header[1] = (layout << 4) | samplePresent;
+    data_packet->header[2] = B << 4;
+    computeHeaderParity(data_packet);
+
+    for (int i = 0; i < n; ++i)
+    {
+        const int16_t l = (*p)[0];
+        const int16_t r = (*p)[1];
+        const uint8_t vuc = 1; // valid
+        uint8_t *d = data_packet->subpacket[i];
+        d[0] = 0;
+        d[1] = l;
+        d[2] = l >> 8;
+        d[3] = 0;
+        d[4] = r;
+        d[5] = r >> 8;
+
+        bool pl = compute8_3(d[1], d[2], vuc);
+        bool pr = compute8_3(d[4], d[5], vuc);
+        d[6] = (vuc << 0) | (pl << 3) | (vuc << 4) | (pr << 7);
+        computeSubPacketParity(data_packet, i);
+        ++p;
+        // channel status (is it relevant?)
+    }
+    memset(data_packet->subpacket[n], 0, sizeof(data_packet->subpacket[0]) * (4 - n));
+    // dump();
+
+    frameCt -= n;
+    if (frameCt < 0) {
+        frameCt += 192;
+    }
+    return frameCt;
 }
 
 void setAudioClockRegeneration(data_packet_t *data_packet, int CTS, int N) {
+    data_packet->header[0] = 1;
+    data_packet->header[1] = 0;
+    data_packet->header[2] = 0;
+    computeHeaderParity(data_packet);
 
+    data_packet->subpacket[0][0] = 0;
+    data_packet->subpacket[0][1] = CTS >> 16;
+    data_packet->subpacket[0][2] = CTS >> 8;
+    data_packet->subpacket[0][3] = CTS;
+    data_packet->subpacket[0][4] = N >> 16;
+    data_packet->subpacket[0][5] = N >> 8;
+    data_packet->subpacket[0][6] = N;
+    computeSubPacketParity(data_packet, 0);
+
+    memcpy(data_packet->subpacket[1], data_packet->subpacket[0], sizeof(data_packet->subpacket[0]));
+    memcpy(data_packet->subpacket[2], data_packet->subpacket[0], sizeof(data_packet->subpacket[0]));
+    memcpy(data_packet->subpacket[3], data_packet->subpacket[0], sizeof(data_packet->subpacket[0]));
 }
 
 void setAudioInfoFrame(data_packet_t *data_packet, int freq) {
+    setNull(data_packet);
+    data_packet->header[0] = 0x84;
+    data_packet->header[1] = 1;  // version
+    data_packet->header[2] = 10; // len
 
+    const int cc = 1; // 2ch
+    const int ct = 1; // IEC 60958 PCM
+    const int ss = 1; // 16bit
+    const int sf = freq == 48000 ? 3 : (freq == 44100 ? 2 : 0);
+    const int ca = 0;  // FR, FL
+    const int lsv = 0; // 0db
+    const int dm_inh = 0;
+    data_packet->subpacket[0][1] = cc | (ct << 4);
+    data_packet->subpacket[0][2] = ss | (sf << 2);
+    data_packet->subpacket[0][4] = ca;
+    data_packet->subpacket[0][5] = (lsv << 3) | (dm_inh << 7);
+
+    computeInfoFrameCheckSum(data_packet);
+    computeParity(data_packet);
 }
 
 void setAVIInfoFrame(data_packet_t *data_packet, ScanInfo s, PixelFormat y, Colorimetry c, PixtureAspectRatio m,
     ActiveFormatAspectRatio r,RGBQuantizationRange q, VideoCode vic) {
+    setNull(data_packet);
+    data_packet->header[0] = 0x82;
+    data_packet->header[1] = 2;  // version
+    data_packet->header[2] = 13; // len
 
+        int sc = 0;
+        // int sc = 3; // scaled hv
+
+    data_packet->subpacket[0][1] = (int)(s) | (r == ACTIVE_FORMAT_ASPECT_RATIO_NO_DATA ? 0 : 16) | ((int)(y) << 5);
+    data_packet->subpacket[0][2] = (int)(r) | ((int)(m) << 4) | ((int)(c) << 6);
+    data_packet->subpacket[0][3] = sc | ((int)(q) << 2);
+    data_packet->subpacket[0][4] = (int)(vic);
+
+    computeInfoFrameCheckSum(data_packet);
+    computeParity(data_packet);
 }
 
 void encode(data_island_stream_t *dst, const data_packet_t *packet, bool vsync, bool hsync) {
-    
+    int hv = (vsync ? 2 : 0) | (hsync ? 1 : 0);
+    dst->data[0][0] = makeTERC4x2Char(0b1100 | hv);
+    dst->data[1][0] = dataGaurdbandSym_;
+    dst->data[2][0] = dataGaurdbandSym_;
+
+    encodeHeader(packet, &dst->data[0][1], hv, true);
+    encodeSubPacket(packet, &dst->data[1][1], &dst->data[2][1]);
+
+    dst->data[0][N_DATA_ISLAND_WORDS - 1] = makeTERC4x2Char(0b1100 | hv);
+    dst->data[1][N_DATA_ISLAND_WORDS - 1] = dataGaurdbandSym_;
+    dst->data[2][N_DATA_ISLAND_WORDS - 1] = dataGaurdbandSym_;
 }
