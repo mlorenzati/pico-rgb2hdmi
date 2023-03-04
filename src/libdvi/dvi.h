@@ -1,17 +1,23 @@
 #ifndef _DVI_H
 #define _DVI_H
 
-#define N_TMDS_LANES 3
-#define TMDS_SYNC_LANE 0 // blue!
-
 #include "pico/util/queue.h"
-
 #include "dvi_config_defs.h"
 #include "dvi_timing.h"
 #include "dvi_serialiser.h"
 #include "util_queue_u32_inline.h"
+#include "data_packet.h"
+
+#define TMDS_SYNC_LANE  0 // blue!
+#ifndef TMDS_CHANNELS
+    #define TMDS_CHANNELS   3
+#endif
 
 typedef void (*dvi_callback_t)(void);
+
+typedef struct audio_sample {
+    int16_t channels[2];
+} audio_sample_t;
 
 struct dvi_inst {
 	// Config ---
@@ -27,6 +33,7 @@ struct dvi_inst {
 	struct dvi_scanline_dma_list dma_list_vblank_nosync;
 	struct dvi_scanline_dma_list dma_list_active;
 	struct dvi_scanline_dma_list dma_list_error;
+    struct dvi_scanline_dma_list dma_list_active_blank;
 
 	// After a TMDS buffer has been enqueue via a control block for the last
 	// time, two IRQs must go by before freeing. The first indicates the control
@@ -46,6 +53,18 @@ struct dvi_inst {
 	queue_t q_colour_valid;
 	queue_t q_colour_free;
     bool    started;
+
+    //Data Packet related
+    data_packet_t avi_info_frame;
+    data_packet_t audio_clock_regeneration;
+    data_packet_t audio_info_frame;
+    int audio_freq;
+    int samples_per_frame;
+    int samples_per_line16;
+    
+    bool data_island_is_enabled;
+    data_island_stream_t next_data_stream;
+    audio_sample_t *audio_sample_buffer;
 };
 
 // Reports DVI status 1: active 0: inactive
@@ -79,5 +98,9 @@ void dvi_scanbuf_main_16bpp(struct dvi_inst *inst);
 // Same as above, but each q_colour_valid entry is a framebuffer
 void dvi_framebuf_main_8bpp(struct dvi_inst *inst);
 void dvi_framebuf_main_16bpp(struct dvi_inst *inst);
+
+// Data island related api
+void dvi_enable_data_island(struct dvi_inst *inst);
+void dvi_update_data_island_ptr(struct dvi_scanline_dma_list *dma_list, data_island_stream_t *stream);
 
 #endif

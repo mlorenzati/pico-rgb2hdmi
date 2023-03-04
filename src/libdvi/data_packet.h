@@ -2,14 +2,23 @@
 #define DATA_PACKET_H
 #include "pico.h"
 
-#define N_CHAR_PER_WORD      2
+#define TMDS_CHANNELS        3
 #define N_LINE_PER_DATA      2
 #define W_GUARDBAND          2
 #define W_PREAMBLE           8
 #define W_DATA_PACKET        32
 
+#ifndef DVI_SYMBOLS_PER_WORD
+#define DVI_SYMBOLS_PER_WORD 2
+#endif
+
+#if DVI_SYMBOLS_PER_WORD != 1 && DVI_SYMBOLS_PER_WORD !=2
+#error "Unsupported value for DVI_SYMBOLS_PER_WORD"
+#endif
+
+
 #define W_DATA_ISLAND        W_GUARDBAND * 2 + W_DATA_PACKET
-#define N_DATA_ISLAND_WORDS  W_DATA_ISLAND / N_CHAR_PER_WORD
+#define N_DATA_ISLAND_WORDS  W_DATA_ISLAND / DVI_SYMBOLS_PER_WORD
 
 typedef enum {
     SCAN_INFO_NO_DATA,
@@ -63,7 +72,7 @@ typedef struct data_packet {
 } data_packet_t;
 
 typedef struct data_island_stream {
-    uint32_t data[3][N_DATA_ISLAND_WORDS];
+    uint32_t data[TMDS_CHANNELS][N_DATA_ISLAND_WORDS];
 } data_island_stream_t;
 
 // Functions related to the data_packet (requires a data_packet instance)

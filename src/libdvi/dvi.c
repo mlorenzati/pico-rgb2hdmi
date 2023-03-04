@@ -40,17 +40,21 @@ void dvi_init(struct dvi_inst *inst, uint spinlock_tmds_queue, uint spinlock_col
 	dvi_setup_scanline_for_vblank(inst->timing, inst->dma_cfg, false, &inst->dma_list_vblank_nosync);
 	dvi_setup_scanline_for_active(inst->timing, inst->dma_cfg, (void*)SRAM_BASE, &inst->dma_list_active);
 	dvi_setup_scanline_for_active(inst->timing, inst->dma_cfg, NULL, &inst->dma_list_error);
+    dvi_setup_scanline_for_active(inst->timing, inst->dma_cfg, NULL, &inst->dma_list_active_blank);
 
 	for (int i = 0; i < DVI_N_TMDS_BUFFERS; ++i) {
 #if DVI_MONOCHROME_TMDS
 		void *tmdsbuf = malloc(inst->timing->h_active_pixels / DVI_SYMBOLS_PER_WORD * sizeof(uint32_t));
 #else
-		void *tmdsbuf = malloc(3 * inst->timing->h_active_pixels / DVI_SYMBOLS_PER_WORD * sizeof(uint32_t));
+		void *tmdsbuf = malloc(TMDS_CHANNELS * inst->timing->h_active_pixels / DVI_SYMBOLS_PER_WORD * sizeof(uint32_t));
 #endif
-		if (!tmdsbuf)
-			panic("TMDS buffer allocation failed");
+		if (!tmdsbuf) {
+            panic("TMDS buffer allocation failed");
+        }
 		queue_add_blocking_u32(&inst->q_tmds_free, &tmdsbuf);
 	}
+
+    setAVIInfoFrame(&inst->avi_info_frame, UNDERSCAN, RGB, ITU601, PIC_ASPECT_RATIO_4_3, SAME_AS_PAR, FULL, _640x480P60);
 }
 
 // The IRQs will run on whichever core calls this function (this is why it's
@@ -288,4 +292,29 @@ static void __dvi_func(dvi_dma1_irq)() {
 	struct dvi_inst *inst = dma_irq_privdata[1];
 	dma_hw->ints1 = 1u << inst->dma_cfg[TMDS_SYNC_LANE].chan_data;
 	dvi_dma_irq_handler(inst);
+}
+
+//DVI Dataisland related
+void dvi_enable_data_island(struct dvi_inst *inst) {
+    inst->data_island_is_enabled  = true;
+
+    // Setup internal Data Packet streams
+    dvi_update_data_island_ptr(&inst->dma_list_vblank_sync,   &inst->next_data_stream);
+    dvi_update_data_island_ptr(&inst->dma_list_vblank_nosync, &inst->next_data_stream);
+    dvi_update_data_island_ptr(&inst->dma_list_active,        &inst->next_data_stream);
+    dvi_update_data_island_ptr(&inst->dma_list_error,         &inst->next_data_stream);
+    dvi_update_data_island_ptr(&inst->dma_list_active_blank,  &inst->next_data_stream);
+}
+
+void dvi_update_data_island_ptr(struct dvi_scanline_dma_list *dma_list, data_island_stream_t *stream) {
+    for (int i = 0; i < N_TMDS_LANES; ++i) {
+        dma_cb_t *cblist = dvi_lane_from_list(dma_list, i);
+        uint32_t *src = stream->data[i];
+
+        if (i == TMDS_SYNC_LANE) {
+            cblist[1].read_addr = src;
+        } else {
+            cblist[2].read_addr = src;
+        }
+    }
 }
