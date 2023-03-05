@@ -7,6 +7,7 @@
 #include "dvi_serialiser.h"
 #include "util_queue_u32_inline.h"
 #include "data_packet.h"
+#include "audio_ring.h"
 
 #define TMDS_SYNC_LANE  0 // blue!
 #ifndef TMDS_CHANNELS
@@ -14,10 +15,6 @@
 #endif
 
 typedef void (*dvi_callback_t)(void);
-
-typedef struct audio_sample {
-    int16_t channels[2];
-} audio_sample_t;
 
 struct dvi_inst {
 	// Config ---
@@ -64,7 +61,7 @@ struct dvi_inst {
     
     bool data_island_is_enabled;
     data_island_stream_t next_data_stream;
-    audio_sample_t *audio_sample_buffer;
+    audio_ring_t  audio_ring;
 };
 
 // Reports DVI status 1: active 0: inactive
@@ -102,5 +99,6 @@ void dvi_framebuf_main_16bpp(struct dvi_inst *inst);
 // Data island related api
 void dvi_enable_data_island(struct dvi_inst *inst);
 void dvi_update_data_island_ptr(struct dvi_scanline_dma_list *dma_list, data_island_stream_t *stream);
-
+void dvi_audio_sample_buffer_set(struct dvi_inst *inst, audio_sample_t *buffer, int size);
+void dvi_set_audio_freq(struct dvi_inst *inst, int freq, int cts, int n);
 #endif

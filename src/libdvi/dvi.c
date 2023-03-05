@@ -318,3 +318,12 @@ void dvi_update_data_island_ptr(struct dvi_scanline_dma_list *dma_list, data_isl
         }
     }
 }
+
+void dvi_audio_sample_buffer_set(struct dvi_inst *inst, audio_sample_t *buffer, int size) {
+    audio_ring_set(&inst->audio_ring, buffer, size);
+}
+
+void dvi_set_audio_freq(struct dvi_inst *inst, int freq, int cts, int n) {
+    inst->audio_freq = freq;
+   // inst->audio_clock_regeneration
+}
