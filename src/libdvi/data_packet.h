@@ -24,26 +24,26 @@ typedef enum {
     SCAN_INFO_NO_DATA,
     OVERSCAN,
     UNDERSCAN
-} ScanInfo;
+} scan_info;
 
 typedef enum {
     RGB,
     YCBCR422,
     YCBCR444
-} PixelFormat;
+} pixel_format;
 
 typedef enum {
     COLORIMETRY_NO_DATA,
     ITU601,
     ITU709,
     EXTENDED
-} Colorimetry;
+} colorimetry;
 
 typedef enum {
     PIC_ASPECT_RATIO_NO_DATA,
     PIC_ASPECT_RATIO_4_3,
     PIC_ASPECT_RATIO_16_9
-} PixtureAspectRatio;
+} picture_aspect_ratio;
 
 typedef enum {
     ACTIVE_FORMAT_ASPECT_RATIO_NO_DATA = -1,
@@ -51,20 +51,20 @@ typedef enum {
     ACTIVE_FORMAT_ASPECT_RATIO_4_3,
     ACTIVE_FORMAT_ASPECT_RATIO_16_9,
     ACTIVE_FORMAT_ASPECT_RATIO_14_9
-} ActiveFormatAspectRatio;
+} active_format_aspect_ratio;
 
 typedef enum {
     DEFAULT,
     LIMITED,
     FULL
-} RGBQuantizationRange;
+} RGB_quantization_range;
 
 typedef enum {
     _640x480P60 = 1,
     _720x480P60 = 2,
     _1280x720P60 = 4,
     _1920x1080I60 = 5,
-} VideoCode;
+} video_code;
 
 typedef struct data_packet {
     uint8_t header[4];
@@ -76,18 +76,18 @@ typedef struct data_island_stream {
 } data_island_stream_t;
 
 // Functions related to the data_packet (requires a data_packet instance)
-void computeHeaderParity(data_packet_t *data_packet);
-void computeSubPacketParity(data_packet_t *data_packet, int i);
-void computeParity(data_packet_t *data_packet);
-void computeInfoFrameCheckSum(data_packet_t *data_packet);
-void encodeHeader(const data_packet_t *data_packet, uint32_t *dst, int hv, bool firstPacket);
-void encodeSubPacket(const data_packet_t *data_packet, uint32_t *dst1, uint32_t *dst2);
-void setNull(data_packet_t *data_packet);
-int  setAudioSample(data_packet_t *data_packet, const int16_t **p, int n, int frameCt);
-void setAudioClockRegeneration(data_packet_t *data_packet, int CTS, int N);
-void setAudioInfoFrame(data_packet_t *data_packet, int freq);
-void setAVIInfoFrame(data_packet_t *data_packet, ScanInfo s, PixelFormat y, Colorimetry c, PixtureAspectRatio m,
-    ActiveFormatAspectRatio r, RGBQuantizationRange q, VideoCode vic);
+void compute_header_parity(data_packet_t *data_packet);
+void compute_subpacket_parity(data_packet_t *data_packet, int i);
+void compute_parity(data_packet_t *data_packet);
+void compute_info_frame_checkSum(data_packet_t *data_packet);
+void encode_header(const data_packet_t *data_packet, uint32_t *dst, int hv, bool firstPacket);
+void encode_subpacket(const data_packet_t *data_packet, uint32_t *dst1, uint32_t *dst2);
+void set_null(data_packet_t *data_packet);
+int  set_audio_sample(data_packet_t *data_packet, const int16_t **p, int n, int frameCt);
+void set_audio_clock_regeneration(data_packet_t *data_packet, int CTS, int N);
+void set_audio_info_frame(data_packet_t *data_packet, int freq);
+void set_AVI_info_frame(data_packet_t *data_packet, scan_info s, pixel_format y, colorimetry c, picture_aspect_ratio m,
+    active_format_aspect_ratio r, RGB_quantization_range q, video_code vic);
 
 // Public Functions
 extern uint32_t defaultDataPacket12_[N_DATA_ISLAND_WORDS];

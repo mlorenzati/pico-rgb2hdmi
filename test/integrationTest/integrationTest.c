@@ -84,6 +84,7 @@ cmd_parser_option_t options[] =
 void __not_in_flash_func(core1_main)() {
     storage_report_core1_use();
     dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
+    dvi_wait_for_valid_line(&dvi0);
     dvi_start(&dvi0);
     #if DVI_SYMBOLS_PER_WORD == 2
         dvi_scanbuf_main_16bpp(&dvi0);

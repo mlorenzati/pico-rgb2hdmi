@@ -54,7 +54,7 @@ void dvi_init(struct dvi_inst *inst, uint spinlock_tmds_queue, uint spinlock_col
 		queue_add_blocking_u32(&inst->q_tmds_free, &tmdsbuf);
 	}
 
-    setAVIInfoFrame(&inst->avi_info_frame, UNDERSCAN, RGB, ITU601, PIC_ASPECT_RATIO_4_3, SAME_AS_PAR, FULL, _640x480P60);
+    set_AVI_info_frame(&inst->avi_info_frame, UNDERSCAN, RGB, ITU601, PIC_ASPECT_RATIO_4_3, SAME_AS_PAR, FULL, _640x480P60);
 }
 
 // The IRQs will run on whichever core calls this function (this is why it's
@@ -325,5 +325,17 @@ void dvi_audio_sample_buffer_set(struct dvi_inst *inst, audio_sample_t *buffer, 
 
 void dvi_set_audio_freq(struct dvi_inst *inst, int freq, int cts, int n) {
     inst->audio_freq = freq;
-   // inst->audio_clock_regeneration
+    set_audio_clock_regeneration(&inst->audio_clock_regeneration, cts, n);
+    set_audio_info_frame(&inst->audio_info_frame, freq);
+    uint pixelClock =   dvi_timing_get_pixel_clock(inst->timing);
+    uint nPixPerFrame = dvi_timing_get_pixels_per_frame(inst->timing);
+    uint nPixPerLine =  dvi_timing_get_pixels_per_line(inst->timing);
+    inst->samples_per_frame  = (uint64_t)(freq) * nPixPerFrame / pixelClock;
+    inst->samples_per_line16 = (uint64_t)(freq) * nPixPerLine * 65536 / pixelClock;
+    dvi_enable_data_island(inst);
+}
+
+void dvi_wait_for_valid_line(struct dvi_inst *inst) {
+    uint32_t *tmdsbuf = NULL;
+    queue_peek_blocking_u32(&inst->q_colour_valid, &tmdsbuf);
 }

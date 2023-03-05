@@ -52,14 +52,14 @@ const uint8_t __not_in_flash_func(bchTable_)[256] = {
     0x49, 0x90, 0xfc, 0x25, 0x24, 0xfd, 0x91, 0x48, 
 };
 
-int __not_in_flash_func(encodeBCH3)(const uint8_t *p) {
+int __not_in_flash_func(encode_BCH_3)(const uint8_t *p) {
     uint8_t v = bchTable_[p[0]];
     v = bchTable_[p[1] ^ v];
     v = bchTable_[p[2] ^ v];
     return v;
 }
 
-int __not_in_flash_func(encodeBCH7)(const uint8_t *p) {
+int __not_in_flash_func(encode_BCH_7)(const uint8_t *p) {
     uint8_t v = bchTable_[p[0]];
     v = bchTable_[p[1] ^ v];
     v = bchTable_[p[2] ^ v];
@@ -130,23 +130,23 @@ uint32_t *__not_in_flash_func(getDefaultDataPacket0)(bool vsync, bool hsync) {
 
 // TERC4 End
 
-void __not_in_flash_func(computeHeaderParity)(data_packet_t *data_packet) {
-    data_packet->header[3] = encodeBCH3(data_packet->header);
+void __not_in_flash_func(compute_header_parity)(data_packet_t *data_packet) {
+    data_packet->header[3] = encode_BCH_3(data_packet->header);
 }
 
-void __not_in_flash_func(computeSubPacketParity)(data_packet_t *data_packet, int i) {
-    data_packet->subpacket[i][7] = encodeBCH7(data_packet->subpacket[i]);
+void __not_in_flash_func(compute_subpacket_parity)(data_packet_t *data_packet, int i) {
+    data_packet->subpacket[i][7] = encode_BCH_7(data_packet->subpacket[i]);
 }
 
-void __not_in_flash_func(computeParity)(data_packet_t *data_packet) {
-    computeHeaderParity(data_packet);
-    computeSubPacketParity(data_packet, 0);
-    computeSubPacketParity(data_packet, 1);
-    computeSubPacketParity(data_packet, 2);
-    computeSubPacketParity(data_packet, 3);
+void __not_in_flash_func(compute_parity)(data_packet_t *data_packet) {
+    compute_header_parity(data_packet);
+    compute_subpacket_parity(data_packet, 0);
+    compute_subpacket_parity(data_packet, 1);
+    compute_subpacket_parity(data_packet, 2);
+    compute_subpacket_parity(data_packet, 3);
 }
 
-void __not_in_flash_func(computeInfoFrameCheckSum)(data_packet_t *data_packet) {
+void __not_in_flash_func(compute_info_frame_checkSum)(data_packet_t *data_packet) {
     int s = 0;
     for (int i = 0; i < 3; ++i)
     {
@@ -163,7 +163,7 @@ void __not_in_flash_func(computeInfoFrameCheckSum)(data_packet_t *data_packet) {
     data_packet->subpacket[0][0] = -s;
 }
 
-void __not_in_flash_func(encodeHeader)(const data_packet_t *data_packet, uint32_t *dst, int hv, bool firstPacket) {
+void __not_in_flash_func(encode_header)(const data_packet_t *data_packet, uint32_t *dst, int hv, bool firstPacket) {
     int hv1 = hv | 8;
     if (!firstPacket) { 
         hv = hv1;
@@ -179,7 +179,7 @@ void __not_in_flash_func(encodeHeader)(const data_packet_t *data_packet, uint32_
     }
 }
 
-void __not_in_flash_func(encodeSubPacket)(const data_packet_t *data_packet, uint32_t *dst1, uint32_t *dst2) {
+void __not_in_flash_func(encode_subpacket)(const data_packet_t *data_packet, uint32_t *dst1, uint32_t *dst2) {
     for (int i = 0; i < 8; ++i) {
         uint32_t v = (data_packet->subpacket[0][i] << 0)  | (data_packet->subpacket[1][i] << 8) |
                      (data_packet->subpacket[2][i] << 16) | (data_packet->subpacket[3][i] << 24);
@@ -198,18 +198,18 @@ void __not_in_flash_func(encodeSubPacket)(const data_packet_t *data_packet, uint
     }
 }
 
-void __not_in_flash_func(setNull)(data_packet_t *data_packet) {
+void __not_in_flash_func(set_null)(data_packet_t *data_packet) {
     memset(data_packet, 0, sizeof(data_packet_t));
 }
 
-int  __not_in_flash_func(setAudioSample)(data_packet_t *data_packet, const int16_t **p, int n, int frameCt) {
+int  __not_in_flash_func(set_audio_sample)(data_packet_t *data_packet, const int16_t **p, int n, int frameCt) {
     const int layout = 0;
     const int samplePresent = (1 << n) - 1;
     const int B = frameCt < 4 ? 1 << frameCt : 0;
     data_packet->header[0] = 2;
     data_packet->header[1] = (layout << 4) | samplePresent;
     data_packet->header[2] = B << 4;
-    computeHeaderParity(data_packet);
+    compute_header_parity(data_packet);
 
     for (int i = 0; i < n; ++i)
     {
@@ -227,7 +227,7 @@ int  __not_in_flash_func(setAudioSample)(data_packet_t *data_packet, const int16
         bool pl = compute8_3(d[1], d[2], vuc);
         bool pr = compute8_3(d[4], d[5], vuc);
         d[6] = (vuc << 0) | (pl << 3) | (vuc << 4) | (pr << 7);
-        computeSubPacketParity(data_packet, i);
+        compute_subpacket_parity(data_packet, i);
         ++p;
         // channel status (is it relevant?)
     }
@@ -241,28 +241,28 @@ int  __not_in_flash_func(setAudioSample)(data_packet_t *data_packet, const int16
     return frameCt;
 }
 
-void setAudioClockRegeneration(data_packet_t *data_packet, int CTS, int N) {
+void set_audio_clock_regeneration(data_packet_t *data_packet, int cts, int n) {
     data_packet->header[0] = 1;
     data_packet->header[1] = 0;
     data_packet->header[2] = 0;
-    computeHeaderParity(data_packet);
+    compute_header_parity(data_packet);
 
     data_packet->subpacket[0][0] = 0;
-    data_packet->subpacket[0][1] = CTS >> 16;
-    data_packet->subpacket[0][2] = CTS >> 8;
-    data_packet->subpacket[0][3] = CTS;
-    data_packet->subpacket[0][4] = N >> 16;
-    data_packet->subpacket[0][5] = N >> 8;
-    data_packet->subpacket[0][6] = N;
-    computeSubPacketParity(data_packet, 0);
+    data_packet->subpacket[0][1] = cts >> 16;
+    data_packet->subpacket[0][2] = cts >> 8;
+    data_packet->subpacket[0][3] = cts;
+    data_packet->subpacket[0][4] = n >> 16;
+    data_packet->subpacket[0][5] = n >> 8;
+    data_packet->subpacket[0][6] = n;
+    compute_subpacket_parity(data_packet, 0);
 
     memcpy(data_packet->subpacket[1], data_packet->subpacket[0], sizeof(data_packet->subpacket[0]));
     memcpy(data_packet->subpacket[2], data_packet->subpacket[0], sizeof(data_packet->subpacket[0]));
     memcpy(data_packet->subpacket[3], data_packet->subpacket[0], sizeof(data_packet->subpacket[0]));
 }
 
-void setAudioInfoFrame(data_packet_t *data_packet, int freq) {
-    setNull(data_packet);
+void set_audio_info_frame(data_packet_t *data_packet, int freq) {
+    set_null(data_packet);
     data_packet->header[0] = 0x84;
     data_packet->header[1] = 1;  // version
     data_packet->header[2] = 10; // len
@@ -279,13 +279,13 @@ void setAudioInfoFrame(data_packet_t *data_packet, int freq) {
     data_packet->subpacket[0][4] = ca;
     data_packet->subpacket[0][5] = (lsv << 3) | (dm_inh << 7);
 
-    computeInfoFrameCheckSum(data_packet);
-    computeParity(data_packet);
+    compute_info_frame_checkSum(data_packet);
+    compute_parity(data_packet);
 }
 
-void setAVIInfoFrame(data_packet_t *data_packet, ScanInfo s, PixelFormat y, Colorimetry c, PixtureAspectRatio m,
-    ActiveFormatAspectRatio r,RGBQuantizationRange q, VideoCode vic) {
-    setNull(data_packet);
+void set_AVI_info_frame(data_packet_t *data_packet, scan_info s, pixel_format y, colorimetry c, picture_aspect_ratio m,
+    active_format_aspect_ratio r, RGB_quantization_range q, video_code vic) {
+    set_null(data_packet);
     data_packet->header[0] = 0x82;
     data_packet->header[1] = 2;  // version
     data_packet->header[2] = 13; // len
@@ -298,8 +298,8 @@ void setAVIInfoFrame(data_packet_t *data_packet, ScanInfo s, PixelFormat y, Colo
     data_packet->subpacket[0][3] = sc | ((int)(q) << 2);
     data_packet->subpacket[0][4] = (int)(vic);
 
-    computeInfoFrameCheckSum(data_packet);
-    computeParity(data_packet);
+    compute_info_frame_checkSum(data_packet);
+    compute_parity(data_packet);
 }
 
 void encode(data_island_stream_t *dst, const data_packet_t *packet, bool vsync, bool hsync) {
@@ -308,8 +308,8 @@ void encode(data_island_stream_t *dst, const data_packet_t *packet, bool vsync, 
     dst->data[1][0] = dataGaurdbandSym_;
     dst->data[2][0] = dataGaurdbandSym_;
 
-    encodeHeader(packet, &dst->data[0][1], hv, true);
-    encodeSubPacket(packet, &dst->data[1][1], &dst->data[2][1]);
+    encode_header(packet, &dst->data[0][1], hv, true);
+    encode_subpacket(packet, &dst->data[1][1], &dst->data[2][1]);
 
     dst->data[0][N_DATA_ISLAND_WORDS - 1] = makeTERC4x2Char(0b1100 | hv);
     dst->data[1][N_DATA_ISLAND_WORDS - 1] = dataGaurdbandSym_;

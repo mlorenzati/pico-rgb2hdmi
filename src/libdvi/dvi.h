@@ -86,6 +86,9 @@ void dvi_start(struct dvi_inst *inst);
 //Stops DVI pairs generations
 void dvi_stop(struct dvi_inst *inst);
 
+//Waits for a valid line
+void dvi_wait_for_valid_line(struct dvi_inst *inst);
+
 // TMDS encode worker function: core enters and doesn't leave, but still
 // responds to IRQs. Repeatedly pop a scanline buffer from q_colour_valid,
 // TMDS encode it, and pass it to the tmds valid queue.
