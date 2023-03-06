@@ -19,7 +19,11 @@ static void dvi_dma0_irq();
 static void dvi_dma1_irq();
 
 void dvi_init(struct dvi_inst *inst, uint spinlock_tmds_queue, uint spinlock_colour_queue) {
-    inst->started = false;
+    inst->dvi_started = false;
+    inst->dvi_line_count  = 0;
+    inst->dvi_frame_count = 0;
+    
+    dvi_audio_init(inst);
 	dvi_timing_state_init(&inst->timing_state);
 	dvi_serialiser_init(&inst->ser_cfg);
 	for (int i = 0; i < N_TMDS_LANES; ++i) {
@@ -55,6 +59,7 @@ void dvi_init(struct dvi_inst *inst, uint spinlock_tmds_queue, uint spinlock_col
 	}
 
     set_AVI_info_frame(&inst->avi_info_frame, UNDERSCAN, RGB, ITU601, PIC_ASPECT_RATIO_4_3, SAME_AS_PAR, FULL, _640x480P60);
+
 }
 
 // The IRQs will run on whichever core calls this function (this is why it's
@@ -121,7 +126,7 @@ static inline void __attribute__((always_inline)) _dvi_load_dma_op(const struct 
 // CHAIN_TO on data channel completion. IRQ handler *must* be prepared before
 // calling this. (Hooked to DMA IRQ0)
 void dvi_start(struct dvi_inst *inst) {
-    if (inst->started) {
+    if (inst->dvi_started) {
         return;
     }
 	_dvi_load_dma_op(inst->dma_cfg, &inst->dma_list_vblank_nosync);
@@ -136,11 +141,11 @@ void dvi_start(struct dvi_inst *inst) {
 		while (!pio_sm_is_tx_fifo_full(inst->ser_cfg.pio, inst->ser_cfg.sm_tmds[i]))
 			tight_loop_contents();
 	dvi_serialiser_enable(&inst->ser_cfg, true);
-    inst->started = true;
+    inst->dvi_started = true;
 }
 
 void dvi_stop(struct dvi_inst *inst) {
-    if (!inst->started) {
+    if (!inst->dvi_started) {
         return;
     }
     uint mask  = 0;
@@ -158,7 +163,7 @@ void dvi_stop(struct dvi_inst *inst) {
     dma_hw->ints0 = 1u << inst->dma_cfg[TMDS_SYNC_LANE].chan_data;
 
     dvi_serialiser_enable(&inst->ser_cfg, false);
-    inst->started = false;
+    inst->dvi_started = false;
 }
 
 static inline void __dvi_func_x(_dvi_prepare_scanline_8bpp)(struct dvi_inst *inst, uint32_t *scanbuf) {
@@ -223,16 +228,18 @@ static void __dvi_func(dvi_dma_irq_handler)(struct dvi_inst *inst) {
 	// now have until the end of this region to generate DMA blocklist for next
 	// scanline.
 	dvi_timing_state_advance(inst->timing, &inst->timing_state);
-	if (inst->tmds_buf_release && !queue_try_add_u32(&inst->q_tmds_free, &inst->tmds_buf_release))
-		panic("TMDS free queue full in IRQ!");
+	if (inst->tmds_buf_release && !queue_try_add_u32(&inst->q_tmds_free, &inst->tmds_buf_release)) {
+        panic("TMDS free queue full in IRQ!");
+    }
 	inst->tmds_buf_release = inst->tmds_buf_release_next;
 	inst->tmds_buf_release_next = NULL;
 
 	// Make sure all three channels have definitely loaded their last block
 	// (should be within a few cycles of one another)
 	for (int i = 0; i < N_TMDS_LANES; ++i) {
-		while (dma_debug_hw->ch[inst->dma_cfg[i].chan_data].tcr != inst->timing->h_active_pixels / DVI_SYMBOLS_PER_WORD)
-			tight_loop_contents();
+		while (dma_debug_hw->ch[inst->dma_cfg[i].chan_data].tcr != inst->timing->h_active_pixels / DVI_SYMBOLS_PER_WORD) {
+            tight_loop_contents();
+        }	
 	}
 
 	uint32_t *tmdsbuf = NULL;
@@ -294,7 +301,17 @@ static void __dvi_func(dvi_dma1_irq)() {
 	dvi_dma_irq_handler(inst);
 }
 
-//DVI Dataisland related
+// DVI Data island related
+void dvi_audio_init(struct dvi_inst *inst) {
+    inst->data_island_is_enabled = false;
+    inst->audio_freq = 0;
+    inst->samples_per_frame = 0;
+    inst->samples_per_line16 = 0;
+    inst->left_audio_sample_count = 0;
+    inst->audio_sample_pos = 0;
+    inst->audio_frame_count = 0;
+}
+
 void dvi_enable_data_island(struct dvi_inst *inst) {
     inst->data_island_is_enabled  = true;
 
@@ -338,4 +355,47 @@ void dvi_set_audio_freq(struct dvi_inst *inst, int freq, int cts, int n) {
 void dvi_wait_for_valid_line(struct dvi_inst *inst) {
     uint32_t *tmdsbuf = NULL;
     queue_peek_blocking_u32(&inst->q_colour_valid, &tmdsbuf);
+}
+
+bool dvi_update_data_packet_(struct dvi_inst *inst, data_packet_t *packet) {
+    if (inst->samples_per_frame == 0) {
+        return false;
+    }
+
+    inst->audio_sample_pos += inst->samples_per_line16;
+    if (inst->timing_state.v_state == DVI_STATE_FRONT_PORCH) {
+        if (inst->dvi_line_count == 0) {
+            if (inst->dvi_frame_count & 1) {
+                *packet = inst->avi_info_frame;
+            } else {
+                *packet = inst->audio_info_frame;
+            }
+            inst->left_audio_sample_count = inst->samples_per_frame;
+
+            return true;
+        } else if (inst->dvi_line_count == 1) {
+            *packet = inst->audio_clock_regeneration;
+
+            return true;
+        }
+    }
+
+    int n = MAX(0, MIN(4, MIN(inst->audio_sample_pos >> 16, get_read_size(&inst->audio_ring, false))));
+    if (n) {
+        audio_sample_t *audio_sample_ptr = get_read_pointer(&inst->audio_ring);
+        inst->audio_frame_count = set_audio_sample(packet, (const int16_t **) audio_sample_ptr, n, inst->audio_frame_count);
+        increase_read_pointer(&inst->audio_ring, n);
+        
+        return true;
+    }
+
+    return false;
+}
+
+void dvi_update_data_packet(struct dvi_inst *inst) {
+    data_packet_t packet;
+    if (!dvi_update_data_packet_(inst, &packet)) {
+        set_null(&packet);
+    }
+    //dma_.updateNextDataPacket(lineState_, packet, *timing_);
 }

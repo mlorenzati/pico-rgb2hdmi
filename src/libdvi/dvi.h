@@ -49,7 +49,9 @@ struct dvi_inst {
 	// Either scanline buffers or frame buffers:
 	queue_t q_colour_valid;
 	queue_t q_colour_free;
-    bool    started;
+    bool    dvi_started;
+    uint    dvi_line_count;
+    uint    dvi_frame_count;
 
     //Data Packet related
     data_packet_t avi_info_frame;
@@ -62,11 +64,15 @@ struct dvi_inst {
     bool data_island_is_enabled;
     data_island_stream_t next_data_stream;
     audio_ring_t  audio_ring;
+
+    int left_audio_sample_count;
+    int audio_sample_pos;
+    int audio_frame_count;
 };
 
 // Reports DVI status 1: active 0: inactive
 inline bool dvi_is_started(struct dvi_inst *inst) {
-    return inst->started;
+    return inst->dvi_started;
 }
 
 // Set up data structures and hardware for DVI.
@@ -99,9 +105,11 @@ void dvi_scanbuf_main_16bpp(struct dvi_inst *inst);
 void dvi_framebuf_main_8bpp(struct dvi_inst *inst);
 void dvi_framebuf_main_16bpp(struct dvi_inst *inst);
 
-// Data island related api
+// Data island (and audio) related api
+void dvi_audio_init(struct dvi_inst *inst);
 void dvi_enable_data_island(struct dvi_inst *inst);
 void dvi_update_data_island_ptr(struct dvi_scanline_dma_list *dma_list, data_island_stream_t *stream);
 void dvi_audio_sample_buffer_set(struct dvi_inst *inst, audio_sample_t *buffer, int size);
 void dvi_set_audio_freq(struct dvi_inst *inst, int freq, int cts, int n);
+void dvi_update_data_packet(struct dvi_inst *inst);
 #endif
