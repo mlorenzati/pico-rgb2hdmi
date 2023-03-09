@@ -53,7 +53,6 @@
 
 // --------- Global register start --------- 
 struct dvi_inst     dvi0;
-static uint         hdmi_scanline = 2;
 const uint          LED_PIN       = PICO_DEFAULT_LED_PIN;
 uint                keyboard_gpio_pins[KEYBOARD_N_PINS] = { KEYBOARD_PIN_UP, KEYBOARD_PIN_DOWN, KEYBOARD_PIN_ACTION };
 menu_event_type     menu_event_map[KEYBOARD_N_PINS]     = { menu_event_next, menu_event_previous, menu_event_action };
@@ -95,19 +94,16 @@ void __not_in_flash_func(core1_main)() {
     __builtin_unreachable();
 }
 
-static inline void core1_scanline_callback() {
+static inline void core1_scanline_callback(uint buffer_line) {
     #if DVI_SYMBOLS_PER_WORD == 2
         uint16_t *bufptr = NULL;
     #else
         uint8_t *bufptr  = NULL;
     #endif
     while (queue_try_remove_u32(&dvi0.q_colour_free, &bufptr));
-    
-    bufptr = &framebuf[hdmi_scanline][0];
+
+    bufptr = &framebuf[(buffer_line + 2)%FRAME_HEIGHT][0];
     queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
-    if (++hdmi_scanline >= FRAME_HEIGHT) {
-        hdmi_scanline = 0;
-    }
 }
 // ---------  DVI API CALL END  --------- 
 
@@ -151,7 +147,7 @@ void command_line_loop() {
     }
 }
 
-int main() {
+ int main() {
     vreg_set_voltage(VREG_VSEL);
     sleep_ms(10);
 
@@ -192,7 +188,8 @@ int main() {
     #else
         uint8_t  *bufptr = GET_RGB8_BUFFER(GET_VIDEO_PROPS().video_buffer);
     #endif
-    
+
+    //Prepare in advance two lines
     queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
     bufptr += FRAME_WIDTH;
     queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);

@@ -193,32 +193,22 @@ static inline void __dvi_func_x(_dvi_prepare_scanline_16bpp)(struct dvi_inst *in
 
 // Version where each record in q_colour_valid is one scanline:
 void __dvi_func(dvi_scanbuf_main_8bpp)(struct dvi_inst *inst) {
-	uint y = 0;
 	while (1) {
 		uint32_t *scanbuf = NULL;
 		queue_remove_blocking_u32(&inst->q_colour_valid, &scanbuf);
 		_dvi_prepare_scanline_8bpp(inst, scanbuf);
 		queue_add_blocking_u32(&inst->q_colour_free, &scanbuf);
-		++y;
-		if (y == inst->timing->v_active_lines) {
-			y = 0;
-		}
 	}
 	__builtin_unreachable();
 }
 
 // Ugh copy/paste but it lets us garbage collect the TMDS stuff that is not being used from .scratch_x
 void __dvi_func(dvi_scanbuf_main_16bpp)(struct dvi_inst *inst) {
-	uint y = 0;
 	while (1) {
 		uint32_t *scanbuf = NULL;
 		queue_remove_blocking_u32(&inst->q_colour_valid, &scanbuf);
 		_dvi_prepare_scanline_16bpp(inst, scanbuf);
 		queue_add_blocking_u32(&inst->q_colour_free, &scanbuf);
-		++y;
-		if (y == inst->timing->v_active_lines) {
-			y = 0;
-		}
 	}
 	__builtin_unreachable();
 }
@@ -263,8 +253,9 @@ static void __dvi_func(dvi_dma_irq_handler)(struct dvi_inst *inst) {
 	else {
 		// No valid scanline was ready (generates solid red scanline)
 		tmdsbuf = NULL;
-		if (inst->timing_state.v_ctr % DVI_VERTICAL_REPEAT == DVI_VERTICAL_REPEAT - 1)
-			++inst->late_scanline_ctr;
+		if (inst->timing_state.v_ctr % DVI_VERTICAL_REPEAT == DVI_VERTICAL_REPEAT - 1) {
+            ++inst->late_scanline_ctr;
+        }	
 	}
 
 	switch (inst->timing_state.v_state) {
@@ -277,7 +268,7 @@ static void __dvi_func(dvi_dma_irq_handler)(struct dvi_inst *inst) {
 				_dvi_load_dma_op(inst->dma_cfg, &inst->dma_list_error);
 			}
 			if (inst->scanline_callback && inst->timing_state.v_ctr % DVI_VERTICAL_REPEAT == DVI_VERTICAL_REPEAT - 1) {
-				inst->scanline_callback();
+				inst->scanline_callback(inst->timing_state.v_ctr/DVI_VERTICAL_REPEAT);
 			}
 			break;
 		case DVI_STATE_SYNC:

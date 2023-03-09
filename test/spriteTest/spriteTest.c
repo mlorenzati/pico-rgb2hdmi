@@ -48,7 +48,6 @@ struct dvi_inst dvi0;
 uint gpio_pins[3] = { KEYBOARD_PIN_UP, KEYBOARD_PIN_DOWN, KEYBOARD_PIN_ACTION };
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
-volatile uint hdmi_scanline = 2;
 
 sprite_t berry[N_LOGOS];
 int vx[N_LOGOS];
@@ -75,18 +74,15 @@ void __not_in_flash_func(core1_main)() {
     __builtin_unreachable();
 }
 
-static inline void core1_scanline_callback() {
+static inline void core1_scanline_callback(uint buffer_line) {
     #if DVI_SYMBOLS_PER_WORD == 2
         uint16_t *bufptr = NULL;
     #else
         uint8_t *bufptr  = NULL;
     #endif
     while (queue_try_remove_u32(&dvi0.q_colour_free, &bufptr));
-    bufptr = &framebuf[hdmi_scanline][0];
+    bufptr = &framebuf[(buffer_line + 2)%FRAME_HEIGHT][0];
     queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
-    if (++hdmi_scanline >= FRAME_HEIGHT) {
-        hdmi_scanline = 0;
-    }
 }
 
 void on_keyboard_event(keyboard_status_t keys) {

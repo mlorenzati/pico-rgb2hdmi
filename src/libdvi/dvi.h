@@ -14,7 +14,7 @@
     #define TMDS_CHANNELS   3
 #endif
 
-typedef void (*dvi_callback_t)(void);
+typedef void (*dvi_callback_t)(uint);
 
 struct dvi_inst {
 	// Config ---
