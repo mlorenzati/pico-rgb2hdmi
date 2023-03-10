@@ -30,6 +30,13 @@ enum dvi_line_state {
 	DVI_STATE_COUNT
 };
 
+typedef struct dvi_blank {
+    int left;
+    int right;
+    int top;
+    int bottom;
+} dvi_blank_t;
+
 struct dvi_timing_state {
 	uint v_ctr;
 	enum dvi_line_state v_state;

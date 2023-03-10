@@ -20,7 +20,7 @@ static void dvi_dma1_irq();
 
 void dvi_init(struct dvi_inst *inst, uint spinlock_tmds_queue, uint spinlock_colour_queue) {
     inst->dvi_started = false;
-    inst->dvi_line_count  = 0;
+    inst->timing_state.v_ctr  = 0;
     inst->dvi_frame_count = 0;
     
     dvi_audio_init(inst);
@@ -260,24 +260,39 @@ static void __dvi_func(dvi_dma_irq_handler)(struct dvi_inst *inst) {
 
 	switch (inst->timing_state.v_state) {
 		case DVI_STATE_ACTIVE:
-			if (tmdsbuf) {
-				dvi_update_scanline_data_dma(inst->timing, tmdsbuf, &inst->dma_list_active);
-				_dvi_load_dma_op(inst->dma_cfg, &inst->dma_list_active);
-			}
-			else {
-				_dvi_load_dma_op(inst->dma_cfg, &inst->dma_list_error);
-			}
-			if (inst->scanline_callback && inst->timing_state.v_ctr % DVI_VERTICAL_REPEAT == DVI_VERTICAL_REPEAT - 1) {
-				inst->scanline_callback(inst->timing_state.v_ctr/DVI_VERTICAL_REPEAT);
-			}
+            if (inst->timing_state.v_ctr < inst->blank_settings.top || inst->timing_state.v_ctr >= (inst->timing->v_active_lines - inst->blank_settings.bottom)) {
+                // Is a Blank Line
+                _dvi_load_dma_op(inst->dma_cfg, &inst->dma_list_active_blank);
+            } else {
+                if (tmdsbuf) {
+                    dvi_update_scanline_data_dma(inst->timing, tmdsbuf, &inst->dma_list_active);
+                    _dvi_load_dma_op(inst->dma_cfg, &inst->dma_list_active);
+                }
+                else {
+                    _dvi_load_dma_op(inst->dma_cfg, &inst->dma_list_error);
+                }
+                if (inst->scanline_callback && inst->timing_state.v_ctr % DVI_VERTICAL_REPEAT == DVI_VERTICAL_REPEAT - 1) {
+                    inst->scanline_callback(inst->timing_state.v_ctr/DVI_VERTICAL_REPEAT);
+                }
+                if (inst->scanline_is_enabled && (inst->timing_state.v_ctr & 1)) {
+                    _dvi_load_dma_op(inst->dma_cfg, &inst->dma_list_active_blank);
+                }
+            }
 			break;
 		case DVI_STATE_SYNC:
 			_dvi_load_dma_op(inst->dma_cfg, &inst->dma_list_vblank_sync);
+            if (inst->timing_state.v_ctr == 0) {
+                ++inst->dvi_frame_count;
+            }
 			break;
 		default:
 			_dvi_load_dma_op(inst->dma_cfg, &inst->dma_list_vblank_nosync);
 			break;
 	}
+    
+    if (inst->data_island_is_enabled) {
+        dvi_update_data_packet(inst);
+    }
 }
 
 static void __dvi_func(dvi_dma0_irq)() {
@@ -295,6 +310,7 @@ static void __dvi_func(dvi_dma1_irq)() {
 // DVI Data island related
 void dvi_audio_init(struct dvi_inst *inst) {
     inst->data_island_is_enabled = false;
+    inst->scanline_is_enabled = false;
     inst->audio_freq = 0;
     inst->samples_per_frame = 0;
     inst->samples_per_line16 = 0;
@@ -331,15 +347,21 @@ void dvi_audio_sample_buffer_set(struct dvi_inst *inst, audio_sample_t *buffer, 
     audio_ring_set(&inst->audio_ring, buffer, size);
 }
 
-void dvi_set_audio_freq(struct dvi_inst *inst, int freq, int cts, int n) {
-    inst->audio_freq = freq;
+// video_freq: video sampling frequency
+// audio_freq: audio sampling frequency
+// CTS: Cycle Time Stamp
+// N: HDMI Constant
+// 128 * audio_freq = video_freq * N / CTS
+// e.g.: video_freq = 23495525, audio_freq = 44100 , CTS = 28000, N = 6727 
+void dvi_set_audio_freq(struct dvi_inst *inst, int audio_freq, int cts, int n) {
+    inst->audio_freq = audio_freq;
     set_audio_clock_regeneration(&inst->audio_clock_regeneration, cts, n);
-    set_audio_info_frame(&inst->audio_info_frame, freq);
+    set_audio_info_frame(&inst->audio_info_frame, audio_freq);
     uint pixelClock =   dvi_timing_get_pixel_clock(inst->timing);
     uint nPixPerFrame = dvi_timing_get_pixels_per_frame(inst->timing);
     uint nPixPerLine =  dvi_timing_get_pixels_per_line(inst->timing);
-    inst->samples_per_frame  = (uint64_t)(freq) * nPixPerFrame / pixelClock;
-    inst->samples_per_line16 = (uint64_t)(freq) * nPixPerLine * 65536 / pixelClock;
+    inst->samples_per_frame  = (uint64_t)(audio_freq) * nPixPerFrame / pixelClock;
+    inst->samples_per_line16 = (uint64_t)(audio_freq) * nPixPerLine * 65536 / pixelClock;
     dvi_enable_data_island(inst);
 }
 
@@ -355,7 +377,7 @@ bool dvi_update_data_packet_(struct dvi_inst *inst, data_packet_t *packet) {
 
     inst->audio_sample_pos += inst->samples_per_line16;
     if (inst->timing_state.v_state == DVI_STATE_FRONT_PORCH) {
-        if (inst->dvi_line_count == 0) {
+        if (inst->timing_state.v_ctr == 0) {
             if (inst->dvi_frame_count & 1) {
                 *packet = inst->avi_info_frame;
             } else {
@@ -364,7 +386,7 @@ bool dvi_update_data_packet_(struct dvi_inst *inst, data_packet_t *packet) {
             inst->left_audio_sample_count = inst->samples_per_frame;
 
             return true;
-        } else if (inst->dvi_line_count == 1) {
+        } else if (inst->timing_state.v_ctr == 1) {
             *packet = inst->audio_clock_regeneration;
 
             return true;
@@ -374,7 +396,7 @@ bool dvi_update_data_packet_(struct dvi_inst *inst, data_packet_t *packet) {
     int n = MAX(0, MIN(4, MIN(inst->audio_sample_pos >> 16, get_read_size(&inst->audio_ring, false))));
     if (n) {
         audio_sample_t *audio_sample_ptr = get_read_pointer(&inst->audio_ring);
-        inst->audio_frame_count = set_audio_sample(packet, (const int16_t **) audio_sample_ptr, n, inst->audio_frame_count);
+        inst->audio_frame_count = set_audio_sample(packet, audio_sample_ptr, n, inst->audio_frame_count);
         increase_read_pointer(&inst->audio_ring, n);
         
         return true;
@@ -388,5 +410,6 @@ void dvi_update_data_packet(struct dvi_inst *inst) {
     if (!dvi_update_data_packet_(inst, &packet)) {
         set_null(&packet);
     }
-    //dma_.updateNextDataPacket(lineState_, packet, *timing_);
+    bool vsync = inst->timing_state.v_state == DVI_STATE_SYNC;
+    encode(&inst->next_data_stream, &packet, inst->timing->v_sync_polarity == vsync, inst->timing->h_sync_polarity);
 }

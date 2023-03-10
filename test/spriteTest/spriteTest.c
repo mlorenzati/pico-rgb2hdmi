@@ -174,7 +174,7 @@ int main() {
                 //berry[i].vflip = vy[i] < 0;
             }
         }    
-        while(hdmi_scanline != 50) {
+        while((dvi0.timing_state.v_ctr >> 1) < ((FRAME_HEIGHT*7)/10)) {
         }
 
         for (uint y = 0; y < FRAME_HEIGHT; ++y) {

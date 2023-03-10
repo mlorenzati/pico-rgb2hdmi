@@ -2,7 +2,7 @@
 #include <hardware/sync.h>
 
 void audio_ring_set(audio_ring_t *audio_ring, audio_sample_t *buffer, uint32_t size) {
-    assert(size <= 1);
+    assert(size > 1);
     audio_ring->buffer = buffer;
     audio_ring->size   = size;
     audio_ring->read   = 0;

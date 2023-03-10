@@ -44,19 +44,19 @@
     #define HSYNC_BACK_PORCH    50
 #endif 
 
-#define V_FRONT_PORCH   42
-#define V_BACK_PORCH    54
+#define V_FRONT_PORCH       42
+#define V_BACK_PORCH        54
 
-#define REFRESH_RATE    50
-#define VREG_VSEL       VREG_VOLTAGE_1_20
-#define DVI_TIMING      dvi_timing_640x480p_60hz
-
+#define REFRESH_RATE        50
+#define VREG_VSEL           VREG_VOLTAGE_1_20
+#define DVI_TIMING          dvi_timing_640x480p_60hz
+#define AUDIO_BUFFER_SIZE   256
 // --------- Global register start --------- 
 struct dvi_inst     dvi0;
 const uint          LED_PIN       = PICO_DEFAULT_LED_PIN;
 uint                keyboard_gpio_pins[KEYBOARD_N_PINS] = { KEYBOARD_PIN_UP, KEYBOARD_PIN_DOWN, KEYBOARD_PIN_ACTION };
 menu_event_type     menu_event_map[KEYBOARD_N_PINS]     = { menu_event_next, menu_event_previous, menu_event_action };
-
+audio_sample_t      audio_buffer[AUDIO_BUFFER_SIZE];
 cmd_parser_option_t options[] =
 {
     {"up",      TRUE,  NULL,  'u'},
@@ -181,6 +181,12 @@ void command_line_loop() {
     dvi0.scanline_callback = core1_scanline_callback;
     dvi_init(&dvi0, next_striped_spin_lock_num(), next_striped_spin_lock_num());
 
+    // HDMI Audio related
+    // dvi_get_blank_settings(&dvi0)->top    = 4 * 2;
+    // dvi_get_blank_settings(&dvi0)->bottom = 4 * 2;
+    dvi_audio_sample_buffer_set(&dvi0, audio_buffer, AUDIO_BUFFER_SIZE);
+    //dvi_set_audio_freq(&dvi0, 44100, 28000, 6272); 
+
     // Prepare DVI for the first time the two initial lines, passing core 1 the framebuffer
     // Start the Core1, dedicated for DVI
     #if DVI_SYMBOLS_PER_WORD == 2
@@ -228,3 +234,14 @@ void command_line_loop() {
 
     __builtin_unreachable();
 }    
+
+// Audio Feed example
+//     int size = get_write_size(&dvi0.audio_ring, false);
+//     audio_sample_t *audio_ptr = get_write_pointer(&dvi0.audio_ring);
+//     audio_sample_t sample;
+//     for (int cnt = 0; cnt < size; cnt++) {
+//         sample.channels[0] = sample.channels[0] + 1;
+//         sample.channels[1] = sample.channels[1] - 1;
+//         *audio_ptr++ = sample;
+//     }
+//     increase_write_pointer(&dvi0.audio_ring, size);

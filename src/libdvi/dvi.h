@@ -7,7 +7,6 @@
 #include "dvi_serialiser.h"
 #include "util_queue_u32_inline.h"
 #include "data_packet.h"
-#include "audio_ring.h"
 
 #define TMDS_SYNC_LANE  0 // blue!
 #ifndef TMDS_CHANNELS
@@ -22,6 +21,7 @@ struct dvi_inst {
 	struct dvi_lane_dma_cfg dma_cfg[N_TMDS_LANES];
 	struct dvi_timing_state timing_state;
 	struct dvi_serialiser_cfg ser_cfg;
+    dvi_blank_t blank_settings;
 	// Called in the DMA IRQ once per scanline -- careful with the run time!
 	dvi_callback_t scanline_callback;
 
@@ -50,7 +50,6 @@ struct dvi_inst {
 	queue_t q_colour_valid;
 	queue_t q_colour_free;
     bool    dvi_started;
-    uint    dvi_line_count;
     uint    dvi_frame_count;
 
     //Data Packet related
@@ -62,6 +61,7 @@ struct dvi_inst {
     int samples_per_line16;
     
     bool data_island_is_enabled;
+    bool scanline_is_enabled;
     data_island_stream_t next_data_stream;
     audio_ring_t  audio_ring;
 
@@ -110,6 +110,12 @@ void dvi_audio_init(struct dvi_inst *inst);
 void dvi_enable_data_island(struct dvi_inst *inst);
 void dvi_update_data_island_ptr(struct dvi_scanline_dma_list *dma_list, data_island_stream_t *stream);
 void dvi_audio_sample_buffer_set(struct dvi_inst *inst, audio_sample_t *buffer, int size);
-void dvi_set_audio_freq(struct dvi_inst *inst, int freq, int cts, int n);
+void dvi_set_audio_freq(struct dvi_inst *inst, int audio_freq, int cts, int n);
 void dvi_update_data_packet(struct dvi_inst *inst);
+inline void dvi_set_scanline(struct dvi_inst *inst, bool value) {
+    inst->scanline_is_enabled = value;
+}
+inline dvi_blank_t *dvi_get_blank_settings(struct dvi_inst *inst) {
+    return &inst->blank_settings;
+}
 #endif

@@ -202,7 +202,7 @@ void __not_in_flash_func(set_null)(data_packet_t *data_packet) {
     memset(data_packet, 0, sizeof(data_packet_t));
 }
 
-int  __not_in_flash_func(set_audio_sample)(data_packet_t *data_packet, const int16_t **p, int n, int frameCt) {
+int  __not_in_flash_func(set_audio_sample)(data_packet_t *data_packet, const audio_sample_t *p, int n, int frameCt) {
     const int layout = 0;
     const int samplePresent = (1 << n) - 1;
     const int B = frameCt < 4 ? 1 << frameCt : 0;
@@ -213,8 +213,8 @@ int  __not_in_flash_func(set_audio_sample)(data_packet_t *data_packet, const int
 
     for (int i = 0; i < n; ++i)
     {
-        const int16_t l = (*p)[0];
-        const int16_t r = (*p)[1];
+        const int16_t l = (*p).channels[0];
+        const int16_t r = (*p).channels[1];
         const uint8_t vuc = 1; // valid
         uint8_t *d = data_packet->subpacket[i];
         d[0] = 0;
