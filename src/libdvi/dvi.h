@@ -36,8 +36,8 @@ struct dvi_inst {
 	// time, two IRQs must go by before freeing. The first indicates the control
 	// block for this buf has been loaded, and the second occurs some time after
 	// the actual data DMA transfer has completed.
-	uint32_t *tmds_buf_release_next;
-	uint32_t *tmds_buf_release;
+	uint32_t *tmds_buf_release[2];
+
 	// Remember how far behind the source is on TMDS scanlines, so we can output
 	// solid colour until they catch up (rather than dying spectacularly)
 	uint late_scanline_ctr;

@@ -33,8 +33,8 @@ void dvi_init(struct dvi_inst *inst, uint spinlock_tmds_queue, uint spinlock_col
 		inst->dma_cfg[i].dreq = pio_get_dreq(inst->ser_cfg.pio, inst->ser_cfg.sm_tmds[i], true);
 	}
 	inst->late_scanline_ctr = 0;
-	inst->tmds_buf_release_next = NULL;
-	inst->tmds_buf_release = NULL;
+	inst->tmds_buf_release[0] = NULL;
+	inst->tmds_buf_release[1] = NULL;
 	queue_init_with_spinlock(&inst->q_tmds_valid,   sizeof(void*),  8, spinlock_tmds_queue);
 	queue_init_with_spinlock(&inst->q_tmds_free,    sizeof(void*),  8, spinlock_tmds_queue);
 	queue_init_with_spinlock(&inst->q_colour_valid, sizeof(void*),  8, spinlock_colour_queue);
@@ -91,14 +91,14 @@ void dvi_unregister_irqs_this_core(struct dvi_inst *inst, uint irq_num) {
     } else {
          irq_remove_handler(DMA_IRQ_1, dvi_dma1_irq);
     }
-    if (inst->tmds_buf_release) {
-        queue_try_add_u32(&inst->q_tmds_free, &inst->tmds_buf_release);
+    if (inst->tmds_buf_release[1]) {
+        queue_try_add_u32(&inst->q_tmds_free, &inst->tmds_buf_release[1]);
     }
-    if (inst->tmds_buf_release_next) {
-        queue_try_add_u32(&inst->q_tmds_free, &inst->tmds_buf_release_next);
+    if (inst->tmds_buf_release[0]) {
+        queue_try_add_u32(&inst->q_tmds_free, &inst->tmds_buf_release[0]);
     }
-	inst->tmds_buf_release = NULL;
-	inst->tmds_buf_release_next = NULL;
+	inst->tmds_buf_release[1] = NULL;
+	inst->tmds_buf_release[0] = NULL;
 }
 
 // Set up control channels to make transfers to data channels' control
@@ -218,11 +218,11 @@ static void __dvi_func(dvi_dma_irq_handler)(struct dvi_inst *inst) {
 	// now have until the end of this region to generate DMA blocklist for next
 	// scanline.
 	dvi_timing_state_advance(inst->timing, &inst->timing_state);
-	if (inst->tmds_buf_release && !queue_try_add_u32(&inst->q_tmds_free, &inst->tmds_buf_release)) {
+	if (inst->tmds_buf_release[1] && !queue_try_add_u32(&inst->q_tmds_free, &inst->tmds_buf_release[1])) {
         panic("TMDS free queue full in IRQ!");
     }
-	inst->tmds_buf_release = inst->tmds_buf_release_next;
-	inst->tmds_buf_release_next = NULL;
+	inst->tmds_buf_release[1] = inst->tmds_buf_release[0];
+	inst->tmds_buf_release[0] = NULL;
 
 	// Make sure all three channels have definitely loaded their last block
 	// (should be within a few cycles of one another)
@@ -247,7 +247,7 @@ static void __dvi_func(dvi_dma_irq_handler)(struct dvi_inst *inst) {
 	else if (queue_try_peek_u32(&inst->q_tmds_valid, &tmdsbuf)) {
 		if (inst->timing_state.v_ctr % DVI_VERTICAL_REPEAT == DVI_VERTICAL_REPEAT - 1) {
 			queue_remove_blocking_u32(&inst->q_tmds_valid, &tmdsbuf);
-			inst->tmds_buf_release_next = tmdsbuf;
+			inst->tmds_buf_release[0] = tmdsbuf;
 		}
 	}
 	else {
