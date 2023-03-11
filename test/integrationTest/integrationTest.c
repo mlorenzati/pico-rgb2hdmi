@@ -185,7 +185,7 @@ void command_line_loop() {
     // dvi_get_blank_settings(&dvi0)->top    = 4 * 2;
     // dvi_get_blank_settings(&dvi0)->bottom = 4 * 2;
     dvi_audio_sample_buffer_set(&dvi0, audio_buffer, AUDIO_BUFFER_SIZE);
-    //dvi_set_audio_freq(&dvi0, 44100, 28000, 6272); 
+    dvi_set_audio_freq(&dvi0, 44100, 28000, 6272); 
 
     // Prepare DVI for the first time the two initial lines, passing core 1 the framebuffer
     // Start the Core1, dedicated for DVI

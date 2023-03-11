@@ -17,7 +17,7 @@ uint32_t get_write_size(audio_ring_t *audio_ring, bool full) {
         return rp - wp - 1;
     } else {
         uint32_t size = audio_ring->size - wp;
-        return full ? ( size + rp - 1) : (rp == 0 ? size - 1 : size);
+        return full ? ( size - wp + rp - 1) : (size - wp - (rp == 0 ? 1 : 0));
     }   
 }
 
@@ -25,8 +25,9 @@ uint32_t get_read_size(audio_ring_t *audio_ring, bool full) {
     __mem_fence_acquire();
     uint32_t rp = audio_ring->read;
     uint32_t wp = audio_ring->write;
+    
     if (wp < rp) {
-        return audio_ring->size - rp + (full ? audio_ring->size: 0);
+        return audio_ring->size - rp + (full ? wp : 0);
     } else {
         return wp - rp;
     }    
