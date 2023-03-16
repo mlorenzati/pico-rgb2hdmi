@@ -153,31 +153,28 @@ typedef struct wm8213_afe_config {
     wm8213_afe_setups_t setups;
     char                verify_retries;
     PIO                 pio;
-	uint                sm_afe_cp;
+    uint                sm_capture[2];
     uint                pin_base_afe_op;
     uint                pin_base_afe_ctrl;
+    uint                pin_hsync;
     color_bppx          bppx;
 } wm8213_afe_config_t;
 
 typedef struct wm8213_afe_capture {
     PIO  pio;
-    uint sm;
+    const uint *sm_capture;
     uint capture_dma;
     uint front_porch_dma;
     uint sampling_rate;
     color_bppx bppx;
-    uint op_pins, control_pins;
-    uint pio_offset;
+    uint hsync_pin, op_pins, control_pins;
+    uint pio_offset[2];
     wm8213_afe_config_t config;
 } wm8213_afe_capture_t;
 
 extern wm8213_afe_capture_t wm8213_afe_capture_global;
 
 int  wm8213_afe_setup(const wm8213_afe_config_t* config, uint sampling_rate);
-
-static inline void afe_capture_rx_fifo_drain(PIO  pio, uint sm) {
-    for (int i = 0; i < AFE_PIO_FIFO_FORCE_DUMP; i++) pio_sm_get(pio, sm);
-}
 
 static inline bool wm8213_afe_capture_run(uint hFrontPorch, uintptr_t buffer, uint size) {
      //Don't interrupt running DMAs!
@@ -188,12 +185,6 @@ static inline bool wm8213_afe_capture_run(uint hFrontPorch, uintptr_t buffer, ui
     
     dma_channel_hw_addr(capture_dma)->al1_write_addr = buffer;
     dma_channel_hw_addr(capture_dma)->transfer_count = size;
-
-    PIO pio = wm8213_afe_capture_global.pio;
-    uint sm = wm8213_afe_capture_global.sm;
-    pio_sm_set_enabled(pio, sm, false);
-    afe_capture_rx_fifo_drain(pio, sm);
-    pio_sm_set_enabled(pio, sm, true);
     dma_channel_hw_addr(wm8213_afe_capture_global.front_porch_dma)->al1_transfer_count_trig = hFrontPorch;
     return true;
 }

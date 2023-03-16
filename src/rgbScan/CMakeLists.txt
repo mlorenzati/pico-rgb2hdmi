@@ -21,5 +21,5 @@ target_link_libraries(rgbScan INTERFACE
     hardware_pio
     color
 )
-
+pico_generate_pio_header(rgbScan ${CMAKE_CURRENT_LIST_DIR}/afeFrontPorch.pio)
 pico_generate_pio_header(rgbScan ${CMAKE_CURRENT_LIST_DIR}/wm8213Afe.pio)
