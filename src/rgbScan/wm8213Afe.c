@@ -8,7 +8,6 @@
 static uint        afe_cs = -1;
 static spi_inst_t *afe_spi;
 static bool        spi_write_only_mode = true;
-uint16_t           dummy_dma_read;
 
 //Global Afe Capture vars
 wm8213_afe_capture_t wm8213_afe_capture_global;
@@ -126,20 +125,20 @@ void wm8213_afe_capture_setup_from_global() {
             break;
     }
     const pio_program_t * front_porch_program = &afe_front_porch_program;
-    for (uint index = 0; index < 2;index++) {
-        if (wm8213_afe_capture_global.pio_offset == 0) {
-            continue;
+    for (uint index = 0; index < 2; index++) {
+        if (wm8213_afe_capture_global.pio_offset[index] > 0) {
+            pio_sm_set_enabled(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm_capture[index], false);
+            pio_remove_program(wm8213_afe_capture_global.pio, index == 0 ? front_porch_program : capture_program, wm8213_afe_capture_global.pio_offset[index]);
+            pio_sm_restart(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm_capture[index]);
         }
-        pio_sm_set_enabled(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm_capture[index], false);
-        pio_remove_program(wm8213_afe_capture_global.pio, capture_program, wm8213_afe_capture_global.pio_offset[index]);
-        pio_sm_restart(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm_capture[index]);
     }
 
     wm8213_afe_capture_global.pio_offset[0] = pio_add_program(wm8213_afe_capture_global.pio, front_porch_program);
     wm8213_afe_capture_global.pio_offset[1] = pio_add_program(wm8213_afe_capture_global.pio, capture_program);
-    afe_front_porch_init(    wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm_capture[0], wm8213_afe_capture_global.pio_offset[0], wm8213_afe_capture_global.sampling_rate, wm8213_afe_capture_global.hsync_pin, wm8213_afe_capture_global.control_pins);
+    afe_front_porch_init(    wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm_capture[0], wm8213_afe_capture_global.pio_offset[0], wm8213_afe_capture_global.sampling_rate, wm8213_afe_capture_global.hsync_pin);
     afe_capture_program_init(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm_capture[1], wm8213_afe_capture_global.pio_offset[1], wm8213_afe_capture_global.sampling_rate, op_pins, wm8213_afe_capture_global.control_pins, op_bits);
     
+    wm8213_afe_capture_start(true);
     // Give DMA R/W priority over the Bus
     //bus_ctrl_hw->priority = BUSCTRL_BUS_PRIORITY_DMA_W_BITS | BUSCTRL_BUS_PRIORITY_DMA_R_BITS;
 }
@@ -172,18 +171,18 @@ void afe_dma_prepare(PIO pio, const uint *sm) {
     wm8213_afe_capture_global.front_porch_dma = dma_claim_unused_channel(true);
 
     dma_channel_config front_porch_dma_channel_cfg = dma_channel_get_default_config(wm8213_afe_capture_global.front_porch_dma);
-    channel_config_set_transfer_data_size(&front_porch_dma_channel_cfg, wm8213_afe_capture_global.bppx == DMA_SIZE_16);   //Transfers a single 16 word with the amount of pixels*12 to wait
-    channel_config_set_dreq(&front_porch_dma_channel_cfg, pio_get_dreq(pio, sm[0], false)); // Pace transfers based on PIO samples availabilty
-    channel_config_set_read_increment(&front_porch_dma_channel_cfg, false);
+    channel_config_set_transfer_data_size(&front_porch_dma_channel_cfg, DMA_SIZE_16);   //Transfers a single 16 word with the amount of pixels*12 to wait
+    channel_config_set_dreq(&front_porch_dma_channel_cfg, pio_get_dreq(pio, sm[0], true)); // Pace transfers based on PIO samples availabilty
+    channel_config_set_read_increment(&front_porch_dma_channel_cfg, true);
     channel_config_set_write_increment(&front_porch_dma_channel_cfg, false);
     channel_config_set_chain_to(&front_porch_dma_channel_cfg, wm8213_afe_capture_global.capture_dma);
 
     dma_channel_configure(wm8213_afe_capture_global.front_porch_dma,
         &front_porch_dma_channel_cfg,
-        &dummy_dma_read,   // Destination: dummy
-        &pio->rxf[sm[0]],  // Source
-        0,                 // Size: will be set later
-        false
+        &pio->txf[sm[0]],      // Destination: SM
+        wm8213_afe_capture_global.front_porch_pixels, // Source
+        2,                     // Size: always 2 words (the pixels to wait and a dummy word to wait)
+        true
     );
 
     dma_channel_config afe_dma_channel_cfg = dma_channel_get_default_config(wm8213_afe_capture_global.capture_dma);
@@ -197,7 +196,7 @@ void afe_dma_prepare(PIO pio, const uint *sm) {
         NULL,              // Destination: will be set later
         &pio->rxf[sm[1]],  // Source
         0,                 // Size: will be set later
-        false
+        true
     );
 }
 
@@ -218,9 +217,9 @@ void wm8213_afe_capture_wait() {
     dma_channel_wait_for_finish_blocking(wm8213_afe_capture_global.capture_dma);
 }
 
-void wm8213_afe_capture_stop() {
-    pio_sm_set_enabled(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm_capture[0], false);
-    pio_sm_set_enabled(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm_capture[1], false);
+void wm8213_afe_capture_start(bool value) {
+    pio_sm_set_enabled(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm_capture[0], value);
+    pio_sm_set_enabled(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm_capture[1], value);
 }
 
 void wm8213_afe_update_gain(uint16_t red, uint16_t green, uint16_t blue, bool commit) {

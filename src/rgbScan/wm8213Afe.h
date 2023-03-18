@@ -166,6 +166,7 @@ typedef struct wm8213_afe_capture {
     uint capture_dma;
     uint front_porch_dma;
     uint sampling_rate;
+    uint16_t front_porch_pixels[2];
     color_bppx bppx;
     uint hsync_pin, op_pins, control_pins;
     uint pio_offset[2];
@@ -176,20 +177,20 @@ extern wm8213_afe_capture_t wm8213_afe_capture_global;
 
 int  wm8213_afe_setup(const wm8213_afe_config_t* config, uint sampling_rate);
 
-static inline bool wm8213_afe_capture_run(uint hFrontPorch, uintptr_t buffer, uint size) {
-     //Don't interrupt running DMAs!
+static inline bool wm8213_afe_capture_run(uint16_t hFrontPorch, uintptr_t buffer, uint size) {
     uint capture_dma = wm8213_afe_capture_global.capture_dma;
-    if (dma_channel_is_busy(capture_dma)) {
-        return false;
-    }
+    uint front_porch_dma = wm8213_afe_capture_global.front_porch_dma;
     
     dma_channel_hw_addr(capture_dma)->al1_write_addr = buffer;
     dma_channel_hw_addr(capture_dma)->transfer_count = size;
-    dma_channel_hw_addr(wm8213_afe_capture_global.front_porch_dma)->al1_transfer_count_trig = hFrontPorch;
+    wm8213_afe_capture_global.front_porch_pixels[0] = hFrontPorch * 24;
+    wm8213_afe_capture_global.front_porch_pixels[1] = 1;
+    dma_channel_hw_addr(front_porch_dma)->al1_read_addr = (uintptr_t)wm8213_afe_capture_global.front_porch_pixels;
+    dma_channel_hw_addr(front_porch_dma)->al1_transfer_count_trig = 2;
     return true;
 }
 
-void wm8213_afe_capture_stop();
+void wm8213_afe_capture_start(bool value);
 void wm8213_afe_capture_wait();
 void wm8213_afe_capture_update_sampling_rate(uint sampling_rate);
 void wm8213_afe_capture_update_bppx(color_bppx bppx);

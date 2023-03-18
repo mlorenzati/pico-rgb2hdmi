@@ -3,33 +3,25 @@
 ; Mantains AFE Lines in low to avoid noise
 .program  afe_front_porch
 .wrap_target
-    pull            ; Get clocks to wait
-    mov x, osr      ; Store it in local register X
+    pull           ; Get clocks to wait
+    mov x, osr     ; Store it in local register X
     wait 0 pin 0    ; Wait for the low
     wait 1 pin 0    ; Wait for the high (with both a rising edge)
-front_porch_wait:   ; Wait for the specified number of cycles
+front_porch_wait:        ; Wait for the specified number of cycles
     jmp x-- front_porch_wait
-    pull            ; dummy to force DREQ
+    pull           ; dummy to force DREQ
 .wrap
 
 % c-sdk {
 #include "hardware/clocks.h"
 #define AFE_CLOCKS_PER_PIXEL 12
 #define AFE_CTRL_BITS        3
-static inline void afe_front_porch_init(PIO pio, uint sm, uint offset, uint sampling_rate, uint hsync_pin, uint control_pins) {
+static inline void afe_front_porch_init(PIO pio, uint sm, uint offset, uint sampling_rate, uint hsync_pin) {
     // Initialize HSYNC PIN
     pio_gpio_init(pio, hsync_pin);
 
-    // Initialize AFE Control PINS
-    for (uint i = control_pins; i < control_pins + AFE_CTRL_BITS; ++i) {
-        pio_gpio_init(pio, i);
-    }
-
     // Set the HSYNC pin direction to input
     pio_sm_set_consecutive_pindirs(pio, sm, hsync_pin, 1, false);
-
-    //Control pins are just outputs to control the AFE reset and capture & clocking
-    pio_sm_set_consecutive_pindirs(pio, sm, control_pins, AFE_CTRL_BITS,  true);
 
     // Create new state machine config
     pio_sm_config c = afe_front_porch_program_get_default_config (offset);
@@ -38,14 +30,11 @@ static inline void afe_front_porch_init(PIO pio, uint sm, uint offset, uint samp
     sm_config_set_fifo_join (&c, PIO_FIFO_JOIN_TX);
 
     // Shift register do not shift 
-    sm_config_set_out_shift(&c, true, false, 0);
+    sm_config_set_out_shift(&c, false, true, 0);
     sm_config_set_in_shift(&c, true, false, 0); 
 
     // Map the HSYNC IN pin group to one pin, namely the `pin`
     sm_config_set_in_pins (&c, hsync_pin);
-
-    // Map the AFE control pins as side step
-    sm_config_set_sideset_pins(&c, control_pins);
 
     // Set the Clocking to 12 times the sampling rate (as in AFE)
     float div = (float)(clock_get_hz(clk_sys) / (float)(AFE_CLOCKS_PER_PIXEL * sampling_rate));
