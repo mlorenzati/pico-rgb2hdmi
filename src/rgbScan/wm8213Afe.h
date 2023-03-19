@@ -153,7 +153,8 @@ typedef struct wm8213_afe_config {
     wm8213_afe_setups_t setups;
     char                verify_retries;
     PIO                 pio;
-	uint                sm_afe_cp;
+	uint                sm_capture[2];
+    uint                pin_hsync;
     uint                pin_base_afe_op;
     uint                pin_base_afe_ctrl;
     color_bppx          bppx;
@@ -161,7 +162,7 @@ typedef struct wm8213_afe_config {
 
 typedef struct wm8213_afe_capture {
     PIO  pio;
-    uint sm;
+    const uint *sm;
     uint capture_dma;
     uint front_porch_dma;
     uint sampling_rate;
@@ -190,7 +191,7 @@ static inline bool wm8213_afe_capture_run(uint hFrontPorch, uintptr_t buffer, ui
     dma_channel_hw_addr(capture_dma)->transfer_count = size;
 
     PIO pio = wm8213_afe_capture_global.pio;
-    uint sm = wm8213_afe_capture_global.sm;
+    uint sm = wm8213_afe_capture_global.sm[1];
     pio_sm_set_enabled(pio, sm, false);
     afe_capture_rx_fifo_drain(pio, sm);
     pio_sm_set_enabled(pio, sm, true);

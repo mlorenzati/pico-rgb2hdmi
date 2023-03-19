@@ -1,0 +1,38 @@
+; PIO program to sync on external HSYNC and trigger capture
+; Without IRQ Code jitter issues
+.program  hsyncChain
+.wrap_target
+    pull            ; Get from TX FIFO front porch to chain to the next stage
+    mov x, osr      ; Store in local register X
+    mov isr, x      ; Store in local register X
+    wait 0 pin 0    ; Wait for the low
+    wait 1 pin 0    ; Wait for the high
+    push            ; dummy to force DREQ
+.wrap
+
+% c-sdk {
+    #include "hardware/clocks.h"
+    static inline void hsyncChain_init(PIO pio, uint sm, uint offset, uint hsync_pin) {
+        // Initialize HSYNC PIN
+        pio_gpio_init(pio, hsync_pin);
+
+        // Set the HSYNC pin direction to input
+        pio_sm_set_consecutive_pindirs(pio, sm, hsync_pin, 1, false);
+
+        // Create new state machine config
+        pio_sm_config c = hsyncChain_init_get_default_config (offset);
+
+        // Shift registers do not shift 
+        sm_config_set_out_shift(&c, true, false, 0);
+        sm_config_set_in_shift(&c, true, false, 0); 
+
+        // Map the HSYNC IN pin group to one pin, namely the `pin`
+        sm_config_set_in_pins (&c, hsync_pin);
+
+        // Set the Clocking to max
+        sm_config_set_clkdiv(&c, 1);
+
+        // Initialize PIO
+        pio_sm_init(pio, sm, offset, &c);
+    }
+%}
