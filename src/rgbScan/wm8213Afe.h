@@ -167,8 +167,8 @@ typedef struct wm8213_afe_capture {
     uint front_porch_dma;
     uint sampling_rate;
     color_bppx bppx;
-    uint op_pins, control_pins;
-    uint pio_offset;
+    uint hsync_pin, op_pins, control_pins;
+    uint pio_offset[2];
     wm8213_afe_config_t config;
 } wm8213_afe_capture_t;
 
@@ -199,7 +199,7 @@ static inline bool wm8213_afe_capture_run(uint hFrontPorch, uintptr_t buffer, ui
     return true;
 }
 
-void wm8213_afe_capture_stop();
+void wm8213_afe_capture_start(bool value);
 void wm8213_afe_capture_wait();
 void wm8213_afe_capture_update_sampling_rate(uint sampling_rate);
 void wm8213_afe_capture_update_bppx(color_bppx bppx);

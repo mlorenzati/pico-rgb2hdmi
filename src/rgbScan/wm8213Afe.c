@@ -1,7 +1,8 @@
-#include "wm8213Afe.h"
-#include "hardware/gpio.h"
-#include "wm8213Afe.pio.h"
 #include "hardware/structs/bus_ctrl.h"
+#include "hardware/gpio.h"
+#include "wm8213Afe.h"
+#include "wm8213Afe.pio.h"
+#include "hsyncChain.pio.h"
 
 //Local registers
 static uint        afe_cs = -1;
@@ -124,24 +125,29 @@ void wm8213_afe_capture_setup_from_global() {
             assert(false);
             break;
     }
-    if (wm8213_afe_capture_global.pio_offset != 0) {
-        pio_sm_set_enabled(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm[1], false);
-        pio_remove_program(wm8213_afe_capture_global.pio, capture_program, wm8213_afe_capture_global.pio_offset);
-        pio_sm_restart(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm[1]);
+    const pio_program_t * chain_program = &hsyncChain_program;
+    for (uint index = 0; index < 2; index++) {
+        if (wm8213_afe_capture_global.pio_offset[index] > 0) {
+            pio_sm_set_enabled(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm[index], false);
+            pio_remove_program(wm8213_afe_capture_global.pio, index == 0 ? chain_program : capture_program, wm8213_afe_capture_global.pio_offset[index]);
+            pio_sm_restart(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm[index]);
+        }
     }
-
-    wm8213_afe_capture_global.pio_offset = pio_add_program(wm8213_afe_capture_global.pio, capture_program);
-    afe_capture_program_init(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm[1], wm8213_afe_capture_global.pio_offset, wm8213_afe_capture_global.sampling_rate, op_pins, wm8213_afe_capture_global.control_pins, op_bits);
+    wm8213_afe_capture_global.pio_offset[0] = pio_add_program(wm8213_afe_capture_global.pio, chain_program);
+    wm8213_afe_capture_global.pio_offset[1] = pio_add_program(wm8213_afe_capture_global.pio, capture_program);
+    hsyncChain_program_init(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm[0],  wm8213_afe_capture_global.pio_offset[0], wm8213_afe_capture_global.hsync_pin);
+    afe_capture_program_init(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm[1], wm8213_afe_capture_global.pio_offset[1], wm8213_afe_capture_global.sampling_rate, op_pins, wm8213_afe_capture_global.control_pins, op_bits);
     
     // Give DMA R/W priority over the Bus
     //bus_ctrl_hw->priority = BUSCTRL_BUS_PRIORITY_DMA_W_BITS | BUSCTRL_BUS_PRIORITY_DMA_R_BITS;
 }
-void wm8213_afe_capture_setup(PIO pio, const uint *sm, uint sampling_rate, color_bppx bppx, uint op_pins, uint control_pins) {
+void wm8213_afe_capture_setup(PIO pio, const uint *sm, uint sampling_rate, color_bppx bppx, uint hsync_pin, uint op_pins, uint control_pins) {
     //Setup OP and sample ports on PIO
     wm8213_afe_capture_global.pio = pio;
     wm8213_afe_capture_global.sm =  sm;
     wm8213_afe_capture_global.sampling_rate = sampling_rate;
     wm8213_afe_capture_global.bppx = bppx;
+    wm8213_afe_capture_global.hsync_pin = hsync_pin;
     wm8213_afe_capture_global.op_pins = op_pins;
     wm8213_afe_capture_global.control_pins = control_pins;
     
@@ -200,7 +206,7 @@ int wm8213_afe_setup(const wm8213_afe_config_t* config, uint sampling_rate)
 
     if (res > 0) { return res; }
 
-    wm8213_afe_capture_setup(config->pio, config->sm_capture, sampling_rate, config->bppx, config->pin_base_afe_op, config->pin_base_afe_ctrl);
+    wm8213_afe_capture_setup(config->pio, config->sm_capture, sampling_rate, config->bppx, config->pin_hsync, config->pin_base_afe_op, config->pin_base_afe_ctrl);
     afe_dma_prepare(config->pio, config->sm_capture);
 
     return res;
@@ -210,8 +216,9 @@ void wm8213_afe_capture_wait() {
     dma_channel_wait_for_finish_blocking(wm8213_afe_capture_global.capture_dma);
 }
 
-void wm8213_afe_capture_stop() {
-    pio_sm_set_enabled(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm[1], false);
+void wm8213_afe_capture_start(bool value) {
+    pio_sm_set_enabled(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm[0], value);
+    pio_sm_set_enabled(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm[1], value);
 }
 
 void wm8213_afe_update_gain(uint16_t red, uint16_t green, uint16_t blue, bool commit) {
