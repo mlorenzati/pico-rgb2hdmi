@@ -7,7 +7,11 @@
     mov isr, x      ; Move from X register to the ISR
     wait 0 pin 0    ; Wait for the low
     wait 1 pin 0    ; Wait for the high
-    push            ; dummy to force DREQ
+    set x, 15       ; Wait so the IRQ has time to provide the next in chain data
+w_loop:
+    nop;
+    jmp x-- w_loop  ;
+    push            ; Send to the RX FIFO
 .wrap
 
 % c-sdk {

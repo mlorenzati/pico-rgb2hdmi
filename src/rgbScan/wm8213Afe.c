@@ -140,6 +140,7 @@ void wm8213_afe_capture_setup_from_global() {
     
     // Give DMA R/W priority over the Bus
     //bus_ctrl_hw->priority = BUSCTRL_BUS_PRIORITY_DMA_W_BITS | BUSCTRL_BUS_PRIORITY_DMA_R_BITS;
+    wm8213_afe_capture_start(true);
 }
 void wm8213_afe_capture_setup(PIO pio, const uint *sm, uint sampling_rate, color_bppx bppx, uint hsync_pin, uint op_pins, uint control_pins) {
     //Setup OP and sample ports on PIO
@@ -164,10 +165,39 @@ void wm8213_afe_capture_update_bppx(color_bppx bppx) {
     wm8213_afe_capture_setup_from_global();
 }
 
+// static void __not_in_flash_func(piochain_dma_triggered)() {
+//     uint capture_dma = wm8213_afe_capture_global.capture_dma;
+//     dma_channel_hw_addr(capture_dma)->al1_write_addr = wm8213_afe_capture_global.capture_dma_buffer;
+//     dma_channel_hw_addr(capture_dma)->transfer_count = wm8213_afe_capture_global.capture_dma_size;
+//     //Clear interrupt request
+//     dma_hw->ints1 = 1u << wm8213_afe_capture_global.piochain_dma;
+// }
+
 // AFE DMA related
 void afe_dma_prepare(PIO pio, const uint *sm) {
+    wm8213_afe_capture_global.piochain_dma = dma_claim_unused_channel(true);
     wm8213_afe_capture_global.capture_dma = dma_claim_unused_channel(true);
     wm8213_afe_capture_global.front_porch_dma = dma_claim_unused_channel(true);
+
+    dma_channel_config piochain_dma_channel_cfg = dma_channel_get_default_config(wm8213_afe_capture_global.piochain_dma);
+    channel_config_set_transfer_data_size(&piochain_dma_channel_cfg, DMA_SIZE_32);   // This will impact DMA 32 bits register
+    channel_config_set_dreq(&piochain_dma_channel_cfg, pio_get_dreq(pio, sm[0], false)); // Pace transfers based on PIO chain availabilty
+    channel_config_set_read_increment(&piochain_dma_channel_cfg, false);
+    channel_config_set_write_increment(&piochain_dma_channel_cfg, false);
+
+    dma_channel_configure(wm8213_afe_capture_global.piochain_dma,
+        &piochain_dma_channel_cfg,
+        &dma_channel_hw_addr(wm8213_afe_capture_global.front_porch_dma)->al1_transfer_count_trig,   // Destination: Chained dma size
+        &pio->rxf[sm[0]],  // Source
+        1,                 // Size: Just one word
+        false
+    );
+    // //When the pio chain DMA Completes, it' the moment to update capture DMA params
+    // dma_channel_set_irq1_enabled(wm8213_afe_capture_global.piochain_dma, true);
+
+    // // Configure the processor to run dma_handler() when DMA IRQ 0 is asserted
+    // irq_set_exclusive_handler(DMA_IRQ_1, piochain_dma_triggered);
+    // irq_set_enabled(DMA_IRQ_1, true);
 
     dma_channel_config front_porch_dma_channel_cfg = dma_channel_get_default_config(wm8213_afe_capture_global.front_porch_dma);
     channel_config_set_transfer_data_size(&front_porch_dma_channel_cfg, wm8213_afe_capture_global.bppx == rgb_8_332 ? DMA_SIZE_8 : DMA_SIZE_16);   //Transfer 8/16bits words that are shifted by pio

@@ -32,7 +32,7 @@ inline io_rw_16 video_overlay_get_starty() {
 
 void set_video_overlay(volatile signed int width, volatile signed int height, bool enabled);
 
-inline void video_overlay_scanline_prepare(unsigned int render_line_number) {
+inline unsigned int video_overlay_scanline_prepare(unsigned int render_line_number) {
     unsigned int next_scanlineNumber = (render_line_number + 1);
     if (next_scanlineNumber >= (video_overlay.video_props)->height) {
         next_scanlineNumber = 0; 
@@ -54,6 +54,8 @@ inline void video_overlay_scanline_prepare(unsigned int render_line_number) {
         video_overlay.computed_front_porch = (video_overlay.video_props)->horizontal_front_porch;
         video_overlay.computed_offset = 0;
     }
+    
+    return next_scanlineNumber;
 }
 
 inline void video_overlay_enable(bool value) {
