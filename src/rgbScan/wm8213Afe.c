@@ -135,6 +135,7 @@ void wm8213_afe_capture_setup_from_global() {
     
     // Give DMA R/W priority over the Bus
     //bus_ctrl_hw->priority = BUSCTRL_BUS_PRIORITY_DMA_W_BITS | BUSCTRL_BUS_PRIORITY_DMA_R_BITS;
+    pio_sm_set_enabled(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm, true);
 }
 void wm8213_afe_capture_setup(PIO pio, uint sm, uint sampling_rate, color_bppx bppx, uint op_pins, uint control_pins) {
     //Setup OP and sample ports on PIO

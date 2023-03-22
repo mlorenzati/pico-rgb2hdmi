@@ -180,7 +180,9 @@ static inline void afe_capture_rx_fifo_drain(PIO  pio, uint sm) {
 }
 
 static inline bool wm8213_afe_capture_run(uint hFrontPorch, uintptr_t buffer, uint size) {
-     //Don't interrupt running DMAs!
+    dma_channel_hw_addr(wm8213_afe_capture_global.front_porch_dma)->al1_transfer_count_trig = hFrontPorch;
+    
+    //Don't interrupt running DMAs!
     uint capture_dma = wm8213_afe_capture_global.capture_dma;
     if (dma_channel_is_busy(capture_dma)) {
         return false;
@@ -188,13 +190,6 @@ static inline bool wm8213_afe_capture_run(uint hFrontPorch, uintptr_t buffer, ui
     
     dma_channel_hw_addr(capture_dma)->al1_write_addr = buffer;
     dma_channel_hw_addr(capture_dma)->transfer_count = size;
-
-    PIO pio = wm8213_afe_capture_global.pio;
-    uint sm = wm8213_afe_capture_global.sm;
-    pio_sm_set_enabled(pio, sm, false);
-    afe_capture_rx_fifo_drain(pio, sm);
-    pio_sm_set_enabled(pio, sm, true);
-    dma_channel_hw_addr(wm8213_afe_capture_global.front_porch_dma)->al1_transfer_count_trig = hFrontPorch;
     return true;
 }
 
