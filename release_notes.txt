@@ -6,6 +6,7 @@ An rpi pico microprocessed rgb 2 hdmi plus rgb 2 usb on the fly converter
 Date: 2023/02/28
 Version: 0.4.4
 - Improvement over capture: trigger fast front porch dma, then prepare capture dma (dough!)
+- keyboard wake: on key pressed the shutdown screen timer is refreshen when there is no video, wakes the screen too
 
 -------------------------------------------------------------------------
 Date: 2023/02/28

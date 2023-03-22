@@ -202,3 +202,9 @@ rgbscan_sync_type rgbScannerGetSyncType() {
 const char* rgbScannerGetSyncTypeStr() {
     return rgbsynctypeStr[rgbScannerGetSyncType()];
 }
+
+void rgbScannerWake() {
+    if (syncTypeCnt < RGB_SCANNER_SYNC_TYPE_TRIG || syncTypeCnt > -RGB_SCANNER_SYNC_TYPE_TRIG) {
+        syncTypeCnt = RGB_SCANNER_SYNC_TYPE_CNT;
+    }
+}

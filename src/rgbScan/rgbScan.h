@@ -30,11 +30,12 @@ typedef void (*rgbscanSyncSignalCallback)(rgbscan_signal_event_type event_type);
 
 int rgbScannerSetup(uint vsyncGPIO, uint hsyncGPIO, uint frontPorch, uint height, scanlineCallback scanCallback, rgbscanSyncSignalCallback noSignalCallback, void *noSignalData);
 unsigned long rgbScannerGetVsyncNanoSec();
-unsigned int rgbScannerGetHsyncNanoSec();
-unsigned int rgbScannerGetHorizontalLines();
-void         rgbScannerEnable(bool value);
-void         rgbScannerUpdateData(uint frontPorch, uint height);
+unsigned int  rgbScannerGetHsyncNanoSec();
+unsigned int  rgbScannerGetHorizontalLines();
+void          rgbScannerEnable(bool value);
+void          rgbScannerUpdateData(uint frontPorch, uint height);
 rgbscan_sync_type rgbScannerGetSyncType();
-const char* rgbScannerGetSyncTypeStr();
+const char*   rgbScannerGetSyncTypeStr();
+void          rgbScannerWake();
 
 #endif//_RGB_SCANNER_H

@@ -2,6 +2,7 @@
 #include "graphics.h"
 #include "videoAdjust.h"
 #include "overlay.h"
+#include "rgbScan.h"
 #include "menuGlobals.h"
 #include "menuCallback.h"
 #include "commands.h"
@@ -18,6 +19,7 @@ void menu_on_keyboard_event(keyboard_status_t keys) {
         menu_event_t *event = &menu_events[cnt];
         event->key_up   = keyboard_get_key_status(&keys, true, cnt); 
         event->key_down = keyboard_get_key_status(&keys, false, cnt);
+        rgbScannerWake();
         switch (event->type) {
             case menu_event_action:
                 if (event->key_up) {
