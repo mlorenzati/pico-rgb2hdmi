@@ -105,6 +105,8 @@ int wm8213_afe_spi_setup(const wm8213_afe_config_t* config) {
 
 // AFE Pio Capture Related
 void wm8213_afe_capture_setup_from_global() {
+    pio_sm_set_enabled(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm, false);
+    
     const pio_program_t *program = NULL;
     uint8_t op_bits = 0;
     uint    op_pins = 0;
