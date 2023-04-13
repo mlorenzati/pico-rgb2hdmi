@@ -21,6 +21,7 @@
 
 #include "menu.h"
 #include "cmdParser.h"
+#include "settings.h"
 #include "commands.h"
 #include "storage.h"
 
@@ -161,8 +162,10 @@ int main() {
     #endif
 
     // Validate license prior starting second core
-    command_storage_initialize();
-    command_validate_license();
+    if (settings_initialize(&factory_settings) > 0) {
+        printf("storage initialize failed \n");
+    };
+    command_validate_license(settings_get()->security_key);
 
     // Configure scan video properties
     set_video_props(V_FRONT_PORCH, V_BACK_PORCH, HSYNC_FRONT_PORCH, HSYNC_BACK_PORCH, FRAME_WIDTH, FRAME_HEIGHT, REFRESH_RATE, framebuf);

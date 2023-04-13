@@ -20,6 +20,7 @@ if (TARGET tinyusb_device)
         overlay
         system
         cmdParser
+        settings
         commands
         menu
         )
