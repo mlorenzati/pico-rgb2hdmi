@@ -7,6 +7,7 @@
 #include "rgbScan.h"
 #include "overlay.h"
 #include "security.h"
+#include "settings.h"
 #include "version.h"
 #include "hardware/watchdog.h"
 
@@ -121,9 +122,8 @@ int command_on_receive(int option, const void *data, bool convert) {
 					printf("Key error received: %d chars, requires %d\n",len, SECURITY_SHA_SIZE * 2);
 					return 0;
 				}
-				uint8_t serial_key[SECURITY_SHA_SIZE];
-				security_str_2_hexa(data, serial_key, 40);
-				storage_update(serial_key);
+				security_str_2_hexa(data, settings_get()->security_key, SECURITY_SHA_SIZE);
+				settings_update();
 				command_reboot();
 				}
 			    break;

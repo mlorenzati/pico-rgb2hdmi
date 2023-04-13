@@ -52,10 +52,10 @@ int security_str_2_hexa(const char *in, uint8_t *out, uint8_t size) {
     return 0;
 }
 
-int security_key_is_valid(const char *key, int token) {
+int security_key_is_valid(const uint8_t *key, int token) {
     static int last_token = 0;
     static uint8_t digest[SHA1HashSize] = {0};
-    static const char *last_key = NULL;
+    static const uint8_t *last_key = NULL;
 
     if (token == last_token || token > 0) {
         return 1;
@@ -75,7 +75,7 @@ int security_key_is_valid(const char *key, int token) {
         last_key = key;
     }
 
-    if (strncmp(key, (char *)digest, SHA1HashSize) != 0) {
+    if (strncmp((const char *)key, (const char *)digest, SHA1HashSize) != 0) {
         return 3;
     }
 

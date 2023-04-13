@@ -12,7 +12,7 @@
 #define SECURITY_SHA_SIZE       20
 
 const char*    security_get_uid();
-int            security_key_is_valid(const char *key, int token);
+int            security_key_is_valid(const uint8_t *key, int token);
 void           security_hexa_2_str(const uint8_t *in, char *out, uint8_t size);
 int            security_str_2_hexa(const char *in, uint8_t *out, uint8_t size);
 const uint8_t *security_get_signing();
