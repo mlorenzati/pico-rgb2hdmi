@@ -141,4 +141,13 @@
         .invert_diffpairs = true
     };
 #endif
+
+// Global settings 
+#ifdef _SETTINGS_H
+    // Factopry Settings
+    const settings_t factory_settings = {
+        .security_key = "12345678901234567890"
+    };
+#endif
+
 #endif
