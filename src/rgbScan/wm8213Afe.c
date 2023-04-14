@@ -11,6 +11,7 @@ uint16_t           dummy_dma_read;
 
 //Global Afe Capture vars
 wm8213_afe_capture_t wm8213_afe_capture_global;
+bool capture_global_configured = false;
 
 // AFE SPI Related
 void wm8213_enable_cs(bool val) {
@@ -50,6 +51,9 @@ int wm8213_afe_spi_setup(const wm8213_afe_config_t* config) {
     // Store config ptr in global
     if (config != NULL) {
         wm8213_afe_capture_global.config = *config;
+        capture_global_configured = true;
+    } else if (!capture_global_configured) {
+        return 5; // Cannot use unconfigured local config
     }
 
     // Configure SPI head and the baudrate
@@ -197,11 +201,21 @@ void afe_dma_prepare(PIO pio, uint sm) {
 }
 
 //AFE Main calls
+// AFE init gets the initial configuration from from and allow later modification prior executing
+void wm8213_afe_init(const wm8213_afe_config_t* config) {
+    if (config != NULL) {
+        wm8213_afe_capture_global.config = *config;
+        capture_global_configured = true;
+    }
+}   
+// AFE setup executes the configuration from config or local and setups AFE and DMA (can be null config)
 int wm8213_afe_setup(const wm8213_afe_config_t* config, uint sampling_rate)
 {
     int res = wm8213_afe_spi_setup(config);
 
     if (res > 0) { return res; }
+
+    config = &wm8213_afe_capture_global.config;
 
     wm8213_afe_capture_setup(config->pio, config->sm_afe_cp, sampling_rate, config->bppx, config->pin_base_afe_op, config->pin_base_afe_ctrl);
     afe_dma_prepare(config->pio, config->sm_afe_cp);

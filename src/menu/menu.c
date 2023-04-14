@@ -242,9 +242,9 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             gui_list_t group_list = initalizeGuiDynList(menu_left_buttons_group_elements, arraySize(elements));
             menu_left_buttons_group_list = group_list;
             
-            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[4].base, &menu_left_buttons_group_elements[4], on_back_event);
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[1].base, &menu_left_buttons_group_elements[1], on_gain_offset_event);
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_gain_offset_event);
+            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[4].base, &menu_left_buttons_group_elements[4], on_back_event);
             }
             break;
         case menu_button_sub_group_diagnostic: {
@@ -345,19 +345,22 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
         case  menu_button_main_group_display:{
             bool auto_shut_down = !(settings_get()->flags.auto_shut_down);
             gui_object_t elements[] = { 
-                gui_create_button(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Alignment"),
-                gui_create_button(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Gain & offset"),
-                gui_create_button(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, menu_get_shutdown_opt_txt(auto_shut_down)),
-                gui_create_button(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Back")
+                gui_create_text(&menu_overlay_ctx, 0, 0,    200, 12, &menu_colors_list, menu_common_label_props, "Display Number"),
+                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_spinbox_props, &spinbox_display_no),
+                gui_create_button(&menu_overlay_ctx,  0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Alignment"),
+                gui_create_button(&menu_overlay_ctx,  0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Gain & offset"),
+                gui_create_button(&menu_overlay_ctx,  0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, menu_get_shutdown_opt_txt(auto_shut_down)),
+                gui_create_button(&menu_overlay_ctx,  0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Back")
             };
             menu_elements_copy(elements, menu_left_buttons_group_elements);
             gui_list_t group_list = initalizeGuiDynList(menu_left_buttons_group_elements, arraySize(elements));
             menu_left_buttons_group_list = group_list;
             
-            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[0], on_alignment_button_event);
-            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[1].base, &menu_left_buttons_group_elements[1], on_gain_offset_button_event);
-            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[2].base, &menu_left_buttons_group_elements[2], on_shutdown_display_event);
-            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_back_event);     
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[1].base, &menu_left_buttons_group_elements[1], on_display_selection_event);
+            gui_event_subscribe(button_status,  &menu_left_buttons_group_elements[2].base, &menu_left_buttons_group_elements[2], on_alignment_button_event);
+            gui_event_subscribe(button_status,  &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_gain_offset_button_event);
+            gui_event_subscribe(button_status,  &menu_left_buttons_group_elements[4].base, &menu_left_buttons_group_elements[4], on_shutdown_display_event);
+            gui_event_subscribe(button_status,  &menu_left_buttons_group_elements[5].base, &menu_left_buttons_group_elements[5], on_back_event);     
             }
             break;
         case menu_button_main_group_startup_info: {
@@ -377,7 +380,7 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             gui_object_t elements[] = {
                 gui_create_button(&menu_overlay_ctx, 0, 0, 110, 12, &menu_colors_list, menu_common_nshared_props, "Diagnostics"),
                 gui_create_button(&menu_overlay_ctx, 0, 0, 110, 12, &menu_colors_list, menu_common_nshared_props, "Display"),
-                gui_create_button(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Palette"),
+                gui_create_button(&menu_overlay_ctx, 0, 0, 110, 12, &menu_colors_list, menu_common_nshared_props, "Palette"),
                 gui_create_button(&menu_overlay_ctx, 0, 0, 110, 12, &menu_colors_list, menu_common_nshared_props, "Configuration"),
                 gui_create_button(&menu_overlay_ctx, 0, 0, 110, 12, &menu_colors_list, menu_common_nshared_props, "About"),
                 gui_create_button(&menu_overlay_ctx, 0, 0, 110, 12, &menu_colors_list, menu_common_nshared_props, "Exit")
@@ -472,6 +475,7 @@ int menu_initialize(uint *pins, menu_event_type *events, uint8_t count) {
     spinbox_pix_width = GET_VIDEO_PROPS().horizontal_front_porch + GET_VIDEO_PROPS().horizontal_back_porch;
     spinbox_offset = wm8213_afe_get_offset(color_part_all);
     spinbox_gain = wm8213_afe_get_gain(color_part_all);
+    spinbox_display_no = settings_get()->flags.default_display + 1;
 
     return 0;
 }

@@ -76,7 +76,7 @@ extern const gui_status_t button_status;
 extern const gui_status_t spinbox_status;
 
 extern uint spinbox_vertical, spinbox_horizontal, spinbox_pix_width;
-extern uint spinbox_gain, spinbox_offset;
+extern uint spinbox_gain, spinbox_offset, spinbox_display_no;
 extern uint color_slider_option, color_spinbox_red, color_spinbox_green, color_spinbox_blue, *color_slider_selected;
 extern const char* menu_about_scroll_str;
 extern const char* menu_about_str;

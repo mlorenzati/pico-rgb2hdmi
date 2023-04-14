@@ -172,7 +172,7 @@ typedef struct wm8213_afe_capture {
 } wm8213_afe_capture_t;
 
 extern wm8213_afe_capture_t wm8213_afe_capture_global;
-
+void wm8213_afe_init(const wm8213_afe_config_t* config);
 int  wm8213_afe_setup(const wm8213_afe_config_t* config, uint sampling_rate);
 
 static inline void afe_capture_rx_fifo_drain(PIO  pio, uint sm) {

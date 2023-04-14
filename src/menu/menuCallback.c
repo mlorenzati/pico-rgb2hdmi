@@ -124,6 +124,38 @@ bool on_gain_offset_event(gui_status_t status, gui_base_t *origin, gui_object_t 
     return true;
 }
 
+bool on_display_selection_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+
+    if (!status.activated && origin->status.activated) {
+        destination->base.status.navigable = !destination->base.status.navigable;
+    } else {
+        if (status.add && spinbox_display_no < SETTINGS_DISPLAY_MAX) {
+                spinbox_display_no++;
+        } else if (status.substract && spinbox_display_no > 1) {
+            spinbox_display_no--;
+        }
+        settings_get()->flags.default_display = spinbox_display_no - 1; 
+        display_t *current_display = &(settings_get()->displays[spinbox_display_no - 1]);
+        
+        // Update all display related configs one by one
+        // Gain does not commit changes
+        wm8213_afe_update_gain(current_display->gain.red, current_display->gain.green, current_display->gain.blue, false);
+        // Offset commits all changes
+        wm8213_afe_update_offset(current_display->offset.red, current_display->offset.green, current_display->offset.blue, true);
+        // Timing and aligment
+        set_video_props(current_display->v_front_porch, current_display->v_back_porch, 
+            current_display->h_front_porch, current_display->h_back_porch, 
+            GET_VIDEO_PROPS().width, GET_VIDEO_PROPS().height, current_display->refresh_rate, GET_VIDEO_PROPS().video_buffer);
+        rgbScannerUpdateData(GET_VIDEO_PROPS().vertical_front_porch, 0);
+        rgbScannerEnable(false);
+        wm8213_afe_capture_update_sampling_rate(GET_VIDEO_PROPS().sampling_rate);
+        rgbScannerEnable(true);
+    }
+    destination->base.status.data_changed = 1;
+
+    return true;
+}
+
 bool on_palette_option_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
     uint *data = (uint *) origin->data;
     if (!status.activated && origin->status.activated) {
