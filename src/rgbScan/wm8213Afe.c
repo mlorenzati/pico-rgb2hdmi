@@ -22,7 +22,7 @@ void wm8213_enable_cs(bool val) {
 void wm8213_trigger_cs() {
     asm volatile("nop \n nop \n nop");
     gpio_put(afe_cs, true);
-    sleep_us(1);
+    busy_wait_us(1);
     gpio_put(afe_cs, false);
     asm volatile("nop \n nop \n nop");
 }

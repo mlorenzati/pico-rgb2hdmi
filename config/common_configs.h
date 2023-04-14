@@ -169,7 +169,8 @@
     // Factory Settings
     const settings_t factory_settings = {
         .security_key = { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF, 0x10, 0x11, 0x12, 0x13 },
-        .menu_colors = { color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green, color_red, color_blue}
+        .menu_colors = { color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green},
+        .eof_canary = 0
     };
 #endif
 

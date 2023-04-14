@@ -4,9 +4,12 @@
 #include "pico.h"
 #include "security.h"
 
+#define GUI_MENU_COLORS 6
 typedef struct settings {
     uint8_t security_key[SECURITY_SHA_SIZE];
-    uint menu_colors[8]; // Only 6 colors are used but left space for upgrades
+    uint menu_colors[GUI_MENU_COLORS];
+    uint menu_reserved[2];
+    uint8_t eof_canary;
 } settings_t;
 
 extern settings_t ram_settings;
