@@ -36,6 +36,7 @@ bool on_alignment_event(gui_status_t status, gui_base_t *origin, gui_object_t *d
     if (!status.activated && origin->status.activated) {
         destination->base.status.navigable = !destination->base.status.navigable;
     } else {
+        display_t *current_display = &(settings_get()->displays[settings_get()->flags.default_display]);
         if (o_data == &spinbox_horizontal) {
             data   = &(GET_VIDEO_PROPS().horizontal_front_porch);
             n_data = &(GET_VIDEO_PROPS().horizontal_back_porch);
@@ -68,12 +69,16 @@ bool on_alignment_event(gui_status_t status, gui_base_t *origin, gui_object_t *d
         }
         if (spinbox_vertical != GET_VIDEO_PROPS().vertical_front_porch) {
             rgbScannerUpdateData(GET_VIDEO_PROPS().vertical_front_porch, 0);
+            current_display->v_front_porch = GET_VIDEO_PROPS().vertical_front_porch;
+            current_display->v_back_porch =  GET_VIDEO_PROPS().vertical_back_porch;
         }
         if (spinbox_pix_width != GET_VIDEO_PROPS().horizontal_front_porch + GET_VIDEO_PROPS().horizontal_back_porch) {
             update_sampling_rate();
             rgbScannerEnable(false);
             wm8213_afe_capture_update_sampling_rate(GET_VIDEO_PROPS().sampling_rate);
             rgbScannerEnable(true);
+            current_display->h_back_porch =  GET_VIDEO_PROPS().horizontal_back_porch;
+            current_display->h_front_porch = GET_VIDEO_PROPS().horizontal_front_porch;
         }
         spinbox_horizontal = GET_VIDEO_PROPS().horizontal_front_porch;
         spinbox_vertical = GET_VIDEO_PROPS().vertical_front_porch;
@@ -87,10 +92,11 @@ bool on_alignment_event(gui_status_t status, gui_base_t *origin, gui_object_t *d
 
 bool on_gain_offset_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
     uint *o_data = (uint *) origin->data;
-    
+
     if (!status.activated && origin->status.activated) {
         destination->base.status.navigable = !destination->base.status.navigable;
     } else {
+        display_t *current_display = &(settings_get()->displays[settings_get()->flags.default_display]);
         if (o_data == &spinbox_offset) {
             if (status.add && spinbox_offset < WM8213_POS_OFFSET_MAX) {
                 spinbox_offset++;
@@ -98,6 +104,9 @@ bool on_gain_offset_event(gui_status_t status, gui_base_t *origin, gui_object_t 
                 spinbox_offset--;
             }
             wm8213_afe_update_offset(spinbox_offset, spinbox_offset, spinbox_offset, true);
+            current_display->offset.red   = wm8213_afe_get_offset(color_part_red);
+            current_display->offset.green = wm8213_afe_get_offset(color_part_green);
+            current_display->offset.blue  = wm8213_afe_get_offset(color_part_blue);
        } else if (o_data == &spinbox_gain) {
             if (status.add && spinbox_gain < WM8213_GAIN_MAX) {
                 spinbox_gain++;
@@ -105,6 +114,9 @@ bool on_gain_offset_event(gui_status_t status, gui_base_t *origin, gui_object_t 
                 spinbox_gain--;
             }
             wm8213_afe_update_gain(spinbox_gain, spinbox_gain, spinbox_gain, true);
+            current_display->gain.red   = wm8213_afe_get_gain(color_part_red);
+            current_display->gain.green = wm8213_afe_get_gain(color_part_green);
+            current_display->gain.blue  = wm8213_afe_get_gain(color_part_blue);
        }
     }
     destination->base.status.data_changed = 1;
