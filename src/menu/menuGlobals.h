@@ -81,5 +81,4 @@ extern uint color_slider_option, color_spinbox_red, color_spinbox_green, color_s
 extern const char* menu_about_scroll_str;
 extern const char* menu_about_str;
 extern bool menu_usb_enabled;
-extern bool menu_shutdown_enabled;
 #endif

@@ -195,9 +195,10 @@ bool on_usb_enable_event(gui_status_t status, gui_base_t *origin, gui_object_t *
 
 bool on_shutdown_display_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
     if (!status.activated && origin->status.activated) {
-        menu_shutdown_enabled = !menu_shutdown_enabled;
-        destination->base.data = (void *) menu_get_shutdown_opt_txt(menu_shutdown_enabled);
+        bool auto_shut_down = !(settings_get()->flags.auto_shut_down);
+        destination->base.data = (void *) menu_get_shutdown_opt_txt(auto_shut_down);
         destination->base.status.data_changed = true;
+        settings_get()->flags.auto_shut_down = auto_shut_down;
     }
     return true;
 }

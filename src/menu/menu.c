@@ -11,6 +11,7 @@
 
 //System configuration includes
 #include "common_configs.h"
+#include "settings.h"
 #include "pico/stdlib.h"
 
 // --------- KEYBOARD API CALL START --------- 
@@ -93,6 +94,7 @@ bool menu_update_timer_callback(struct repeating_timer *t) {
 }
 
 void menu_video_signal_callback(rgbscan_signal_event_type type) {
+     bool auto_shut_down = !(settings_get()->flags.auto_shut_down);
     if (type == rgbscan_signal_stopped) {
         fill_rect(&menu_graphic_ctx, 0, 0, menu_graphic_ctx.width, menu_graphic_ctx.height, color_black);
         draw_textf(&menu_graphic_ctx, menu_graphic_ctx.width / 2 - 36, menu_graphic_ctx.height / 2 - 4, color_white, color_white, false, "NO SIGNAL");
@@ -103,7 +105,7 @@ void menu_video_signal_callback(rgbscan_signal_event_type type) {
                 gui_obj_draw(menu_main_view_group);
             }
         }
-    } else if (type == rgbscan_signal_shutdown && menu_shutdown_enabled) {
+    } else if (type == rgbscan_signal_shutdown && auto_shut_down) {
         dvi_stop(&dvi0);
     } else if (type == rgbscan_signal_started) {
         dvi_start(&dvi0);
@@ -341,11 +343,12 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             }
             break;
         case  menu_button_main_group_display:{
+            bool auto_shut_down = !(settings_get()->flags.auto_shut_down);
             gui_object_t elements[] = { 
                 gui_create_button(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Alignment"),
                 gui_create_button(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Gain & offset"),
                 gui_create_button(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Palette"),
-                gui_create_button(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, menu_get_shutdown_opt_txt(menu_shutdown_enabled)),
+                gui_create_button(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, menu_get_shutdown_opt_txt(auto_shut_down)),
                 gui_create_button(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Back")
             };
             menu_elements_copy(elements, menu_left_buttons_group_elements);
