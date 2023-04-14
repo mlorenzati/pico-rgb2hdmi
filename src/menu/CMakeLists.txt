@@ -17,4 +17,5 @@ target_link_libraries(menu INTERFACE
     keyboard
     gui
     commands
+    settings
 )

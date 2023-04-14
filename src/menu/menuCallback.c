@@ -7,6 +7,8 @@
 #include "rgbScan.h"
 #include "wm8213Afe.h"
 #include <string.h>
+#include "common_configs.h"
+#include "settings.h" // This goes after common_config, we need defines but not to create static object
 
 // ---------  GUI EVENT SLOTS HANDLERS START  ---------
 bool on_exit_button_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
@@ -155,14 +157,16 @@ bool on_palette_color_event(gui_status_t status, gui_base_t *origin, gui_object_
 
 bool on_save_reboot_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
     if (!status.activated && origin->status.activated) {
-        command_reboot();
+        command_save_settings();
+        command_reboot(); // A software reboot is required after storing the new settings
     }
     return true;
 }
 
 bool on_factory_reboot_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
     if (!status.activated && origin->status.activated) {
-        command_reboot();
+        command_factory_reset();
+        command_reboot(); // A software reboot is required after storing the new settings
     }
     return true;
 }
@@ -229,8 +233,8 @@ void menu_palette_opt_print(print_delegate_t printer) {
 // ----------- RELATED UTILS START -----------
 void menu_setup_selected_color() { 
     uint index = color_slider_option * (menu_colors_list.size-1) / GUI_BAR_100PERCENT;
-    color_slider_selected = &menu_colors[index];
-    bppx_split_color(menu_overlay_ctx.bppx, menu_colors[index], &color_spinbox_red, &color_spinbox_green, &color_spinbox_blue, true);
+    color_slider_selected = &ram_settings.menu_colors[index];
+    bppx_split_color(menu_overlay_ctx.bppx, ram_settings.menu_colors[index], &color_spinbox_red, &color_spinbox_green, &color_spinbox_blue, true);
 }
 
 const char *menu_get_usb_button_txt(bool status) {

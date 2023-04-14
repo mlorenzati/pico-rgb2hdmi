@@ -14,5 +14,7 @@ void command_validate_license(const uint8_t *security_key);
 void command_show_info(bool value);
 bool command_is_license_valid();
 void command_reboot();
+void command_save_settings();
+void command_factory_reset();
 void command_enable_usb(bool status);
 #endif

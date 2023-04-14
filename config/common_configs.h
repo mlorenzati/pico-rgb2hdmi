@@ -142,11 +142,34 @@
     };
 #endif
 
+#if DVI_SYMBOLS_PER_WORD == 2
+    // Colors                0brrrrrggggggbbbbb
+    #define color_black      0b0000000000000000
+    #define color_dark_gray  0b0001100011100011
+    #define color_mid_gray   0b1010010100010000
+    #define color_light_gray 0b1100011000011000
+    #define color_white      0b1111111111111111
+    #define color_red        0b1111100000000000
+    #define color_green      0b0000011111100000
+    #define color_blue       0b0000000000011111
+#else
+    // Colors                0brrrgggbb
+    #define color_black      0b00000000
+    #define color_dark_gray  0b01001001
+    #define color_mid_gray   0b10110110
+    #define color_light_gray 0b11011011
+    #define color_white      0b11111111
+    #define color_red        0b11100000
+    #define color_green      0b00011100
+    #define color_blue       0b00000011
+#endif
+
 // Global settings 
 #ifdef _SETTINGS_H
-    // Factopry Settings
+    // Factory Settings
     const settings_t factory_settings = {
-        .security_key = { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF, 0x10, 0x11, 0x12, 0x13 }
+        .security_key = { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF, 0x10, 0x11, 0x12, 0x13 },
+        .menu_colors = { color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green, color_red, color_blue}
     };
 #endif
 

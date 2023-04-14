@@ -3,12 +3,14 @@
 #include "storage.h"
 
 const settings_t *flash_settings;
+const settings_t *p_factory_settings;
+
 settings_t ram_settings;
 
-int settings_initialize(const settings_t *p_factory_settings) {
+int settings_initialize(const settings_t *p_fact_sett) {
     const settings_t *initial_settings;
     bool force_storage = false;
-    
+    p_factory_settings = p_fact_sett;
     #ifdef INITIAL_LICENSE
 		const char *security_key_str = INITIAL_LICENSE;
         memcpy(&ram_settings, p_factory_settings, sizeof(settings_t));
@@ -27,9 +29,10 @@ int settings_initialize(const settings_t *p_factory_settings) {
 }
 
 int settings_update() {
-    return 0;
+    return storage_update(&ram_settings);
 }
 
 int settings_factory() {
-    return 0;
+    memcpy(&ram_settings, p_factory_settings, sizeof(settings_t));
+    return storage_update(&ram_settings);
 }

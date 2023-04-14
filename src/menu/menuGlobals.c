@@ -1,23 +1,6 @@
 #include "menuGlobals.h"
 #include "pico/stdlib.h"
-
-#if DVI_SYMBOLS_PER_WORD == 2
-    // Colors                     0brrrrrggggggbbbbb;
-    const uint color_black      = 0b0000000000000000;
-    const uint color_dark_gray  = 0b0001100011100011;
-    const uint color_mid_gray   = 0b1010010100010000;
-    const uint color_light_gray = 0b1100011000011000; 
-    const uint color_green      = 0b0000011111100000;
-    const uint color_white      = 0b1111111111111111;
-#else
-    // Colors                     0brrrgggbb;
-    const uint color_black      = 0b00000000;
-    const uint color_dark_gray  = 0b01001001;
-    const uint color_mid_gray   = 0b10110110;
-    const uint color_light_gray = 0b11011011;
-    const uint color_green      = 0b00011100;
-    const uint color_white      = 0b11111111;
-#endif
+#include "settings.h"
 
 // --------- Global register start ---------
 uint8_t menu_tot_events; 
@@ -31,8 +14,7 @@ graphic_ctx_t menu_graphic_ctx = {
 };
 
 graphic_ctx_t menu_overlay_ctx;
-uint menu_colors[] = { color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green };
-gui_list_t menu_colors_list = initalizeGuiList(menu_colors);
+gui_list_t menu_colors_list = initalizeGuiList(ram_settings.menu_colors);
 
 const gui_properties_t menu_common_nshared_props = {
     .focusable  = 1,

@@ -43,6 +43,16 @@ void command_reboot() {
 	watchdog_reboot(0, SRAM_END, 10);
 }
 
+void command_save_settings() {
+    printf("Saving settings\n");
+    settings_update();
+}
+
+void command_factory_reset() {
+    printf("Factory reset\n");
+    settings_factory();
+}
+
 void command_enable_usb(bool status) {
     static bool first_time = true;
     if (first_time) {
