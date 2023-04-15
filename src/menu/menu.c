@@ -94,7 +94,7 @@ bool menu_update_timer_callback(struct repeating_timer *t) {
 }
 
 void menu_video_signal_callback(rgbscan_signal_event_type type) {
-     bool auto_shut_down = !(settings_get()->flags.auto_shut_down);
+    bool auto_shut_down = settings_get()->flags.auto_shut_down;
     if (type == rgbscan_signal_stopped) {
         fill_rect(&menu_graphic_ctx, 0, 0, menu_graphic_ctx.width, menu_graphic_ctx.height, color_black);
         draw_textf(&menu_graphic_ctx, menu_graphic_ctx.width / 2 - 36, menu_graphic_ctx.height / 2 - 4, color_white, color_white, false, "NO SIGNAL");
@@ -343,7 +343,7 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             }
             break;
         case  menu_button_main_group_display:{
-            bool auto_shut_down = !(settings_get()->flags.auto_shut_down);
+            bool auto_shut_down = settings_get()->flags.auto_shut_down;
             gui_object_t elements[] = { 
                 gui_create_text(&menu_overlay_ctx, 0, 0,    200, 12, &menu_colors_list, menu_common_label_props, "Display Number"),
                 gui_create_spinbox(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_spinbox_props, &spinbox_display_no),

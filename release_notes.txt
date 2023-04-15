@@ -3,9 +3,19 @@ pico rgb2hdmi
 
 An rpi pico microprocessed rgb 2 hdmi plus rgb 2 usb on the fly converter
 -------------------------------------------------------------------------
+Date: 2023/04/14
+Version: 0.5.0
+Major feature update: added settings persistence and menu integration
+- Save settings and revert to factory
+- Maintains license, and cover upgrade process from basic settings
+- Menu system updated for 4 displays options
+- gain, offset, alignment, pix width, auto shutdown and gui palette can be saved
+
+-------------------------------------------------------------------------
 Date: 2023/04/12
 Version: 0.4.5
 - Fix for capture changes (like pixel width) that affected the pio and made it stall
+
 -------------------------------------------------------------------------
 Date: 2023/02/28
 Version: 0.4.4

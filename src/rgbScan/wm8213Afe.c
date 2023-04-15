@@ -259,7 +259,7 @@ uint16_t wm8213_afe_get_gain(color_part part) {
     wm8213_afe_pga_gain_rgb_t *gain = &wm8213_afe_capture_global.config.setups.pga_gain;
     uint16_t red   = ((uint16_t) (gain->red.msb   << 1)) | (gain->red.lsb   & 0x1);
     uint16_t green = ((uint16_t) (gain->green.msb << 1)) | (gain->green.lsb & 0x1);
-    uint16_t blue =  ((uint16_t) (gain->blue.lsb  << 1)) | (gain->blue.lsb  & 0x1);
+    uint16_t blue =  ((uint16_t) (gain->blue.msb  << 1)) | (gain->blue.lsb  & 0x1);
 
     switch (part) {
         case color_part_red:   return red;
