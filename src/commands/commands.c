@@ -6,16 +6,10 @@
 #include "videoAdjust.h"
 #include "rgbScan.h"
 #include "overlay.h"
-#include "storage.h"
 #include "security.h"
+#include "settings.h"
 #include "version.h"
 #include "hardware/watchdog.h"
-
-#ifdef TEST_MODE
-#define TEST_MODE_STR	"\nTest Mode!!"
-#else
-#define TEST_MODE_STR	""
-#endif
 
 int command_info_afe_error;
 int command_info_scanner_error;
@@ -39,30 +33,24 @@ bool command_is_license_valid() {
     return command_license_is_valid;
 }
 
-void command_storage_initialize() {
-	#ifdef INITIAL_LICENSE
-		uint8_t security_key[SECURITY_SHA_SIZE];
-		const char *security_key_str = INITIAL_LICENSE;
-		security_str_2_hexa(security_key_str, security_key, 40);
-		const bool force_storage = true;
-	#else 
-		const char security_key[SECURITY_SHA_SIZE] = "12345678901234567890";
-		const bool force_storage = false;
-	#endif
-    
-    if (storage_initialize(security_key, &security_key_in_flash, SECURITY_SHA_SIZE, force_storage) > 0) {
-		printf("storage initialize failed \n");
-	}
-}
-
-void command_validate_license() {
+void command_validate_license(const uint8_t *security_key) {
     int token = -1;
-	command_license_is_valid = security_key_is_valid((const char *)security_key_in_flash, token) <= 0;
+	command_license_is_valid = security_key_is_valid(security_key, token) <= 0;
 }
 
 void command_reboot() {
 	printf("Rebooting\n");
 	watchdog_reboot(0, SRAM_END, 10);
+}
+
+void command_save_settings() {
+    printf("Saving settings\n");
+    settings_update();
+}
+
+void command_factory_reset() {
+    printf("Factory reset\n");
+    settings_factory();
 }
 
 void command_enable_usb(bool status) {
@@ -144,9 +132,8 @@ int command_on_receive(int option, const void *data, bool convert) {
 					printf("Key error received: %d chars, requires %d\n",len, SECURITY_SHA_SIZE * 2);
 					return 0;
 				}
-				uint8_t serial_key[SECURITY_SHA_SIZE];
-				security_str_2_hexa(data, serial_key, 40);
-				storage_update(serial_key);
+				security_str_2_hexa(data, settings_get()->security_key, SECURITY_SHA_SIZE);
+				settings_update();
 				command_reboot();
 				}
 			    break;

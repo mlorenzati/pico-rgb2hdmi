@@ -45,8 +45,6 @@ typedef struct menu_event {
 } menu_event_t;
 // ------------ Enum / Struct End ------------
 
-
-
 // --------- Global register start ---------
 extern const uint color_black;
 extern const uint color_dark_gray;
@@ -60,7 +58,6 @@ extern menu_event_t  menu_events[menu_event_max];
 extern menu_button_group_type menu_nav_stack[MENU_TOTAL_NAV_STACK];
 extern graphic_ctx_t menu_graphic_ctx, menu_overlay_ctx;
 extern uint8_t menu_button_index;
-extern uint menu_colors[];
 extern gui_list_t menu_colors_list;
 extern const gui_properties_t menu_common_nshared_props;
 extern const gui_properties_t menu_common_label_props;
@@ -79,10 +76,9 @@ extern const gui_status_t button_status;
 extern const gui_status_t spinbox_status;
 
 extern uint spinbox_vertical, spinbox_horizontal, spinbox_pix_width;
-extern uint spinbox_gain, spinbox_offset;
+extern uint spinbox_gain, spinbox_offset, spinbox_display_no;
 extern uint color_slider_option, color_spinbox_red, color_spinbox_green, color_spinbox_blue, *color_slider_selected;
 extern const char* menu_about_scroll_str;
 extern const char* menu_about_str;
 extern bool menu_usb_enabled;
-extern bool menu_shutdown_enabled;
 #endif

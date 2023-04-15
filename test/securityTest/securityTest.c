@@ -64,7 +64,7 @@ int main() {
             printf("security_str_2_hexa converted %s %s\n", hexa_test_str, res == 0 ? "succesfully" : "wrong"); 
         }
 
-        res = security_key_is_valid(security_key_in_flash, token);
+        res = security_key_is_valid((const uint8_t *)security_key_in_flash, token);
         printf("The good security key (%s) is %s\n", key_str, res > 0 ? "invalid" : "valid");
         if (res <= 0) {
             token = res;

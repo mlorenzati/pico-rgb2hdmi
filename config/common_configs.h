@@ -20,6 +20,18 @@
 #ifdef _RGB_SCANNER_H
     #define RGB_SCAN_VSYNC_PIN  26
     #define RGB_SCAN_HSYNC_PIN  27
+#endif
+
+//VIDEO Timing
+#define V_FRONT_PORCH   42
+#define V_BACK_PORCH    54
+#define REFRESH_RATE    50
+#if DVI_SYMBOLS_PER_WORD == 2
+    #define HSYNC_FRONT_PORCH   50
+    #define HSYNC_BACK_PORCH    20
+#else
+    #define HSYNC_FRONT_PORCH   100
+    #define HSYNC_BACK_PORCH    50
 #endif 
 
 //AFE (Analog Front End) Specific Config
@@ -93,26 +105,26 @@
                 .rlc_en = 0,
                 .clamp_ctrl = 0
             },
-            .offset_dac = {
-                .red = AFE_OFFSET_DAC,
-				.green = AFE_OFFSET_DAC,         // Common config
-				//.green = (1 * AFE_OFFSET_DAC) / 5, // SOG config
-                .blue = AFE_OFFSET_DAC
-            },
-            .pga_gain = {
-                .red = {
-                    .lsb =  AFE_PGA_GAIN_RGB & 0x01,
-                    .msb = (AFE_PGA_GAIN_RGB >> 1) & 0xFF
-                },
-                .green = {
-                    .lsb =  AFE_PGA_GAIN_RGB & 0x01,
-                    .msb = (AFE_PGA_GAIN_RGB >> 1) & 0xFF
-                },
-                .blue = {
-                    .lsb =  AFE_PGA_GAIN_RGB & 0x01,
-                    .msb = (AFE_PGA_GAIN_RGB >> 1) & 0xFF
-                }
-            }
+            // .offset_dac = {
+            //     .red = AFE_OFFSET_DAC,
+			// 	.green = AFE_OFFSET_DAC,         // Common config
+			// 	//.green = (1 * AFE_OFFSET_DAC) / 5, // SOG config
+            //     .blue = AFE_OFFSET_DAC
+            // },
+            // .pga_gain = {
+            //     .red = {
+            //         .lsb =  AFE_PGA_GAIN_RGB & 0x01,
+            //         .msb = (AFE_PGA_GAIN_RGB >> 1) & 0xFF
+            //     },
+            //     .green = {
+            //         .lsb =  AFE_PGA_GAIN_RGB & 0x01,
+            //         .msb = (AFE_PGA_GAIN_RGB >> 1) & 0xFF
+            //     },
+            //     .blue = {
+            //         .lsb =  AFE_PGA_GAIN_RGB & 0x01,
+            //         .msb = (AFE_PGA_GAIN_RGB >> 1) & 0xFF
+            //     }
+            // }
         },
         .verify_retries = 3,
         .pio = pio1,
@@ -141,4 +153,65 @@
         .invert_diffpairs = true
     };
 #endif
+
+#if DVI_SYMBOLS_PER_WORD == 2
+    // Colors                0brrrrrggggggbbbbb
+    #define color_black      0b0000000000000000
+    #define color_dark_gray  0b0001100011100011
+    #define color_mid_gray   0b1010010100010000
+    #define color_light_gray 0b1100011000011000
+    #define color_white      0b1111111111111111
+    #define color_red        0b1111100000000000
+    #define color_green      0b0000011111100000
+    #define color_blue       0b0000000000011111
+#else
+    // Colors                0brrrgggbb
+    #define color_black      0b00000000
+    #define color_dark_gray  0b01001001
+    #define color_mid_gray   0b10110110
+    #define color_light_gray 0b11011011
+    #define color_white      0b11111111
+    #define color_red        0b11100000
+    #define color_green      0b00011100
+    #define color_blue       0b00000011
+#endif
+
+// Global settings 
+#ifdef _SETTINGS_H
+    // Factory Settings
+    const settings_t factory_settings = {
+        .security_key = { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF, 0x10, 0x11, 0x12, 0x13 },
+        .menu_colors = { color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green},
+        .flags.auto_shut_down = 1,
+        .flags.default_display = 0,
+        .displays = {{ 
+                .gain = { .red = AFE_PGA_GAIN_RGB, .green = AFE_PGA_GAIN_RGB, .blue = AFE_PGA_GAIN_RGB},
+                .offset = { .red = AFE_OFFSET_DAC, .green = AFE_OFFSET_DAC,   .blue = AFE_OFFSET_DAC},
+                .v_front_porch = V_FRONT_PORCH, .v_back_porch = V_BACK_PORCH,
+                .h_front_porch = HSYNC_FRONT_PORCH, .h_back_porch = HSYNC_BACK_PORCH,
+                .refresh_rate = REFRESH_RATE
+            }, {
+                .gain = { .red = AFE_PGA_GAIN_RGB, .green = AFE_PGA_GAIN_RGB, .blue = AFE_PGA_GAIN_RGB},
+                .offset = { .red = AFE_OFFSET_DAC, .green = AFE_OFFSET_DAC,   .blue = AFE_OFFSET_DAC},
+                .v_front_porch = V_FRONT_PORCH, .v_back_porch = V_BACK_PORCH,
+                .h_front_porch = HSYNC_FRONT_PORCH, .h_back_porch = HSYNC_BACK_PORCH,
+                .refresh_rate = REFRESH_RATE
+            }, {
+                .gain = { .red = AFE_PGA_GAIN_RGB, .green = AFE_PGA_GAIN_RGB, .blue = AFE_PGA_GAIN_RGB},
+                .offset = { .red = AFE_OFFSET_DAC, .green = AFE_OFFSET_DAC,   .blue = AFE_OFFSET_DAC},
+                .v_front_porch = V_FRONT_PORCH, .v_back_porch = V_BACK_PORCH,
+                .h_front_porch = HSYNC_FRONT_PORCH, .h_back_porch = HSYNC_BACK_PORCH,
+                .refresh_rate = REFRESH_RATE
+            }, {
+                .gain = { .red = AFE_PGA_GAIN_RGB, .green = AFE_PGA_GAIN_RGB, .blue = AFE_PGA_GAIN_RGB},
+                .offset = { .red = AFE_OFFSET_DAC, .green = AFE_OFFSET_DAC,   .blue = AFE_OFFSET_DAC},
+                .v_front_porch = V_FRONT_PORCH, .v_back_porch = V_BACK_PORCH,
+                .h_front_porch = HSYNC_FRONT_PORCH, .h_back_porch = HSYNC_BACK_PORCH,
+                .refresh_rate = REFRESH_RATE
+            }
+        },
+        .eof_canary = 0
+    };
+#endif
+
 #endif

@@ -8,7 +8,7 @@ target_sources(commands INTERFACE
 target_include_directories(commands INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 
 target_link_libraries(commands INTERFACE
-    storage
+    settings
     security
     graphics
 )

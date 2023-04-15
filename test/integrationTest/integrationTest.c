@@ -21,6 +21,7 @@
 
 #include "menu.h"
 #include "cmdParser.h"
+#include "settings.h"
 #include "commands.h"
 #include "storage.h"
 
@@ -34,20 +35,12 @@
     //With 2 repeated symbols per word, we go for 320 pixels width and 16 bits per pixel
     #define FRAME_WIDTH         320
     uint16_t            framebuf[FRAME_HEIGHT][FRAME_WIDTH];
-    #define HSYNC_FRONT_PORCH   50
-    #define HSYNC_BACK_PORCH    20
 #else
     //With no repeated symbols per word, we go for 640 pixels width and 8 bits per pixel
     #define FRAME_WIDTH     640
     uint8_t            framebuf[FRAME_HEIGHT][FRAME_WIDTH];
-    #define HSYNC_FRONT_PORCH   100
-    #define HSYNC_BACK_PORCH    50
 #endif 
 
-#define V_FRONT_PORCH   42
-#define V_BACK_PORCH    54
-
-#define REFRESH_RATE    50
 #define VREG_VSEL       VREG_VOLTAGE_1_20
 #define DVI_TIMING      dvi_timing_640x480p_60hz
 
@@ -161,14 +154,22 @@ int main() {
     #endif
 
     // Validate license prior starting second core
-    command_storage_initialize();
-    command_validate_license();
+    if (settings_initialize(&factory_settings) > 0) {
+        printf("storage initialize failed \n");
+    };
+    command_validate_license(settings_get()->security_key);
 
     // Configure scan video properties
-    set_video_props(V_FRONT_PORCH, V_BACK_PORCH, HSYNC_FRONT_PORCH, HSYNC_BACK_PORCH, FRAME_WIDTH, FRAME_HEIGHT, REFRESH_RATE, framebuf);
+    display_t *current_display = &(settings_get()->displays[settings_get()->flags.default_display]);
+    set_video_props(current_display->v_front_porch, current_display->v_back_porch, current_display->h_front_porch, current_display->h_back_porch, FRAME_WIDTH, FRAME_HEIGHT, current_display->refresh_rate, framebuf);
     
-    // Configure AFE Capture System
-    command_info_afe_error = wm8213_afe_setup(&afec_cfg, GET_VIDEO_PROPS().sampling_rate);
+    // Do early init of config and update Gain & offset from stored settings
+    wm8213_afe_init(&afec_cfg);
+    wm8213_afe_update_offset(current_display->offset.red, current_display->offset.green, current_display->offset.blue, false);
+    wm8213_afe_update_gain(current_display->gain.red, current_display->gain.green, current_display->gain.blue, false);
+
+    // Configure AFE Capture System from afe config local
+    command_info_afe_error = wm8213_afe_setup(NULL, GET_VIDEO_PROPS().sampling_rate);
     if ( command_info_afe_error > 0) {
          printf("AFE initialize failed with error %d\n", command_info_afe_error);
     } else {
