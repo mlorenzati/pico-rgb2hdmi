@@ -29,10 +29,12 @@
 	//With 2 repeated symbols per word, we go for 320 pixels width and 16 bits per pixel
 	#define FRAME_WIDTH 320
 	uint16_t framebuf[FRAME_HEIGHT][FRAME_WIDTH];
+    #define BPPX rgb_16_565
 #else
 	//With no repeated symbols per word, we go for 640 pixels width and 8 bits per pixel
 	#define FRAME_WIDTH 640
 	uint8_t framebuf[FRAME_HEIGHT][FRAME_WIDTH];
+    #define BPPX rgb_8_332
 #endif
 
 #define REFRESH_RATE 50
@@ -46,11 +48,11 @@ const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
 static uint hdmi_scanline = 2;
 static graphic_ctx_t graphic_ctx = {
-	.width = FRAME_WIDTH,
-	.height = FRAME_HEIGHT,
+	.width        = FRAME_WIDTH,
+	.height       = FRAME_HEIGHT,
 	.video_buffer = framebuf,
-	.bppx = afec_cfg.bppx,
-	.parent = NULL
+	.bppx         = BPPX ,
+	.parent       = NULL
 };
 
 // --------- Global register end --------- 
@@ -127,23 +129,7 @@ int main() {
 	uint x, y, a;
 	uint sizex = FRAME_WIDTH / 2;
 	uint sizey = FRAME_HEIGHT / 2;
-	#if DVI_SYMBOLS_PER_WORD == 2
-	uint color_black = 0b0000000000000000;
-	uint color_gray =  0b0001100011100011;
-	uint color_red =   0b1111100000000000;
-	uint color_green = 0b0000011111100000;
-	uint color_blue =  0b0000000000011111;
-	uint color_white = 0b1111111111111111;
-	uint color_list[] = {color_red, color_green, color_blue, color_white, color_gray, color_black};
-	#else
-	uint color_black = 0b00000000;
-	char color_gray =  0b01101101;
-	char color_red =   0b11100000;
-	char color_green = 0b00011100;
-	char color_blue =  0b00000011;
-	char color_white = 0b11111111;
-	char color_list[] = {color_red, color_green, color_blue, color_white, color_gray, color_black};
-	#endif
+    uint color_list[] = {color_red, color_green, color_blue, color_white, color_mid_gray, color_black};
 
 	//Draw boxes
 	for (int i = 0; i < 6; i++) {
@@ -166,10 +152,10 @@ int main() {
 	draw_line(&graphic_ctx, FRAME_WIDTH - 1, 0, 0, FRAME_HEIGHT - 1, color_blue);
 
 	//Draw rectangle
-	draw_rect(&graphic_ctx, FRAME_WIDTH / 16, FRAME_HEIGHT / 12, FRAME_WIDTH - FRAME_WIDTH / 8, FRAME_HEIGHT - FRAME_HEIGHT / 8, color_gray);
+	draw_rect(&graphic_ctx, FRAME_WIDTH / 16, FRAME_HEIGHT / 12, FRAME_WIDTH - FRAME_WIDTH / 8, FRAME_HEIGHT - FRAME_HEIGHT / 8, color_mid_gray);
 
 	//Draw text
-	draw_textf(&graphic_ctx, FRAME_WIDTH / 6, (FRAME_HEIGHT *63) / 100, color_gray, color_white, false, "This is a test of RGB%s %d", FRAME_WIDTH == 640 ? "332 " : "565\n", 2022);
+	draw_textf(&graphic_ctx, FRAME_WIDTH / 6, (FRAME_HEIGHT *63) / 100, color_mid_gray, color_white, false, "This is a test of RGB%s %d", FRAME_WIDTH == 640 ? "332 " : "565\n", 2022);
 
 	while (1)
 	{

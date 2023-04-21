@@ -56,24 +56,6 @@ static graphic_ctx_t graphic_ctx = {
 	.parent = NULL
 };
 
-#if DVI_SYMBOLS_PER_WORD == 2
-    // Colors                     0brrrrrggggggbbbbb;
-    const uint color_black      = 0b0000000000000000;
-    const uint color_dark_gray  = 0b0001100011100011;
-    const uint color_mid_gray   = 0b1010010100010000;
-    const uint color_light_gray = 0b1100011000011000; 
-    const uint color_green      = 0b0000011111100000;
-    const uint color_white      = 0b1111111111111111;
-#else
-    // Colors                     0brrrgggbb;
-    const uint color_black      = 0b00000000;
-    const uint color_dark_gray  = 0b01001001;
-    const uint color_mid_gray   = 0b10110110;
-    const uint color_light_gray = 0b11011011;
-    const uint color_green      = 0b00011100;
-    const uint color_white      = 0b11111111;
-#endif
-
 gui_object_t *focused_object = NULL;
 
 // --------- Global register end --------- 
@@ -175,13 +157,15 @@ int main() {
 	uint colors[] = {color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green };
 	gui_list_t colors_list = initalizeGuiList(colors);
 	gui_properties_t common_nshared_props = {
-		.alignment = gui_align_center,
-		.horiz_vert = gui_orientation_vertical,
-		.padding = 1,
-		.shared = 0,
-		.border = 1
+        .focusable  = 1,
+        .alignment  = gui_align_center,
+        .horiz_vert = gui_orientation_vertical,
+        .padding    = 1,
+        .shared     = 0,
+        .border     = 1 
 	};
 	gui_properties_t spinbox_props = {
+        .focusable  = 1,
 		.alignment = gui_align_center,
 		.horiz_vert = gui_orientation_horizontal,
 		.padding = 1,

@@ -9,6 +9,7 @@ target_include_directories(storage INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 
 target_link_libraries(storage INTERFACE
     pico_base_headers
+    pico_multicore
     hardware_flash
     hardware_irq
 )
