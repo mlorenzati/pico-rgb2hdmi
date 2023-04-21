@@ -183,6 +183,7 @@ int main() {
     dvi0.timing = &DVI_TIMING;
     dvi0.ser_cfg = DVI_DEFAULT_SERIAL_CONFIG;
     dvi0.scanline_callback = core1_scanline_callback;
+    dvi0.scan_line = settings_get()->flags.scan_line;
     dvi_init(&dvi0, next_striped_spin_lock_num(), next_striped_spin_lock_num());
 
     // Prepare DVI for the first time the two initial lines, passing core 1 the framebuffer

@@ -244,6 +244,18 @@ bool on_shutdown_display_event(gui_status_t status, gui_base_t *origin, gui_obje
     }
     return true;
 }
+
+bool on_scanline_display_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+    if (!status.activated && origin->status.activated) {
+        bool scanline_opt = !settings_get()->flags.scan_line;
+        destination->base.data = (void *) menu_get_scanline_opt_txt(scanline_opt);
+        destination->base.status.data_changed = true;
+        settings_get()->flags.scan_line = scanline_opt;
+        dvi0.scan_line = scanline_opt;
+    }
+    return true;
+}
+
 // ----------  GUI EVENT SLOTS HANDLERS END  ----------
 
 // ---------  GUI Callbacks START  ---------
@@ -298,5 +310,9 @@ const char *menu_get_usb_button_txt(bool status) {
 
 const char *menu_get_shutdown_opt_txt(bool status) {
     return status ? "Display auto shutdown" : "Display allways on";
+}
+
+const char *menu_get_scanline_opt_txt(bool status) {
+    return status ? "ScanLine on" : "ScanLine off";
 }
 // ----------- RELATED UTILS END -----------

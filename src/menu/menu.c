@@ -344,12 +344,16 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             break;
         case  menu_button_main_group_display:{
             bool auto_shut_down = settings_get()->flags.auto_shut_down;
+            bool scanline_opt = settings_get()->flags.scan_line;
+            gui_properties_t optional_prop = menu_common_nshared_props;
+            optional_prop.focusable = (DVI_VERTICAL_REPEAT == 2);
             gui_object_t elements[] = { 
                 gui_create_text(&menu_overlay_ctx, 0, 0,    200, 12, &menu_colors_list, menu_common_label_props, "Display Number"),
                 gui_create_spinbox(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_spinbox_props, &spinbox_display_no),
                 gui_create_button(&menu_overlay_ctx,  0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Alignment"),
                 gui_create_button(&menu_overlay_ctx,  0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Gain & offset"),
                 gui_create_button(&menu_overlay_ctx,  0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, menu_get_shutdown_opt_txt(auto_shut_down)),
+                gui_create_button(&menu_overlay_ctx,  0, 0, 200, 12, &menu_colors_list, optional_prop, menu_get_scanline_opt_txt(scanline_opt && DVI_VERTICAL_REPEAT == 2)),
                 gui_create_button(&menu_overlay_ctx,  0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Back")
             };
             menu_elements_copy(elements, menu_left_buttons_group_elements);
@@ -360,7 +364,8 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             gui_event_subscribe(button_status,  &menu_left_buttons_group_elements[2].base, &menu_left_buttons_group_elements[2], on_alignment_button_event);
             gui_event_subscribe(button_status,  &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_gain_offset_button_event);
             gui_event_subscribe(button_status,  &menu_left_buttons_group_elements[4].base, &menu_left_buttons_group_elements[4], on_shutdown_display_event);
-            gui_event_subscribe(button_status,  &menu_left_buttons_group_elements[5].base, &menu_left_buttons_group_elements[5], on_back_event);     
+            gui_event_subscribe(button_status,  &menu_left_buttons_group_elements[5].base, &menu_left_buttons_group_elements[5], on_scanline_display_event);
+            gui_event_subscribe(button_status,  &menu_left_buttons_group_elements[6].base, &menu_left_buttons_group_elements[6], on_back_event);     
             }
             break;
         case menu_button_main_group_startup_info: {

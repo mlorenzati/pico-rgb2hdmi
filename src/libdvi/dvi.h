@@ -45,7 +45,8 @@ struct dvi_inst {
 	// Either scanline buffers or frame buffers:
 	queue_t q_colour_valid;
 	queue_t q_colour_free;
-    bool    started;
+    uint8_t started:1;
+    uint8_t scan_line:1;
 };
 
 // Reports DVI status 1: active 0: inactive

@@ -201,16 +201,26 @@ const uint32_t __dvi_const(dvi_ctrl_syms)[4] = {
 
 // Output solid red scanline if we are given NULL for tmdsbuff
 #if DVI_SYMBOLS_PER_WORD == 2
-static uint32_t __dvi_const(empty_scanline_tmds)[3] = {
+// static uint32_t __dvi_const(empty_scanline_tmds)[3] = {
+// 	0x7fd00u, // 0x00, 0x00
+// 	0x7fd00u, // 0x00, 0x00
+// 	0xbfa01u  // 0xfc, 0xfc
+// };
+static uint32_t __dvi_const(black_scanline_tmds)[3] = {
 	0x7fd00u, // 0x00, 0x00
 	0x7fd00u, // 0x00, 0x00
-	0xbfa01u  // 0xfc, 0xfc
+	0x7fd00u, // 0x00, 0x00
 };
 #else
-static uint32_t __attribute__((aligned(8))) __dvi_const(empty_scanline_tmds)[6] = {
+// static uint32_t __attribute__((aligned(8))) __dvi_const(empty_scanline_tmds)[6] = {
+// 	0x100u, 0x1ffu, // 0x00, 0x00
+// 	0x100u, 0x1ffu, // 0x00, 0x00
+// 	0x201u, 0x2feu  // 0xfc, 0xfc
+// };
+static uint32_t __attribute__((aligned(8))) __dvi_const(black_scanline_tmds)[6] = {
 	0x100u, 0x1ffu, // 0x00, 0x00
 	0x100u, 0x1ffu, // 0x00, 0x00
-	0x201u, 0x2feu  // 0xfc, 0xfc
+	0x100u, 0x1ffu, // 0x00, 0x00
 };
 #endif
 
@@ -304,7 +314,7 @@ void dvi_setup_scanline_for_active(const struct dvi_timing *t, const struct dvi_
 		}
 		else {
 			// Use read ring to repeat the correct DC-balanced symbol pair on blank scanlines (4 or 8 byte period)
-			_set_data_cb(&cblist[target_block], &dma_cfg[i], &empty_scanline_tmds[2 * i / DVI_SYMBOLS_PER_WORD],
+			_set_data_cb(&cblist[target_block], &dma_cfg[i], &black_scanline_tmds[2 * i / DVI_SYMBOLS_PER_WORD],
 				t->h_active_pixels / DVI_SYMBOLS_PER_WORD, DVI_SYMBOLS_PER_WORD == 2 ? 2 : 3, false);
 		}
 	}

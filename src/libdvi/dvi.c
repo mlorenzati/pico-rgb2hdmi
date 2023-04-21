@@ -247,14 +247,16 @@ static void __dvi_func(dvi_dma_irq_handler)(struct dvi_inst *inst) {
 		if (inst->timing_state.v_ctr % DVI_VERTICAL_REPEAT == DVI_VERTICAL_REPEAT - 1) {
 			queue_remove_blocking_u32(&inst->q_tmds_valid, &tmdsbuf);
 			inst->tmds_buf_release_next = tmdsbuf;
-		}
+		} else if (inst->scan_line) {
+            tmdsbuf = NULL; //Force a black line, but without counting error
+        }
 	}
 	else {
 		// No valid scanline was ready (generates solid red scanline)
 		tmdsbuf = NULL;
 		if (inst->timing_state.v_ctr % DVI_VERTICAL_REPEAT == DVI_VERTICAL_REPEAT - 1)
-			++inst->late_scanline_ctr;
-	}
+            ++inst->late_scanline_ctr;
+        }	
 
 	switch (inst->timing_state.v_state) {
 		case DVI_STATE_ACTIVE:

@@ -184,6 +184,7 @@
         .menu_colors = { color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green},
         .flags.auto_shut_down = 1,
         .flags.default_display = 0,
+        .flags.scan_line = 1,
         .displays = {{ 
                 .gain = { .red = AFE_PGA_GAIN_RGB, .green = AFE_PGA_GAIN_RGB, .blue = AFE_PGA_GAIN_RGB},
                 .offset = { .red = AFE_OFFSET_DAC, .green = AFE_OFFSET_DAC,   .blue = AFE_OFFSET_DAC},
