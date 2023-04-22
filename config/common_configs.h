@@ -55,8 +55,10 @@
 
     #define AFE_PGA_GAIN_RGB  60
     #define AFE_RLC_DAC_NEG   1
-	#define AFE_OFFSET_DAC    0   // Common config
-	//#define AFE_OFFSET_DAC    230   // SOG config
+	#define AFE_OFFSET_DAC    0
+	#define AFE_OFFSET_DAC_SOG_RED    230
+    #define AFE_OFFSET_DAC_SOG_GREEN  230/5
+	#define AFE_OFFSET_DAC_SOG_BLUE   230
 
     static const wm8213_afe_config_t afec_cfg = {
         .spi = spi0,
@@ -184,7 +186,7 @@
         .menu_colors = { color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green},
         .flags.auto_shut_down = 1,
         .flags.default_display = 0,
-        .flags.scan_line = 1,
+        .flags.scan_line = 0,
         .displays = {{ 
                 .gain = { .red = AFE_PGA_GAIN_RGB, .green = AFE_PGA_GAIN_RGB, .blue = AFE_PGA_GAIN_RGB},
                 .offset = { .red = AFE_OFFSET_DAC, .green = AFE_OFFSET_DAC,   .blue = AFE_OFFSET_DAC},
@@ -205,7 +207,7 @@
                 .refresh_rate = REFRESH_RATE
             }, {
                 .gain = { .red = AFE_PGA_GAIN_RGB, .green = AFE_PGA_GAIN_RGB, .blue = AFE_PGA_GAIN_RGB},
-                .offset = { .red = AFE_OFFSET_DAC, .green = AFE_OFFSET_DAC,   .blue = AFE_OFFSET_DAC},
+                .offset = { .red = AFE_OFFSET_DAC_SOG_RED, .green = AFE_OFFSET_DAC_SOG_GREEN,   .blue = AFE_OFFSET_DAC_SOG_BLUE},
                 .v_front_porch = V_FRONT_PORCH, .v_back_porch = V_BACK_PORCH,
                 .h_front_porch = HSYNC_FRONT_PORCH, .h_back_porch = HSYNC_BACK_PORCH,
                 .refresh_rate = REFRESH_RATE
