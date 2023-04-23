@@ -13,5 +13,3 @@ add_subdirectory(menu)
 add_subdirectory(cmdParser)
 add_subdirectory(commands)
 add_subdirectory(system)
-add_subdirectory(app)
-

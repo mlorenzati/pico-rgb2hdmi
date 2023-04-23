@@ -23,16 +23,12 @@
 #endif
 
 //VIDEO Timing
-#define V_FRONT_PORCH   42
-#define V_BACK_PORCH    54
-#define REFRESH_RATE    50
-#if DVI_SYMBOLS_PER_WORD == 2
-    #define HSYNC_FRONT_PORCH   50
-    #define HSYNC_BACK_PORCH    20
-#else
-    #define HSYNC_FRONT_PORCH   100
-    #define HSYNC_BACK_PORCH    50
-#endif 
+#define V_FRONT_PORCH            42
+#define V_BACK_PORCH             54
+#define REFRESH_RATE             50
+#define HSYNC_FRONT_PORCH        100
+#define HSYNC_BACK_PORCH         50
+#define DEFAULT_SYMBOLS_PER_WORD 1
 
 //AFE (Analog Front End) Specific Config
 #ifdef _WM8213_AFE_H
@@ -134,7 +130,7 @@
         .sm_afe_cp = 0,
         .pin_base_afe_op = AFE_OP,
         .pin_base_afe_ctrl = AFE_VSMP,
-        #if DVI_SYMBOLS_PER_WORD == 2
+        #if DEFAULT_SYMBOLS_PER_WORD == 2
         .bppx = rgb_16_565
         #else
         .bppx = rgb_8_332
@@ -189,7 +185,7 @@
             .flags.auto_shut_down = 1, \
             .flags.default_display = 0, \
             .flags.scan_line = 0, \
-            .flags.symbols_per_word = 0, \
+            .flags.symbols_per_word = DEFAULT_SYMBOLS_PER_WORD == 2, \
             .displays = {{ \
                     .gain = { .red = AFE_PGA_GAIN_RGB, .green = AFE_PGA_GAIN_RGB, .blue = AFE_PGA_GAIN_RGB}, \
                     .offset = { .red = AFE_OFFSET_DAC, .green = AFE_OFFSET_DAC,   .blue = AFE_OFFSET_DAC}, \

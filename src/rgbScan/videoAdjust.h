@@ -13,6 +13,7 @@ typedef struct video_props {
     io_rw_8     refresh_rate;
     io_rw_32    sampling_rate;
     void        *video_buffer;
+    bool        symbols_per_word;
 } video_props_t;
 
 extern video_props_t video_props;
@@ -27,6 +28,7 @@ void set_video_props(
     io_rw_16    width,
     io_rw_16    height,
     io_rw_8     refresh_rate,
+    bool        symbols_per_word,
     void        *video_buffer
     );
 

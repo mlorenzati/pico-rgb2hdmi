@@ -142,7 +142,7 @@ bool on_display_selection_event(gui_status_t status, gui_base_t *origin, gui_obj
             // Timing and aligment
             set_video_props(menu_current_display->v_front_porch, menu_current_display->v_back_porch, 
                 menu_current_display->h_front_porch, menu_current_display->h_back_porch, 
-                GET_VIDEO_PROPS().width, GET_VIDEO_PROPS().height, menu_current_display->refresh_rate, GET_VIDEO_PROPS().video_buffer);
+                GET_VIDEO_PROPS().width, GET_VIDEO_PROPS().height, menu_current_display->refresh_rate, settings_get()->flags.symbols_per_word, GET_VIDEO_PROPS().video_buffer);
             rgbScannerUpdateData(GET_VIDEO_PROPS().vertical_front_porch, 0);
             rgbScannerEnable(false);
             wm8213_afe_capture_update_sampling_rate(GET_VIDEO_PROPS().sampling_rate);
@@ -154,7 +154,6 @@ bool on_display_selection_event(gui_status_t status, gui_base_t *origin, gui_obj
             spinbox_offset     = wm8213_afe_get_offset(color_part_all);
             spinbox_gain       = wm8213_afe_get_gain(color_part_all);
         }
-        
     }
     destination->base.status.data_changed = 1;
 

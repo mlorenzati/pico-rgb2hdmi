@@ -78,11 +78,11 @@ void __not_in_flash_func(core1_main)() {
     storage_report_core1_use();
     dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
     dvi_start(&dvi0);
-    #if DVI_SYMBOLS_PER_WORD == 2
-        dvi_scanbuf_main_16bpp(&dvi0);
-    #else
+    if (!settings_get()->flags.symbols_per_word) {
+        dvi_scanbuf_main_16bpp(&dvi0); 
+    } else {
         dvi_scanbuf_main_8bpp(&dvi0);
-    #endif
+    }
     
     __builtin_unreachable();
 }
@@ -161,10 +161,11 @@ int main() {
 
     // Configure scan video properties
     display_t *current_display = &(settings_get()->displays[settings_get()->flags.default_display]);
-    set_video_props(current_display->v_front_porch, current_display->v_back_porch, current_display->h_front_porch, current_display->h_back_porch, FRAME_WIDTH, FRAME_HEIGHT, current_display->refresh_rate, framebuf);
+    set_video_props(current_display->v_front_porch, current_display->v_back_porch, current_display->h_front_porch, current_display->h_back_porch, FRAME_WIDTH, FRAME_HEIGHT, current_display->refresh_rate, settings_get()->flags.symbols_per_word, framebuf);
     
     // Do early init of config and update Gain & offset from stored settings
     wm8213_afe_init(&afec_cfg);
+    wm8213_afe_capture_update_bppx(settings_get()->flags.symbols_per_word ? rgb_16_565 : rgb_8_332);
     wm8213_afe_update_offset(current_display->offset.red, current_display->offset.green, current_display->offset.blue, false);
     wm8213_afe_update_gain(current_display->gain.red, current_display->gain.green, current_display->gain.blue, false);
 

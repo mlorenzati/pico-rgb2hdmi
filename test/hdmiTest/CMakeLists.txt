@@ -9,7 +9,6 @@ if (TARGET tinyusb_device)
     target_compile_definitions(hdmiTest PRIVATE
         DVI_VERTICAL_REPEAT=1
         DVI_N_TMDS_BUFFERS=5
-        DVI_SYMBOLS_PER_WORD=1
         )
 
     target_link_libraries(hdmiTest PRIVATE

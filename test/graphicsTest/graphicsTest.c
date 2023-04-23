@@ -41,7 +41,8 @@
 #define VREG_VSEL VREG_VOLTAGE_1_20
 #define DVI_TIMING dvi_timing_640x480p_60hz
 
-// --------- Global register start --------- 
+// --------- Global register start ---------
+bool symbols_per_word = 0; //0: 1 symbol (320x240@16), 1: 2 symbols(640x240@8)
 struct dvi_inst dvi0;
 uint gpio_pins[3] = { KEYBOARD_PIN_UP, KEYBOARD_PIN_DOWN, KEYBOARD_PIN_ACTION };
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
@@ -60,11 +61,13 @@ static graphic_ctx_t graphic_ctx = {
 void __not_in_flash_func(core1_main)() {
 	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
 	dvi_start(&dvi0);
-	#if DVI_SYMBOLS_PER_WORD == 2
-		dvi_scanbuf_main_16bpp(&dvi0);
-	#else
-		dvi_scanbuf_main_8bpp(&dvi0);
-	#endif
+
+    if (!symbols_per_word) {
+        dvi_scanbuf_main_16bpp(&dvi0); 
+    } else {
+        dvi_scanbuf_main_8bpp(&dvi0);
+    }
+
 	__builtin_unreachable();
 }
 
