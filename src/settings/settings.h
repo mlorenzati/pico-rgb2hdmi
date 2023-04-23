@@ -9,7 +9,7 @@
 
 typedef struct display {
     struct { 
-        uint32_t red:6, green:6, blue:6;
+        uint16_t red, green, blue;
     } gain;
 
     struct { 

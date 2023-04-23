@@ -11,7 +11,6 @@
 
 //System configuration includes
 #include "common_configs.h"
-#include "settings.h"
 #include "pico/stdlib.h"
 
 // --------- KEYBOARD API CALL START --------- 
@@ -481,6 +480,7 @@ int menu_initialize(uint *pins, menu_event_type *events, uint8_t count) {
     spinbox_offset = wm8213_afe_get_offset(color_part_all);
     spinbox_gain = wm8213_afe_get_gain(color_part_all);
     spinbox_display_no = settings_get()->flags.default_display + 1;
+    menu_current_display = &(settings_get()->displays[settings_get()->flags.default_display]);
 
     return 0;
 }

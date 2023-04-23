@@ -117,10 +117,9 @@ int __not_in_flash("main") main() {
 	multicore_launch_core1(core1_main);
 
 	sem_release(&dvi_start_sem);
+    uint32_t *tmds_buf = NULL;
 	while (1) {
 		for (int y = 0; y < FRAME_HEIGHT; y+=2) {
-			uint32_t *tmds_buf;
-	
 			queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmds_buf);
 			prepare_scanline((const uint32_t*)(framebuf[y/3]), tmds_buf);
 			queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmds_buf);

@@ -1,5 +1,5 @@
-#include "menuCallback.h"
 #include "menuGlobals.h"
+#include "menuCallback.h"
 #include "overlay.h"
 #include "commands.h"
 #include "version.h"
@@ -8,7 +8,6 @@
 #include "wm8213Afe.h"
 #include <string.h>
 #include "common_configs.h"
-#include "settings.h" // This goes after common_config, we need defines but not to create static object
 
 // ---------  GUI EVENT SLOTS HANDLERS START  ---------
 bool on_exit_button_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
@@ -36,7 +35,6 @@ bool on_alignment_event(gui_status_t status, gui_base_t *origin, gui_object_t *d
     if (!status.activated && origin->status.activated) {
         destination->base.status.navigable = !destination->base.status.navigable;
     } else {
-        display_t *current_display = &(settings_get()->displays[settings_get()->flags.default_display]);
         if (o_data == &spinbox_horizontal) {
             data   = &(GET_VIDEO_PROPS().horizontal_front_porch);
             n_data = &(GET_VIDEO_PROPS().horizontal_back_porch);
@@ -77,10 +75,10 @@ bool on_alignment_event(gui_status_t status, gui_base_t *origin, gui_object_t *d
             rgbScannerEnable(true);
             
         }
-        current_display->v_front_porch = GET_VIDEO_PROPS().vertical_front_porch;
-        current_display->v_back_porch =  GET_VIDEO_PROPS().vertical_back_porch;
-        current_display->h_back_porch =  GET_VIDEO_PROPS().horizontal_back_porch;
-        current_display->h_front_porch = GET_VIDEO_PROPS().horizontal_front_porch;
+        menu_current_display->v_front_porch = GET_VIDEO_PROPS().vertical_front_porch;
+        menu_current_display->v_back_porch =  GET_VIDEO_PROPS().vertical_back_porch;
+        menu_current_display->h_back_porch =  GET_VIDEO_PROPS().horizontal_back_porch;
+        menu_current_display->h_front_porch = GET_VIDEO_PROPS().horizontal_front_porch;
         spinbox_horizontal = GET_VIDEO_PROPS().horizontal_front_porch;
         spinbox_vertical = GET_VIDEO_PROPS().vertical_front_porch;
         spinbox_pix_width = GET_VIDEO_PROPS().horizontal_front_porch + GET_VIDEO_PROPS().horizontal_back_porch;
@@ -93,11 +91,9 @@ bool on_alignment_event(gui_status_t status, gui_base_t *origin, gui_object_t *d
 
 bool on_gain_offset_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
     uint *o_data = (uint *) origin->data;
-
     if (!status.activated && origin->status.activated) {
         destination->base.status.navigable = !destination->base.status.navigable;
     } else {
-        display_t *current_display = &(settings_get()->displays[settings_get()->flags.default_display]);
         if (o_data == &spinbox_offset) {
             if (status.add && spinbox_offset < WM8213_POS_OFFSET_MAX) {
                 spinbox_offset++;
@@ -105,9 +101,9 @@ bool on_gain_offset_event(gui_status_t status, gui_base_t *origin, gui_object_t 
                 spinbox_offset--;
             }
             wm8213_afe_update_offset(spinbox_offset, spinbox_offset, spinbox_offset, true);
-            current_display->offset.red   = wm8213_afe_get_offset(color_part_red);
-            current_display->offset.green = wm8213_afe_get_offset(color_part_green);
-            current_display->offset.blue  = wm8213_afe_get_offset(color_part_blue);
+            menu_current_display->offset.red   = wm8213_afe_get_offset(color_part_red);
+            menu_current_display->offset.green = wm8213_afe_get_offset(color_part_green);
+            menu_current_display->offset.blue  = wm8213_afe_get_offset(color_part_blue);
        } else if (o_data == &spinbox_gain) {
             if (status.add && spinbox_gain < WM8213_GAIN_MAX) {
                 spinbox_gain++;
@@ -115,9 +111,9 @@ bool on_gain_offset_event(gui_status_t status, gui_base_t *origin, gui_object_t 
                 spinbox_gain--;
             }
             wm8213_afe_update_gain(spinbox_gain, spinbox_gain, spinbox_gain, true);
-            current_display->gain.red   = wm8213_afe_get_gain(color_part_red);
-            current_display->gain.green = wm8213_afe_get_gain(color_part_green);
-            current_display->gain.blue  = wm8213_afe_get_gain(color_part_blue);
+            menu_current_display->gain.red   = wm8213_afe_get_gain(color_part_red);
+            menu_current_display->gain.green = wm8213_afe_get_gain(color_part_green);
+            menu_current_display->gain.blue  = wm8213_afe_get_gain(color_part_blue);
        }
     }
     destination->base.status.data_changed = 1;
@@ -126,7 +122,6 @@ bool on_gain_offset_event(gui_status_t status, gui_base_t *origin, gui_object_t 
 }
 
 bool on_display_selection_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
-
     if (!status.activated && origin->status.activated) {
         destination->base.status.navigable = !destination->base.status.navigable;
     } else {
@@ -137,24 +132,24 @@ bool on_display_selection_event(gui_status_t status, gui_base_t *origin, gui_obj
         }
         if (spinbox_display_no != settings_get()->flags.default_display + 1) {
             settings_get()->flags.default_display = spinbox_display_no - 1; 
-            display_t *current_display = &(settings_get()->displays[spinbox_display_no - 1]);
-            
+            menu_current_display = &(settings_get()->displays[settings_get()->flags.default_display]);
+
             // Update all display related configs one by one
             // Gain does not commit changes
-            wm8213_afe_update_gain(current_display->gain.red, current_display->gain.green, current_display->gain.blue, false);
+            wm8213_afe_update_gain(menu_current_display->gain.red, menu_current_display->gain.green, menu_current_display->gain.blue, false);
             // Offset commits all changes
-            wm8213_afe_update_offset(current_display->offset.red, current_display->offset.green, current_display->offset.blue, true);
+            wm8213_afe_update_offset(menu_current_display->offset.red, menu_current_display->offset.green, menu_current_display->offset.blue, true);
             // Timing and aligment
-            set_video_props(current_display->v_front_porch, current_display->v_back_porch, 
-                current_display->h_front_porch, current_display->h_back_porch, 
-                GET_VIDEO_PROPS().width, GET_VIDEO_PROPS().height, current_display->refresh_rate, GET_VIDEO_PROPS().video_buffer);
+            set_video_props(menu_current_display->v_front_porch, menu_current_display->v_back_porch, 
+                menu_current_display->h_front_porch, menu_current_display->h_back_porch, 
+                GET_VIDEO_PROPS().width, GET_VIDEO_PROPS().height, menu_current_display->refresh_rate, GET_VIDEO_PROPS().video_buffer);
             rgbScannerUpdateData(GET_VIDEO_PROPS().vertical_front_porch, 0);
             rgbScannerEnable(false);
             wm8213_afe_capture_update_sampling_rate(GET_VIDEO_PROPS().sampling_rate);
             rgbScannerEnable(true);
             //Update spinBoxes
-            spinbox_horizontal = current_display->h_front_porch;
-            spinbox_vertical   = current_display->v_front_porch;
+            spinbox_horizontal = menu_current_display->h_front_porch;
+            spinbox_vertical   = menu_current_display->v_front_porch;
             spinbox_pix_width  = GET_VIDEO_PROPS().horizontal_front_porch + GET_VIDEO_PROPS().horizontal_back_porch;
             spinbox_offset     = wm8213_afe_get_offset(color_part_all);
             spinbox_gain       = wm8213_afe_get_gain(color_part_all);

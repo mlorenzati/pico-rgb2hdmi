@@ -3,6 +3,7 @@
 #include "pico.h"
 #include "graphics.h"
 #include "gui.h"
+#include "settings.h"
 
 // ------------ Defines Start ------------
 #if DVI_SYMBOLS_PER_WORD == 2
@@ -46,13 +47,6 @@ typedef struct menu_event {
 // ------------ Enum / Struct End ------------
 
 // --------- Global register start ---------
-extern const uint color_black;
-extern const uint color_dark_gray;
-extern const uint color_mid_gray;
-extern const uint color_light_gray;
-extern const uint color_green;
-extern const uint color_white;
-
 extern uint8_t menu_tot_events; 
 extern menu_event_t  menu_events[menu_event_max];
 extern menu_button_group_type menu_nav_stack[MENU_TOTAL_NAV_STACK];
@@ -81,4 +75,5 @@ extern uint color_slider_option, color_spinbox_red, color_spinbox_green, color_s
 extern const char* menu_about_scroll_str;
 extern const char* menu_about_str;
 extern bool menu_usb_enabled;
+extern display_t *menu_current_display;
 #endif

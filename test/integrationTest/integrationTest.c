@@ -50,7 +50,7 @@ static uint         hdmi_scanline = 2;
 const uint          LED_PIN       = PICO_DEFAULT_LED_PIN;
 uint                keyboard_gpio_pins[KEYBOARD_N_PINS] = { KEYBOARD_PIN_UP, KEYBOARD_PIN_DOWN, KEYBOARD_PIN_ACTION };
 menu_event_type     menu_event_map[KEYBOARD_N_PINS]     = { menu_event_next, menu_event_previous, menu_event_action };
-
+const settings_t factory_settings = GET_FACTORY_SETTINGS();
 cmd_parser_option_t options[] =
 {
     {"up",      TRUE,  NULL,  'u'},

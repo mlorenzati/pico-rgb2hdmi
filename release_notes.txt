@@ -6,6 +6,7 @@ An rpi pico microprocessed rgb 2 hdmi plus rgb 2 usb on the fly converter
 Date: 2023/04/21
 Version: 0.5.2
 - Scan lines support with menu and settings when using vertical line repeat
+- Display config 4 has a SOG (sync on green) setup
 -------------------------------------------------------------------------
 Date: 2023/04/21
 Version: 0.5.1
