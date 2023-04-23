@@ -145,7 +145,7 @@
 //DVI Specific configs
 #ifdef _DVI_SERIALISER_H
     //DVI Config
-    #define DVI_DEFAULT_SERIAL_CONFIG     picodvi_dvi_cfg
+    #define DVI_DEFAULT_SERIAL_CONFIG    picodvi_dvi_cfg
     #define DVI_DEFAULT_PIO_INST         pio0
 
     static const struct dvi_serialiser_cfg picodvi_dvi_cfg = {
@@ -153,7 +153,8 @@
         .sm_tmds = {0, 1, 2},
         .pins_tmds = {5, 7, 9},
         .pins_clk = 3,
-        .invert_diffpairs = true
+        .invert_diffpairs = true,
+        .symbols_per_word = false
     };
 #endif
 
@@ -188,6 +189,7 @@
             .flags.auto_shut_down = 1, \
             .flags.default_display = 0, \
             .flags.scan_line = 0, \
+            .flags.symbols_per_word = 0, \
             .displays = {{ \
                     .gain = { .red = AFE_PGA_GAIN_RGB, .green = AFE_PGA_GAIN_RGB, .blue = AFE_PGA_GAIN_RGB}, \
                     .offset = { .red = AFE_OFFSET_DAC, .green = AFE_OFFSET_DAC,   .blue = AFE_OFFSET_DAC}, \

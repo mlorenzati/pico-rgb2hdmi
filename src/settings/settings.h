@@ -28,6 +28,7 @@ typedef struct settings {
         uint16_t auto_shut_down: 1;
         uint16_t default_display:2; // Tied to SETTINGS_DISPLAY_MAX
         uint8_t  scan_line:1;
+        uint8_t  symbols_per_word:1;
     } flags;
     display_t displays[SETTINGS_DISPLAY_MAX];
     uint8_t eof_canary;

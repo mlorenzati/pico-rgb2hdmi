@@ -182,6 +182,7 @@ int main() {
     // Initialize DVI
     dvi0.timing = &DVI_TIMING;
     dvi0.ser_cfg = DVI_DEFAULT_SERIAL_CONFIG;
+    dvi0.ser_cfg.symbols_per_word = settings_get()->flags.symbols_per_word;
     dvi0.scanline_callback = core1_scanline_callback;
     dvi0.scan_line = settings_get()->flags.scan_line;
     dvi_init(&dvi0, next_striped_spin_lock_num(), next_striped_spin_lock_num());

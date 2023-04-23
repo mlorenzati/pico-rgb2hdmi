@@ -35,7 +35,8 @@ void dvi_serialiser_init(struct dvi_serialiser_cfg *cfg) {
 			cfg->sm_tmds[i],
 			offset,
 			cfg->pins_tmds[i],
-			DVI_SERIAL_DEBUG
+			DVI_SERIAL_DEBUG,
+            cfg->symbols_per_word + 1
 		);
 		dvi_configure_pad(cfg->pins_tmds[i], cfg->invert_diffpairs);
 		dvi_configure_pad(cfg->pins_tmds[i] + 1, cfg->invert_diffpairs);

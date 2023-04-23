@@ -29,7 +29,7 @@
 % c-sdk {
 #include "dvi_config_defs.h"
 
-static inline void dvi_serialiser_program_init(PIO pio, uint sm, uint offset, uint data_pins, bool debug) {
+static inline void dvi_serialiser_program_init(PIO pio, uint sm, uint offset, uint data_pins, bool debug, uint8_t symbols_per_word) {
     pio_sm_set_pins_with_mask(pio, sm, 2u << data_pins, 3u << data_pins);
     pio_sm_set_pindirs_with_mask(pio, sm, ~0u, 3u << data_pins);
     pio_gpio_init(pio, data_pins);
@@ -45,7 +45,7 @@ static inline void dvi_serialiser_program_init(PIO pio, uint sm, uint offset, ui
     sm_config_set_sideset_pins(&c, data_pins);
     if (debug)
 	    sm_config_set_out_pins(&c, data_pins, 1);
-    sm_config_set_out_shift(&c, true, !debug, 10 * DVI_SYMBOLS_PER_WORD);
+    sm_config_set_out_shift(&c, true, !debug, 10 * symbols_per_word);
     sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
     pio_sm_init(pio, sm, offset, &c);
     pio_sm_set_enabled(pio, sm, false);

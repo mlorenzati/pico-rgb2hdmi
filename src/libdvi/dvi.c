@@ -35,17 +35,17 @@ void dvi_init(struct dvi_inst *inst, uint spinlock_tmds_queue, uint spinlock_col
 	queue_init_with_spinlock(&inst->q_tmds_free,    sizeof(void*),  8, spinlock_tmds_queue);
 	queue_init_with_spinlock(&inst->q_colour_valid, sizeof(void*),  8, spinlock_colour_queue);
 	queue_init_with_spinlock(&inst->q_colour_free,  sizeof(void*),  8, spinlock_colour_queue);
-
-	dvi_setup_scanline_for_vblank(inst->timing, inst->dma_cfg, true, &inst->dma_list_vblank_sync);
-	dvi_setup_scanline_for_vblank(inst->timing, inst->dma_cfg, false, &inst->dma_list_vblank_nosync);
-	dvi_setup_scanline_for_active(inst->timing, inst->dma_cfg, (void*)SRAM_BASE, &inst->dma_list_active);
-	dvi_setup_scanline_for_active(inst->timing, inst->dma_cfg, NULL, &inst->dma_list_error);
+    uint8_t symbols_per_word = inst->ser_cfg.symbols_per_word + 1;
+	dvi_setup_scanline_for_vblank(inst->timing, inst->dma_cfg, true, &inst->dma_list_vblank_sync, symbols_per_word);
+	dvi_setup_scanline_for_vblank(inst->timing, inst->dma_cfg, false, &inst->dma_list_vblank_nosync, symbols_per_word);
+	dvi_setup_scanline_for_active(inst->timing, inst->dma_cfg, (void*)SRAM_BASE, &inst->dma_list_active, symbols_per_word);
+	dvi_setup_scanline_for_active(inst->timing, inst->dma_cfg, NULL, &inst->dma_list_error, symbols_per_word);
 
 	for (int i = 0; i < DVI_N_TMDS_BUFFERS; ++i) {
 #if DVI_MONOCHROME_TMDS
-		void *tmdsbuf = malloc(inst->timing->h_active_pixels / DVI_SYMBOLS_PER_WORD * sizeof(uint32_t));
+		void *tmdsbuf = malloc(inst->timing->h_active_pixels / symbols_per_word * sizeof(uint32_t));
 #else
-		void *tmdsbuf = malloc(3 * inst->timing->h_active_pixels / DVI_SYMBOLS_PER_WORD * sizeof(uint32_t));
+		void *tmdsbuf = malloc(3 * inst->timing->h_active_pixels / symbols_per_word * sizeof(uint32_t));
 #endif
 		if (!tmdsbuf)
 			panic("TMDS buffer allocation failed");
@@ -161,11 +161,11 @@ static inline void __dvi_func_x(_dvi_prepare_scanline_8bpp)(struct dvi_inst *ins
 	uint32_t *tmdsbuf = NULL;
 	queue_remove_blocking_u32(&inst->q_tmds_free, &tmdsbuf);
 	uint pixwidth = inst->timing->h_active_pixels;
-	uint words_per_channel = pixwidth / DVI_SYMBOLS_PER_WORD;
+	uint words_per_channel = pixwidth / (inst->ser_cfg.symbols_per_word + 1);
 	// Scanline buffers are half-resolution; the functions take the number of *input* pixels as parameter.
-	tmds_encode_data_channel_8bpp(scanbuf, tmdsbuf + 0 * words_per_channel, pixwidth / 2, DVI_8BPP_BLUE_MSB,  DVI_8BPP_BLUE_LSB );
-	tmds_encode_data_channel_8bpp(scanbuf, tmdsbuf + 1 * words_per_channel, pixwidth / 2, DVI_8BPP_GREEN_MSB, DVI_8BPP_GREEN_LSB);
-	tmds_encode_data_channel_8bpp(scanbuf, tmdsbuf + 2 * words_per_channel, pixwidth / 2, DVI_8BPP_RED_MSB,   DVI_8BPP_RED_LSB  );
+	tmds_encode_data_channel_8bpp(scanbuf, tmdsbuf + 0 * words_per_channel, pixwidth / 2, DVI_8BPP_BLUE_MSB,  DVI_8BPP_BLUE_LSB,  inst->ser_cfg.symbols_per_word);
+	tmds_encode_data_channel_8bpp(scanbuf, tmdsbuf + 1 * words_per_channel, pixwidth / 2, DVI_8BPP_GREEN_MSB, DVI_8BPP_GREEN_LSB, inst->ser_cfg.symbols_per_word);
+	tmds_encode_data_channel_8bpp(scanbuf, tmdsbuf + 2 * words_per_channel, pixwidth / 2, DVI_8BPP_RED_MSB,   DVI_8BPP_RED_LSB,   inst->ser_cfg.symbols_per_word);
 	queue_add_blocking_u32(&inst->q_tmds_valid, &tmdsbuf);
 }
 
@@ -173,7 +173,7 @@ static inline void __dvi_func_x(_dvi_prepare_scanline_16bpp)(struct dvi_inst *in
 	uint32_t *tmdsbuf = NULL;
 	queue_remove_blocking_u32(&inst->q_tmds_free, &tmdsbuf);
 	uint pixwidth = inst->timing->h_active_pixels;
-	uint words_per_channel = pixwidth / DVI_SYMBOLS_PER_WORD;
+	uint words_per_channel = pixwidth / (inst->ser_cfg.symbols_per_word + 1);
 	tmds_encode_data_channel_16bpp(scanbuf, tmdsbuf + 0 * words_per_channel, pixwidth / 2, DVI_16BPP_BLUE_MSB,  DVI_16BPP_BLUE_LSB );
 	tmds_encode_data_channel_16bpp(scanbuf, tmdsbuf + 1 * words_per_channel, pixwidth / 2, DVI_16BPP_GREEN_MSB, DVI_16BPP_GREEN_LSB);
 	tmds_encode_data_channel_16bpp(scanbuf, tmdsbuf + 2 * words_per_channel, pixwidth / 2, DVI_16BPP_RED_MSB,   DVI_16BPP_RED_LSB  );
@@ -226,8 +226,9 @@ static void __dvi_func(dvi_dma_irq_handler)(struct dvi_inst *inst) {
 
 	// Make sure all three channels have definitely loaded their last block
 	// (should be within a few cycles of one another)
+    uint8_t symbols_per_word = inst->ser_cfg.symbols_per_word + 1;
 	for (int i = 0; i < N_TMDS_LANES; ++i) {
-		while (dma_debug_hw->ch[inst->dma_cfg[i].chan_data].tcr != inst->timing->h_active_pixels / DVI_SYMBOLS_PER_WORD)
+		while (dma_debug_hw->ch[inst->dma_cfg[i].chan_data].tcr != inst->timing->h_active_pixels / symbols_per_word)
 			tight_loop_contents();
 	}
 
@@ -261,7 +262,7 @@ static void __dvi_func(dvi_dma_irq_handler)(struct dvi_inst *inst) {
 	switch (inst->timing_state.v_state) {
 		case DVI_STATE_ACTIVE:
 			if (tmdsbuf) {
-				dvi_update_scanline_data_dma(inst->timing, tmdsbuf, &inst->dma_list_active);
+				dvi_update_scanline_data_dma(inst->timing, tmdsbuf, &inst->dma_list_active, inst->ser_cfg.symbols_per_word + 1);
 				_dvi_load_dma_op(inst->dma_cfg, &inst->dma_list_active);
 			}
 			else {
