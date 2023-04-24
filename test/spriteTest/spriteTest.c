@@ -27,21 +27,15 @@
 // System config definitions
 // TMDS bit clock 252 MHz
 // DVDD 1.2V (1.1V seems ok too)
-#define FRAME_HEIGHT 240
-#if DVI_SYMBOLS_PER_WORD == 2
-    //With 2 repeated symbols per word, we go for 320 pixels width and 16 bits per pixel
-    #define FRAME_WIDTH 320
-    uint16_t framebuf[FRAME_HEIGHT][FRAME_WIDTH];
-#else
-    //With no repeated symbols per word, we go for 640 pixels width and 8 bits per pixel
-    #define FRAME_WIDTH 640
-    uint8_t framebuf[FRAME_HEIGHT][FRAME_WIDTH];
-#endif
 
+//With 2 repeated symbols per word, we go for 320 pixels width and 16 bits per pixel
+#define FRAME_WIDTH 320
+#define FRAME_HEIGHT 240
 #define REFRESH_RATE 50
 #define VREG_VSEL VREG_VOLTAGE_1_20
 #define DVI_TIMING dvi_timing_640x480p_60hz
 #define N_LOGOS 32
+uint16_t framebuf[FRAME_HEIGHT][FRAME_WIDTH];
 
 // --------- Global register start --------- 
 struct dvi_inst dvi0;
@@ -49,6 +43,7 @@ uint gpio_pins[3] = { KEYBOARD_PIN_UP, KEYBOARD_PIN_DOWN, KEYBOARD_PIN_ACTION };
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
 volatile uint hdmi_scanline = 2;
+bool symbols_per_word = 1; //0: 1 symbol (320x240@16), 1: 2 symbols(640x240@8)
 
 sprite_t berry[N_LOGOS];
 int vx[N_LOGOS];
@@ -67,20 +62,16 @@ const int vmax = 4;
 void __not_in_flash_func(core1_main)() {
     dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
     dvi_start(&dvi0);
-    #if DVI_SYMBOLS_PER_WORD == 2
-        dvi_scanbuf_main_16bpp(&dvi0);
-    #else
+    if (symbols_per_word) {
+        dvi_scanbuf_main_16bpp(&dvi0); 
+    } else {
         dvi_scanbuf_main_8bpp(&dvi0);
-    #endif
+    }
     __builtin_unreachable();
 }
 
 static inline void core1_scanline_callback() {
-    #if DVI_SYMBOLS_PER_WORD == 2
-        uint16_t *bufptr = NULL;
-    #else
-        uint8_t *bufptr  = NULL;
-    #endif
+    uint16_t *bufptr  = NULL;
     while (queue_try_remove_u32(&dvi0.q_colour_free, &bufptr));
     bufptr = &framebuf[hdmi_scanline][0];
     queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
@@ -115,6 +106,7 @@ int main() {
 
     dvi0.timing = &DVI_TIMING;
     dvi0.ser_cfg = DVI_DEFAULT_SERIAL_CONFIG;
+    dvi0.ser_cfg.symbols_per_word = symbols_per_word;
     dvi0.scanline_callback = core1_scanline_callback;
     dvi_init(&dvi0, next_striped_spin_lock_num(), next_striped_spin_lock_num());
 
@@ -122,11 +114,8 @@ int main() {
     // it without any intervention from core 0
 
     //Prepare for the first time the two initial lines
-    #if DVI_SYMBOLS_PER_WORD == 2
-        uint16_t *bufptr = NULL;
-    #else
-        uint8_t *bufptr  = NULL;
-    #endif
+    uint16_t *bufptr = NULL;
+
     queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
     bufptr += FRAME_WIDTH;
     queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);

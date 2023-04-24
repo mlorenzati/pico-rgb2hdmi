@@ -8,12 +8,11 @@ menu_button_group_type menu_nav_stack[MENU_TOTAL_NAV_STACK];
 uint8_t menu_button_index = 0;
 
 graphic_ctx_t menu_graphic_ctx = {
-    .bppx = MENU_OVERLAY_BBPX,
     .parent = NULL
 };
 
 graphic_ctx_t menu_overlay_ctx;
-gui_list_t menu_colors_list = initalizeGuiList(ram_settings.menu_colors);
+gui_list_t menu_colors_list;
 
 const gui_properties_t menu_common_nshared_props = {
     .focusable  = 1,
@@ -63,5 +62,6 @@ const char* menu_about_scroll_str;
 const char* menu_about_str = "pico-rgb2hdmi is a micro-\ncontrolled RGB to HDMI\nand RGB to USB converter\nbased on a raspberry pi\npico and a cheap Analog\nFront End (AFE) aimed to\nsupport 80s and 90s comp-\nuters with the precursor\nof the VGA.\n\nSupporter list:\nFernando Bugallo\nEspacio Tec:\n Jose Francisco Manera\n Sebastian Rho\n Juan Pablo Chucair\nGabriel Garcia\nAlejandro Perez\nGaston Martin Ferreiros\nOtto\nAldo Ibanez\nEmiliano Escobar\nFrancisco Maqueira\nJose Gumersindo\nRetro computacion:\n Jorge Castillo\nLeandro Galvano\nErnesto Uriburu\nCarlos Masciarelli\nMarcelo Barbalace\nCarlos Aon\nPCB Design:\n Camilo Gomez\nFirmware and HW Design:\n Marcelo Lorenzati\nArgentina-Cordoba-2022";
 bool menu_usb_enabled = false;
 display_t *menu_current_display;
+uint color_black, color_white;
 
 // --------- Global register end --------- 

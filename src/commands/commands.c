@@ -18,15 +18,11 @@ int command_info_scanner_error;
 bool command_license_is_valid;
 const void *security_key_in_flash;
 
-#if DVI_SYMBOLS_PER_WORD == 2
-	#define COMMAND_GETBUFFER   GET_RGB16_BUFFER
-	#define COMMAND_PRINTF_WORD	"%04X%s"
-    #define COMMAND_GFX_BBPX    rgb_16_565
-#else
-	#define COMMAND_GETBUFFER   GET_RGB8_BUFFER
-	#define COMMAND_PRINTF_WORD	"%02X%s"
-    #define COMMAND_GFX_BBPX    rgb_8_332
-#endif
+#define COMMAND_GET_PRINTF_WORD() command_get_current_bppx() == rgb_16_565 ? "%04X%s" : "%02X%s"
+#define COMMAND_GET_WORD_FROM_BUFFER(width, height) command_get_current_bppx() == rgb_16_565 ? \
+    GET_RGB16_BUFFER(GET_VIDEO_PROPS().video_buffer)[GET_VIDEO_PROPS().width * height + width] : \
+    GET_RGB8_BUFFER(GET_VIDEO_PROPS().video_buffer)[GET_VIDEO_PROPS().width * height + width]
+
 /////////// END GLOBALS ///////////
 
 bool command_is_license_valid() {
@@ -51,6 +47,10 @@ void command_save_settings() {
 void command_factory_reset() {
     printf("Factory reset\n");
     settings_factory();
+}
+
+color_bppx command_get_current_bppx() {
+    return settings_get()->flags.symbols_per_word ? rgb_16_565 : rgb_8_332; 
 }
 
 void command_enable_usb(bool status) {
@@ -111,12 +111,12 @@ int command_on_receive(int option, const void *data, bool convert) {
 				}
                 break;
 			case 'c':
-				printf("Capture screen: %dx%d@%dbppx", GET_VIDEO_PROPS().width, GET_VIDEO_PROPS().height, bppx_to_int(COMMAND_GFX_BBPX, color_part_all));
+				printf("Capture screen: %dx%d@%dbppx", GET_VIDEO_PROPS().width, GET_VIDEO_PROPS().height, bppx_to_int(command_get_current_bppx(), color_part_all));
 				rgbScannerEnable(false);
 				for(int height=0; height < GET_VIDEO_PROPS().height; height++) {
 					printf("\n");
 					for(int width=0; width < GET_VIDEO_PROPS().width; width++) {
-						printf(COMMAND_PRINTF_WORD, COMMAND_GETBUFFER(GET_VIDEO_PROPS().video_buffer)[GET_VIDEO_PROPS().width * height + width], (width < GET_VIDEO_PROPS().width -1) ? ",": "");
+						printf(COMMAND_GET_PRINTF_WORD(), COMMAND_GET_WORD_FROM_BUFFER(width, height), (width < GET_VIDEO_PROPS().width -1) ? ",": "");
 					}
 				}
 				rgbScannerEnable(true);
@@ -148,7 +148,7 @@ int command_on_receive(int option, const void *data, bool convert) {
                 printf("%s - Integration Test - version %s\n", PROJECT_NAME, PROJECT_VER);
 				break;
 			case 'm':
-                printf("%s %dx%d@%dbppx\n", PROJECT_NAME, GET_VIDEO_PROPS().width, GET_VIDEO_PROPS().height, bppx_to_int(COMMAND_GFX_BBPX, color_part_all));
+                printf("%s %dx%d@%dbppx\n", PROJECT_NAME, GET_VIDEO_PROPS().width, GET_VIDEO_PROPS().height, bppx_to_int(command_get_current_bppx(), color_part_all));
 				break;
 			case 'R':
 				printf("Software reboot requested\n");

@@ -6,11 +6,6 @@
 #include "settings.h"
 
 // ------------ Defines Start ------------
-#if DVI_SYMBOLS_PER_WORD == 2
-    #define MENU_OVERLAY_BBPX    rgb_16_565
-#else
-    #define MENU_OVERLAY_BBPX    rgb_8_332
-#endif
 #define MENU_TOTAL_NAV_STACK    4
 #define MENU_TOTAL_LEFT_BUTTONS 8
 #define MENU_TOTAL_MAIN_VIEW    4
@@ -76,4 +71,5 @@ extern const char* menu_about_scroll_str;
 extern const char* menu_about_str;
 extern bool menu_usb_enabled;
 extern display_t *menu_current_display;
+extern uint color_black, color_white;
 #endif

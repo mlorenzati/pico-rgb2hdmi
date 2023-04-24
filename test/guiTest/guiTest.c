@@ -44,6 +44,7 @@
 
 // --------- Global register start --------- 
 struct dvi_inst dvi0;
+bool symbols_per_word = 0; //0: 1 symbol (320x240@16), 1: 2 symbols(640x240@8)
 uint gpio_pins[3] = { KEYBOARD_PIN_UP, KEYBOARD_PIN_DOWN, KEYBOARD_PIN_ACTION };
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
@@ -55,6 +56,8 @@ static graphic_ctx_t graphic_ctx = {
 	.bppx = GUI_OVERLAY_BBPX,
 	.parent = NULL
 };
+const uint colors_8[]  = {color_8_dark_gray,  color_8_light_gray,  color_8_white,  color_8_black,  color_8_mid_gray,  color_8_green };
+const uint colors_16[] = {color_16_dark_gray, color_16_light_gray, color_16_white, color_16_black, color_16_mid_gray, color_16_green };
 
 gui_object_t *focused_object = NULL;
 
@@ -63,11 +66,11 @@ gui_object_t *focused_object = NULL;
 void __not_in_flash_func(core1_main)() {
 	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
 	dvi_start(&dvi0);
-	#if DVI_SYMBOLS_PER_WORD == 2
-		dvi_scanbuf_main_16bpp(&dvi0);
-	#else
-		dvi_scanbuf_main_8bpp(&dvi0);
-	#endif
+	if (!symbols_per_word) {
+        dvi_scanbuf_main_16bpp(&dvi0); 
+    } else {
+        dvi_scanbuf_main_8bpp(&dvi0);
+    }
 	__builtin_unreachable();
 }
 
@@ -130,7 +133,8 @@ int main() {
 
 	dvi0.timing = &DVI_TIMING;
 	dvi0.ser_cfg = DVI_DEFAULT_SERIAL_CONFIG;
-	dvi0.scanline_callback = core1_scanline_callback;
+    dvi0.ser_cfg.symbols_per_word = symbols_per_word;
+    dvi0.scanline_callback = core1_scanline_callback;
 	dvi_init(&dvi0, next_striped_spin_lock_num(), next_striped_spin_lock_num());
 
 	// Once we've given core 1 the framebuffer, it will just keep on displaying
@@ -154,8 +158,10 @@ int main() {
 	printf("Start rendering\n");
 
 	//GUI Props
-	uint colors[] = {color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green };
-	gui_list_t colors_list = initalizeGuiList(colors);
+	gui_list_t colors_8_list = initalizeGuiList(colors_8);
+    gui_list_t colors_16_list = initalizeGuiList(colors_16);
+    gui_list_t colors_list = symbols_per_word ? colors_16_list : colors_8_list;
+    
 	gui_properties_t common_nshared_props = {
         .focusable  = 1,
         .alignment  = gui_align_center,

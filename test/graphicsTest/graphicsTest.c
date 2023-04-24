@@ -55,6 +55,9 @@ static graphic_ctx_t graphic_ctx = {
 	.bppx         = BPPX ,
 	.parent       = NULL
 };
+const uint color_8_list[]  = {color_8_red,  color_8_green,  color_8_blue,  color_8_white,  color_8_mid_gray,  color_8_black};
+const uint color_16_list[] = {color_16_red, color_16_green, color_16_blue, color_16_white, color_16_mid_gray, color_16_black};
+
 
 // --------- Global register end --------- 
 
@@ -72,11 +75,8 @@ void __not_in_flash_func(core1_main)() {
 }
 
 static inline void core1_scanline_callback() {
-	#if DVI_SYMBOLS_PER_WORD == 2
-		uint16_t *bufptr = NULL;
-	#else
-		uint8_t *bufptr  = NULL;
-	#endif
+	uint8_t *bufptr  = NULL;
+
 	while (queue_try_remove_u32(&dvi0.q_colour_free, &bufptr));
 	bufptr = &framebuf[hdmi_scanline][0];
 	queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
@@ -90,6 +90,11 @@ void on_keyboard_event(keyboard_status_t keys) {
 }
 
 int main() {
+    uint color_red = symbols_per_word ? color_16_red : color_8_red;
+    uint color_blue = symbols_per_word ? color_16_blue : color_8_blue;
+    uint color_mid_gray = symbols_per_word ? color_16_mid_gray : color_8_mid_gray;
+    uint color_white = symbols_per_word ? color_16_white : color_8_white;
+
 	vreg_set_voltage(VREG_VSEL);
 	sleep_ms(10);
 
@@ -108,6 +113,7 @@ int main() {
 	dvi0.timing = &DVI_TIMING;
 	dvi0.ser_cfg = DVI_DEFAULT_SERIAL_CONFIG;
 	dvi0.scanline_callback = core1_scanline_callback;
+    dvi0.ser_cfg.symbols_per_word = symbols_per_word;
 	dvi_init(&dvi0, next_striped_spin_lock_num(), next_striped_spin_lock_num());
 
 	// Once we've given core 1 the framebuffer, it will just keep on displaying
@@ -132,13 +138,12 @@ int main() {
 	uint x, y, a;
 	uint sizex = FRAME_WIDTH / 2;
 	uint sizey = FRAME_HEIGHT / 2;
-    uint color_list[] = {color_red, color_green, color_blue, color_white, color_mid_gray, color_black};
 
 	//Draw boxes
 	for (int i = 0; i < 6; i++) {
 		int valx = (FRAME_WIDTH * i)  / 30;
 		int valy = (FRAME_HEIGHT * i) / 15;
-		fill_rect(&graphic_ctx, valx, valy, FRAME_WIDTH - (2 * valx), FRAME_HEIGHT - (2 * valy), color_list[i]);
+		fill_rect(&graphic_ctx, valx, valy, FRAME_WIDTH - (2 * valx), FRAME_HEIGHT - (2 * valy), symbols_per_word ? color_16_list[i] : color_8_list[i]);
 	}
 
 	//Draw circles
@@ -158,7 +163,7 @@ int main() {
 	draw_rect(&graphic_ctx, FRAME_WIDTH / 16, FRAME_HEIGHT / 12, FRAME_WIDTH - FRAME_WIDTH / 8, FRAME_HEIGHT - FRAME_HEIGHT / 8, color_mid_gray);
 
 	//Draw text
-	draw_textf(&graphic_ctx, FRAME_WIDTH / 6, (FRAME_HEIGHT *63) / 100, color_mid_gray, color_white, false, "This is a test of RGB%s %d", FRAME_WIDTH == 640 ? "332 " : "565\n", 2022);
+	draw_textf(&graphic_ctx, FRAME_WIDTH / 6, (FRAME_HEIGHT *63) / 100, color_mid_gray, color_white, false, "This is a test of RGB%s %d", FRAME_WIDTH == 640 ? "332 " : "565\n", 2023);
 
 	while (1)
 	{
