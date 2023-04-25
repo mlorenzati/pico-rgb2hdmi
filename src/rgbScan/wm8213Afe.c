@@ -108,7 +108,10 @@ int wm8213_afe_spi_setup(const wm8213_afe_config_t* config) {
 }
 
 // AFE Pio Capture Related
-void wm8213_afe_capture_setup_from_global() {
+uint wm8213_afe_capture_setup_from_global() {
+    if (!capture_global_configured) {
+        return 1;
+    }
     pio_sm_set_enabled(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm, false);
     
     const pio_program_t *program = NULL;
@@ -130,6 +133,7 @@ void wm8213_afe_capture_setup_from_global() {
             assert(false);
             break;
     }
+    
     if (wm8213_afe_capture_global.pio_offset != 0) {
         pio_sm_set_enabled(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm, false);
         pio_remove_program(wm8213_afe_capture_global.pio, program, wm8213_afe_capture_global.pio_offset);
@@ -142,8 +146,9 @@ void wm8213_afe_capture_setup_from_global() {
     // Give DMA R/W priority over the Bus
     //bus_ctrl_hw->priority = BUSCTRL_BUS_PRIORITY_DMA_W_BITS | BUSCTRL_BUS_PRIORITY_DMA_R_BITS;
     pio_sm_set_enabled(wm8213_afe_capture_global.pio, wm8213_afe_capture_global.sm, true);
+    return 0;
 }
-void wm8213_afe_capture_setup(PIO pio, uint sm, uint sampling_rate, color_bppx bppx, uint op_pins, uint control_pins) {
+uint wm8213_afe_capture_setup(PIO pio, uint sm, uint sampling_rate, color_bppx bppx, uint op_pins, uint control_pins) {
     //Setup OP and sample ports on PIO
     wm8213_afe_capture_global.pio = pio;
     wm8213_afe_capture_global.sm =  sm;
@@ -152,17 +157,20 @@ void wm8213_afe_capture_setup(PIO pio, uint sm, uint sampling_rate, color_bppx b
     wm8213_afe_capture_global.op_pins = op_pins;
     wm8213_afe_capture_global.control_pins = control_pins;
     
-    wm8213_afe_capture_setup_from_global();
+    return wm8213_afe_capture_setup_from_global();
 }
 
-void wm8213_afe_capture_update_sampling_rate(uint sampling_rate) {
+uint wm8213_afe_capture_update_sampling_rate(uint sampling_rate) {
     wm8213_afe_capture_global.sampling_rate = sampling_rate;
-    wm8213_afe_capture_setup_from_global();
+    return wm8213_afe_capture_setup_from_global();
 }
 
-void wm8213_afe_capture_update_bppx(color_bppx bppx) {
+uint wm8213_afe_capture_update_bppx(color_bppx bppx, bool commit) {
     wm8213_afe_capture_global.bppx = bppx;
-    wm8213_afe_capture_setup_from_global();
+    if (commit) {
+        return wm8213_afe_capture_setup_from_global();
+    }
+    return 0;
 }
 
 // AFE DMA related

@@ -19,7 +19,7 @@ int main() {
     stdio_init_all();
     printf("AFE initial test \n");
     wm8213_afe_init(&afec_cfg);
-    wm8213_afe_capture_update_bppx(rgb_16_565);
+    wm8213_afe_capture_update_bppx(rgb_16_565, false);
     if (wm8213_afe_setup(NULL, 2000000) > 0) {
          printf("AFE initialize failed \n");
     } else {

@@ -73,7 +73,7 @@ void __not_in_flash_func(core1_main)() {
     storage_report_core1_use();
     dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
     dvi_start(&dvi0);
-    if (!settings_get()->flags.symbols_per_word) {
+    if (GET_VIDEO_PROPS().symbols_per_word) {
         dvi_scanbuf_main_16bpp(&dvi0); 
     } else {
         dvi_scanbuf_main_8bpp(&dvi0);
@@ -86,7 +86,7 @@ static inline void core1_scanline_callback() {
     void *bufptr = NULL;
     while (queue_try_remove_u32(&dvi0.q_colour_free, &bufptr));
     
-    if (dvi0.ser_cfg.symbols_per_word) {
+    if (GET_VIDEO_PROPS().symbols_per_word) {
         bufptr = &framebuf_16[GET_VIDEO_PROPS().width * hdmi_scanline];
     } else {
         bufptr = &framebuf_8[GET_VIDEO_PROPS().width * hdmi_scanline];
@@ -168,7 +168,7 @@ int main() {
     
     // Do early init of config and update Gain & offset from stored settings
     wm8213_afe_init(&afec_cfg);
-    wm8213_afe_capture_update_bppx(settings_get()->flags.symbols_per_word ? rgb_16_565 : rgb_8_332);
+    wm8213_afe_capture_update_bppx(settings_get()->flags.symbols_per_word ? rgb_16_565 : rgb_8_332, false);
     wm8213_afe_update_offset(current_display->offset.red, current_display->offset.green, current_display->offset.blue, false);
     wm8213_afe_update_gain(current_display->gain.red, current_display->gain.green, current_display->gain.blue, false);
 
