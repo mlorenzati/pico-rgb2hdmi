@@ -68,6 +68,7 @@ int __not_in_flash("main") main() {
 
 	dvi0.timing = &DVI_TIMING;
 	dvi0.ser_cfg = DVI_DEFAULT_SERIAL_CONFIG;
+    dvi0.ser_cfg.symbols_per_word = 0;
 	
 	printf("Copy Image pattern\n");
 	for (int y=0; y< FRAME_HEIGHT/3; y++) {

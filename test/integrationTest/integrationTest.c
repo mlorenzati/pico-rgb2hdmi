@@ -30,17 +30,12 @@
 #include "system.h"
 
 // System config definitions
-#define FRAME_HEIGHT     240
-#if DVI_SYMBOLS_PER_WORD == 2
-    //With 2 repeated symbols per word, we go for 320 pixels width and 16 bits per pixel
-    #define FRAME_WIDTH         320
-    uint16_t            framebuf[FRAME_HEIGHT][FRAME_WIDTH];
-#else
-    //With no repeated symbols per word, we go for 640 pixels width and 8 bits per pixel
-    #define FRAME_WIDTH     640
-    uint8_t            framebuf[FRAME_HEIGHT][FRAME_WIDTH];
-#endif 
-
+#define FRAME_HEIGHT        240
+#define FRAME_WIDTH_8_BITS  640
+#define FRAME_WIDTH_16_BITS 320
+uint8_t genbuf[FRAME_HEIGHT][FRAME_WIDTH_8_BITS];
+uint8_t  *framebuf_8  = GET_RGB8_BUFFER(genbuf);
+uint16_t *framebuf_16 = GET_RGB16_BUFFER(genbuf);
 #define VREG_VSEL       VREG_VOLTAGE_1_20
 #define DVI_TIMING      dvi_timing_640x480p_60hz
 
@@ -88,14 +83,15 @@ void __not_in_flash_func(core1_main)() {
 }
 
 static inline void core1_scanline_callback() {
-    #if DVI_SYMBOLS_PER_WORD == 2
-        uint16_t *bufptr = NULL;
-    #else
-        uint8_t *bufptr  = NULL;
-    #endif
+    void *bufptr = NULL;
     while (queue_try_remove_u32(&dvi0.q_colour_free, &bufptr));
     
-    bufptr = &framebuf[hdmi_scanline][0];
+    if (dvi0.ser_cfg.symbols_per_word) {
+        bufptr = &framebuf_16[GET_VIDEO_PROPS().width * hdmi_scanline];
+    } else {
+        bufptr = &framebuf_8[GET_VIDEO_PROPS().width * hdmi_scanline];
+    }
+
     queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
     if (++hdmi_scanline >= FRAME_HEIGHT) {
         hdmi_scanline = 0;
@@ -106,7 +102,14 @@ static inline void core1_scanline_callback() {
 // ---------  RGB SCAN API CALL START  --------- 
 static void __not_in_flash_func(scanLineTriggered)(unsigned int render_line_number) {
     gpio_put(LED_PIN, true);
-    if (wm8213_afe_capture_run(VIDEO_OVERLAY_GET_COMPUTED_FRONT_PORCH(), (uintptr_t)&framebuf[render_line_number][VIDEO_OVERLAY_GET_COMPUTED_OFFSET()], VIDEO_OVERLAY_GET_COMPUTED_WIDTH())) {
+    void *bufptr = NULL;
+    if (GET_VIDEO_PROPS().symbols_per_word) {
+        bufptr = &framebuf_16[GET_VIDEO_PROPS().width * render_line_number + VIDEO_OVERLAY_GET_COMPUTED_OFFSET()];
+    } else {
+        bufptr = &framebuf_8[GET_VIDEO_PROPS().width * render_line_number + VIDEO_OVERLAY_GET_COMPUTED_OFFSET()];
+    }
+    
+    if (wm8213_afe_capture_run(VIDEO_OVERLAY_GET_COMPUTED_FRONT_PORCH(), (uintptr_t) bufptr, VIDEO_OVERLAY_GET_COMPUTED_WIDTH())) {
         //Nothing is done here so far
     }
     video_overlay_scanline_prepare(render_line_number);
@@ -161,7 +164,7 @@ int main() {
 
     // Configure scan video properties
     display_t *current_display = &(settings_get()->displays[settings_get()->flags.default_display]);
-    set_video_props(current_display->v_front_porch, current_display->v_back_porch, current_display->h_front_porch, current_display->h_back_porch, FRAME_WIDTH, FRAME_HEIGHT, current_display->refresh_rate, settings_get()->flags.symbols_per_word, framebuf);
+    set_video_props(current_display->v_front_porch, current_display->v_back_porch, current_display->h_front_porch, current_display->h_back_porch, settings_get()->flags.symbols_per_word ? FRAME_WIDTH_16_BITS : FRAME_WIDTH_8_BITS, FRAME_HEIGHT, current_display->refresh_rate, settings_get()->flags.symbols_per_word, genbuf);
     
     // Do early init of config and update Gain & offset from stored settings
     wm8213_afe_init(&afec_cfg);
@@ -190,14 +193,10 @@ int main() {
 
     // Prepare DVI for the first time the two initial lines, passing core 1 the framebuffer
     // Start the Core1, dedicated for DVI
-    #if DVI_SYMBOLS_PER_WORD == 2
-        uint16_t *bufptr = GET_RGB16_BUFFER(GET_VIDEO_PROPS().video_buffer);
-    #else
-        uint8_t  *bufptr = GET_RGB8_BUFFER(GET_VIDEO_PROPS().video_buffer);
-    #endif
+    void *bufptr = NULL;
     
     queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
-    bufptr += FRAME_WIDTH;
+    bufptr += GET_VIDEO_PROPS().width;
     queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
     multicore_launch_core1(core1_main);
 

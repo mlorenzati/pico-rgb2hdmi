@@ -25,19 +25,12 @@
 // System config definitions
 // TMDS bit clock 252 MHz
 // DVDD 1.2V (1.1V seems ok too)
-#define FRAME_HEIGHT 240
-#if DVI_SYMBOLS_PER_WORD == 2
-	//With 2 repeated symbols per word, we go for 320 pixels width and 16 bits per pixel
-	#define FRAME_WIDTH 320
-	uint16_t framebuf[FRAME_HEIGHT][FRAME_WIDTH];
-    #define GUI_OVERLAY_BBPX    rgb_16_565
-#else
-	//With no repeated symbols per word, we go for 640 pixels width and 8 bits per pixel
-	#define FRAME_WIDTH 640
-	uint8_t framebuf[FRAME_HEIGHT][FRAME_WIDTH];
-    #define GUI_OVERLAY_BBPX    rgb_8_332
-#endif
-
+#define FRAME_HEIGHT        240
+#define FRAME_WIDTH_8_BITS  640
+#define FRAME_WIDTH_16_BITS 320
+uint8_t genbuf[FRAME_HEIGHT][FRAME_WIDTH_8_BITS];
+uint8_t  *framebuf_8  = GET_RGB8_BUFFER(genbuf);
+uint16_t *framebuf_16 = GET_RGB16_BUFFER(genbuf);
 #define REFRESH_RATE 50
 #define VREG_VSEL VREG_VOLTAGE_1_20
 #define DVI_TIMING dvi_timing_640x480p_60hz
@@ -50,10 +43,8 @@ const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
 static uint hdmi_scanline = 2;
 static graphic_ctx_t graphic_ctx = {
-	.width = FRAME_WIDTH,
 	.height = FRAME_HEIGHT,
-	.video_buffer = framebuf,
-	.bppx = GUI_OVERLAY_BBPX,
+	.video_buffer = genbuf,
 	.parent = NULL
 };
 const uint colors_8[]  = {color_8_dark_gray,  color_8_light_gray,  color_8_white,  color_8_black,  color_8_mid_gray,  color_8_green };
@@ -66,7 +57,7 @@ gui_object_t *focused_object = NULL;
 void __not_in_flash_func(core1_main)() {
 	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
 	dvi_start(&dvi0);
-	if (!symbols_per_word) {
+	if (symbols_per_word) {
         dvi_scanbuf_main_16bpp(&dvi0); 
     } else {
         dvi_scanbuf_main_8bpp(&dvi0);
@@ -75,13 +66,14 @@ void __not_in_flash_func(core1_main)() {
 }
 
 static inline void core1_scanline_callback() {
-	#if DVI_SYMBOLS_PER_WORD == 2
-		uint16_t *bufptr = NULL;
-	#else
-		uint8_t *bufptr  = NULL;
-	#endif
+	void *bufptr = NULL;
 	while (queue_try_remove_u32(&dvi0.q_colour_free, &bufptr));
-	bufptr = &framebuf[hdmi_scanline][0];
+    if (dvi0.ser_cfg.symbols_per_word) {
+        bufptr = &framebuf_16[graphic_ctx.width * hdmi_scanline];
+    } else {
+        bufptr = &framebuf_8[graphic_ctx.width * hdmi_scanline];
+    }
+	
 	queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
 	if (++hdmi_scanline >= FRAME_HEIGHT) {
     	hdmi_scanline = 0;
@@ -141,13 +133,9 @@ int main() {
 	// it without any intervention from core 0
 
 	//Prepare for the first time the two initial lines
-	#if DVI_SYMBOLS_PER_WORD == 2
-		uint16_t *bufptr = NULL;
-	#else
-		uint8_t  *bufptr = NULL;
-	#endif
+	void  *bufptr = NULL;
 	queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
-	bufptr += FRAME_WIDTH;
+	bufptr += graphic_ctx.width;
 	queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
 
 	printf("Core 1 start\n");
@@ -182,9 +170,11 @@ int main() {
 	// GUI Objects
 	uint slider_value = 0;
 	uint spinbox_value = 0;
+    graphic_ctx.bppx  = symbols_per_word ? rgb_16_565 : rgb_8_332;
+    graphic_ctx.width = symbols_per_word ? FRAME_WIDTH_16_BITS : FRAME_WIDTH_8_BITS;
 	
-	gui_object_t window = gui_create_window(&graphic_ctx, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, &colors_list, common_nshared_props);
-	
+	gui_object_t window = gui_create_window(&graphic_ctx, 0, 0, graphic_ctx.width, graphic_ctx.height, &colors_list, common_nshared_props);
+
 	gui_object_t group_elements[] = { 
 		gui_create_button(&graphic_ctx,  0, 0, 100, 12, &colors_list, common_nshared_props, "Button 1"),
 		gui_create_button(&graphic_ctx,  0, 0, 100, 12, &colors_list, common_nshared_props, "Button 2"),

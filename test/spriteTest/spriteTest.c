@@ -43,7 +43,7 @@ uint gpio_pins[3] = { KEYBOARD_PIN_UP, KEYBOARD_PIN_DOWN, KEYBOARD_PIN_ACTION };
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
 volatile uint hdmi_scanline = 2;
-bool symbols_per_word = 1; //0: 1 symbol (320x240@16), 1: 2 symbols(640x240@8)
+bool symbols_per_word = 1; //0: 1 symbol (640x240@8), 1: 2 symbols(320x240@16)
 
 sprite_t berry[N_LOGOS];
 int vx[N_LOGOS];
