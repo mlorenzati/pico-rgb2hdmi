@@ -127,14 +127,9 @@
         },
         .verify_retries = 3,
         .pio = pio1,
-        .sm_afe_cp = 0,
+        .sm_afe = 0,
         .pin_base_afe_op = AFE_OP,
-        .pin_base_afe_ctrl = AFE_VSMP,
-        #if DEFAULT_SYMBOLS_PER_WORD == 2
-        .bppx = rgb_16_565
-        #else
-        .bppx = rgb_8_332
-        #endif
+        .pin_base_afe_ctrl = AFE_VSMP
     };
 #endif
 
@@ -173,10 +168,14 @@
 #define color_8_green       0b00011100
 #define color_8_blue        0b00000011
 
+#define DEFAULT_MENU_COLORS_16 { color_16_dark_gray, color_16_light_gray, color_16_white, color_16_black, color_16_mid_gray, color_16_green}
+#define DEFAULT_MENU_COLORS_8  { color_8_dark_gray, color_8_light_gray, color_8_white, color_8_black, color_8_mid_gray, color_8_green}
+
+
 #if DEFAULT_SYMBOLS_PER_WORD == 2
-    #define DEFAULT_MENU_COLORS { color_16_dark_gray, color_16_light_gray, color_16_white, color_16_black, color_16_mid_gray, color_16_green}
+    #define DEFAULT_MENU_COLORS DEFAULT_MENU_COLORS_16
 #else
-    #define DEFAULT_MENU_COLORS { color_8_dark_gray, color_8_light_gray, color_8_white, color_8_black, color_8_mid_gray, color_8_green}
+    #define DEFAULT_MENU_COLORS DEFAULT_MENU_COLORS_8
 #endif
 
 // Global settings 

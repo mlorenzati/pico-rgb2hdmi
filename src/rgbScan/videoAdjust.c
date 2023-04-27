@@ -15,8 +15,8 @@ void set_video_props(
     ) {
     video_props.vertical_front_porch = vertical_front_porch;
     video_props.vertical_back_porch = vertical_back_porch;
-    video_props.horizontal_front_porch = horizontal_front_porch;
-    video_props.horizontal_back_porch = horizontal_back_porch;
+    video_props.horizontal_front_porch = horizontal_front_porch >> symbols_per_word;
+    video_props.horizontal_back_porch = horizontal_back_porch >> symbols_per_word;
     video_props.width = width;
     video_props.height = height;
     video_props.refresh_rate = refresh_rate;
@@ -26,8 +26,8 @@ void set_video_props(
 }
 
 void update_sampling_rate() {
-    io_rw_16 horizontal_front_porch = video_props.horizontal_front_porch >> video_props.symbols_per_word;
-    io_rw_16 horizontal_back_porch  = video_props.horizontal_back_porch >> video_props.symbols_per_word;
+    io_rw_16 horizontal_front_porch = video_props.horizontal_front_porch;
+    io_rw_16 horizontal_back_porch  = video_props.horizontal_back_porch;
     video_props.sampling_rate = 
         (horizontal_front_porch + video_props.width + horizontal_back_porch) * 
         (video_props.vertical_front_porch + video_props.height + video_props.vertical_back_porch) * 

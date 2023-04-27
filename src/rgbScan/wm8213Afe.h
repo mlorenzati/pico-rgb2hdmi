@@ -153,21 +153,17 @@ typedef struct wm8213_afe_config {
     wm8213_afe_setups_t setups;
     char                verify_retries;
     PIO                 pio;
-	uint                sm_afe_cp;
+	uint                sm_afe;
     uint                pin_base_afe_op;
     uint                pin_base_afe_ctrl;
-    color_bppx          bppx;
 } wm8213_afe_config_t;
 
 typedef struct wm8213_afe_capture {
-    PIO  pio;
-    uint sm;
     uint capture_dma;
     uint front_porch_dma;
     uint sampling_rate;
-    color_bppx bppx;
-    uint op_pins, control_pins;
     uint pio_offset;
+    color_bppx bppx;
     wm8213_afe_config_t config;
 } wm8213_afe_capture_t;
 

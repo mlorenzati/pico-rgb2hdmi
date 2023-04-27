@@ -15,6 +15,7 @@ bool on_factory_reboot_event(gui_status_t status, gui_base_t *origin, gui_object
 bool on_usb_enable_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination);
 bool on_shutdown_display_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination);
 bool on_scanline_display_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination);
+bool on_display_mode_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination);
 
 // GUI Callbacks handlers
 void gui_draw_palette_choice(gui_base_t *base);
@@ -28,4 +29,5 @@ void menu_setup_selected_color();
 const char *menu_get_usb_button_txt(bool status);
 const char *menu_get_shutdown_opt_txt(bool status);
 const char *menu_get_scanline_opt_txt(bool status);
+const char *menu_get_display_mode_opt_txt(bool mode, bool confirmation);
 #endif

@@ -72,4 +72,5 @@ extern const char* menu_about_str;
 extern bool menu_usb_enabled;
 extern display_t *menu_current_display;
 extern uint color_black, color_white;
+extern bool menu_display_confirmation;
 #endif
