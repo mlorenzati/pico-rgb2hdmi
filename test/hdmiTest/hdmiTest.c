@@ -92,7 +92,8 @@ int __not_in_flash("main") main() {
 
 	while (1) {
 		for (int y = 0; y < FRAME_HEIGHT; y+=2) {
-			uint32_t *our_tmds_buf, *their_tmds_buf;
+			uint32_t *our_tmds_buf   = NULL;
+            uint32_t *their_tmds_buf = NULL;
 			queue_remove_blocking_u32(&dvi0.q_tmds_free, &their_tmds_buf);
 			multicore_fifo_push_blocking((uint32_t)img_buf[y/3]);
 			multicore_fifo_push_blocking((uint32_t)their_tmds_buf);

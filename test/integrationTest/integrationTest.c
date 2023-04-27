@@ -186,7 +186,7 @@ int main() {
     wm8213_afe_update_gain(current_display->gain.red, current_display->gain.green, current_display->gain.blue, false);
 
     // Configure AFE Capture System from afe config local
-    command_info_afe_error = wm8213_afe_setup(NULL, GET_VIDEO_PROPS().sampling_rate);
+    command_info_afe_error = wm8213_afe_start(GET_VIDEO_PROPS().sampling_rate);
     if ( command_info_afe_error > 0) {
          printf("AFE initialize failed with error %d\n", command_info_afe_error);
     } else {
