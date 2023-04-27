@@ -23,16 +23,12 @@
 #endif
 
 //VIDEO Timing
-#define V_FRONT_PORCH   42
-#define V_BACK_PORCH    54
-#define REFRESH_RATE    50
-#if DVI_SYMBOLS_PER_WORD == 2
-    #define HSYNC_FRONT_PORCH   50
-    #define HSYNC_BACK_PORCH    20
-#else
-    #define HSYNC_FRONT_PORCH   100
-    #define HSYNC_BACK_PORCH    50
-#endif 
+#define V_FRONT_PORCH            42
+#define V_BACK_PORCH             54
+#define REFRESH_RATE             50
+#define HSYNC_FRONT_PORCH        100
+#define HSYNC_BACK_PORCH         50
+#define DEFAULT_SYMBOLS_PER_WORD 1
 
 //AFE (Analog Front End) Specific Config
 #ifdef _WM8213_AFE_H
@@ -131,21 +127,16 @@
         },
         .verify_retries = 3,
         .pio = pio1,
-        .sm_afe_cp = 0,
+        .sm_afe = 0,
         .pin_base_afe_op = AFE_OP,
-        .pin_base_afe_ctrl = AFE_VSMP,
-        #if DVI_SYMBOLS_PER_WORD == 2
-        .bppx = rgb_16_565
-        #else
-        .bppx = rgb_8_332
-        #endif
+        .pin_base_afe_ctrl = AFE_VSMP
     };
 #endif
 
 //DVI Specific configs
 #ifdef _DVI_SERIALISER_H
     //DVI Config
-    #define DVI_DEFAULT_SERIAL_CONFIG     picodvi_dvi_cfg
+    #define DVI_DEFAULT_SERIAL_CONFIG    picodvi_dvi_cfg
     #define DVI_DEFAULT_PIO_INST         pio0
 
     static const struct dvi_serialiser_cfg picodvi_dvi_cfg = {
@@ -153,30 +144,38 @@
         .sm_tmds = {0, 1, 2},
         .pins_tmds = {5, 7, 9},
         .pins_clk = 3,
-        .invert_diffpairs = true
+        .invert_diffpairs = true,
+        .symbols_per_word = false
     };
 #endif
 
-#if DVI_SYMBOLS_PER_WORD == 2
-    // Colors                0brrrrrggggggbbbbb
-    #define color_black      0b0000000000000000
-    #define color_dark_gray  0b0001100011100011
-    #define color_mid_gray   0b1010010100010000
-    #define color_light_gray 0b1100011000011000
-    #define color_white      0b1111111111111111
-    #define color_red        0b1111100000000000
-    #define color_green      0b0000011111100000
-    #define color_blue       0b0000000000011111
+// Colors 16bits            0brrrrrggggggbbbbb
+#define color_16_black      0b0000000000000000
+#define color_16_dark_gray  0b0001100011100011
+#define color_16_mid_gray   0b1010010100010000
+#define color_16_light_gray 0b1100011000011000
+#define color_16_white      0b1111111111111111
+#define color_16_red        0b1111100000000000
+#define color_16_green      0b0000011111100000
+#define color_16_blue       0b0000000000011111
+// Colors 8 bits            0brrrgggbb
+#define color_8_black       0b00000000
+#define color_8_dark_gray   0b01001001
+#define color_8_mid_gray    0b10110110
+#define color_8_light_gray  0b11011011
+#define color_8_white       0b11111111
+#define color_8_red         0b11100000
+#define color_8_green       0b00011100
+#define color_8_blue        0b00000011
+
+#define DEFAULT_MENU_COLORS_16 { color_16_dark_gray, color_16_light_gray, color_16_white, color_16_black, color_16_mid_gray, color_16_green}
+#define DEFAULT_MENU_COLORS_8  { color_8_dark_gray, color_8_light_gray, color_8_white, color_8_black, color_8_mid_gray, color_8_green}
+
+
+#if DEFAULT_SYMBOLS_PER_WORD == 2
+    #define DEFAULT_MENU_COLORS DEFAULT_MENU_COLORS_16
 #else
-    // Colors                0brrrgggbb
-    #define color_black      0b00000000
-    #define color_dark_gray  0b01001001
-    #define color_mid_gray   0b10110110
-    #define color_light_gray 0b11011011
-    #define color_white      0b11111111
-    #define color_red        0b11100000
-    #define color_green      0b00011100
-    #define color_blue       0b00000011
+    #define DEFAULT_MENU_COLORS DEFAULT_MENU_COLORS_8
 #endif
 
 // Global settings 
@@ -184,10 +183,11 @@
     // Factory Settings
     #define GET_FACTORY_SETTINGS() { \
             .security_key = { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF, 0x10, 0x11, 0x12, 0x13 },\
-            .menu_colors = { color_dark_gray, color_light_gray, color_white, color_black, color_mid_gray, color_green}, \
+            .menu_colors = DEFAULT_MENU_COLORS, \
             .flags.auto_shut_down = 1, \
             .flags.default_display = 0, \
             .flags.scan_line = 0, \
+            .flags.symbols_per_word = DEFAULT_SYMBOLS_PER_WORD == 2, \
             .displays = {{ \
                     .gain = { .red = AFE_PGA_GAIN_RGB, .green = AFE_PGA_GAIN_RGB, .blue = AFE_PGA_GAIN_RGB}, \
                     .offset = { .red = AFE_OFFSET_DAC, .green = AFE_OFFSET_DAC,   .blue = AFE_OFFSET_DAC}, \

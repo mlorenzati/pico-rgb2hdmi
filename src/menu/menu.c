@@ -346,6 +346,7 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             bool scanline_opt = settings_get()->flags.scan_line;
             gui_properties_t optional_prop = menu_common_nshared_props;
             optional_prop.focusable = (DVI_VERTICAL_REPEAT == 2);
+            menu_display_confirmation = false;
             gui_object_t elements[] = { 
                 gui_create_text(&menu_overlay_ctx, 0, 0,    200, 12, &menu_colors_list, menu_common_label_props, "Display Number"),
                 gui_create_spinbox(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_spinbox_props, &spinbox_display_no),
@@ -353,6 +354,7 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
                 gui_create_button(&menu_overlay_ctx,  0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Gain & offset"),
                 gui_create_button(&menu_overlay_ctx,  0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, menu_get_shutdown_opt_txt(auto_shut_down)),
                 gui_create_button(&menu_overlay_ctx,  0, 0, 200, 12, &menu_colors_list, optional_prop, menu_get_scanline_opt_txt(scanline_opt && DVI_VERTICAL_REPEAT == 2)),
+                gui_create_button(&menu_overlay_ctx,  0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, menu_get_display_mode_opt_txt(GET_VIDEO_PROPS().symbols_per_word, menu_display_confirmation)),
                 gui_create_button(&menu_overlay_ctx,  0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Back")
             };
             menu_elements_copy(elements, menu_left_buttons_group_elements);
@@ -364,7 +366,8 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             gui_event_subscribe(button_status,  &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_gain_offset_button_event);
             gui_event_subscribe(button_status,  &menu_left_buttons_group_elements[4].base, &menu_left_buttons_group_elements[4], on_shutdown_display_event);
             gui_event_subscribe(button_status,  &menu_left_buttons_group_elements[5].base, &menu_left_buttons_group_elements[5], on_scanline_display_event);
-            gui_event_subscribe(button_status,  &menu_left_buttons_group_elements[6].base, &menu_left_buttons_group_elements[6], on_back_event);     
+            gui_event_subscribe(button_status,  &menu_left_buttons_group_elements[6].base, &menu_left_buttons_group_elements[6], on_display_mode_event);
+            gui_event_subscribe(button_status,  &menu_left_buttons_group_elements[7].base, &menu_left_buttons_group_elements[7], on_back_event);     
             }
             break;
         case menu_button_main_group_startup_info: {
@@ -461,6 +464,7 @@ int menu_initialize(uint *pins, menu_event_type *events, uint8_t count) {
     assert(GET_VIDEO_PROPS().width != 0);
     assert(GET_VIDEO_PROPS().height != 0);
     assert(GET_VIDEO_PROPS().video_buffer != 0);
+    menu_graphic_ctx.bppx = GET_VIDEO_PROPS().symbols_per_word ? rgb_16_565 : rgb_8_332;
     menu_graphic_ctx.width = GET_VIDEO_PROPS().width;
     menu_graphic_ctx.height = GET_VIDEO_PROPS().height;
     menu_graphic_ctx.video_buffer = GET_VIDEO_PROPS().video_buffer;
@@ -480,8 +484,14 @@ int menu_initialize(uint *pins, menu_event_type *events, uint8_t count) {
     spinbox_offset = wm8213_afe_get_offset(color_part_all);
     spinbox_gain = wm8213_afe_get_gain(color_part_all);
     spinbox_display_no = settings_get()->flags.default_display + 1;
-    menu_current_display = &(settings_get()->displays[settings_get()->flags.default_display]);
 
+    menu_current_display = &(settings_get()->displays[settings_get()->flags.default_display]);
+    
+    // Colors in 16 and 8 bits modes
+    color_black = settings_get()->flags.symbols_per_word ? color_16_black : color_8_black;
+    color_white = settings_get()->flags.symbols_per_word ? color_16_white : color_8_white;
+    gui_list_t _menu_colors_list = initalizeGuiList(ram_settings.menu_colors);
+    menu_colors_list = _menu_colors_list;
     return 0;
 }
 // --------- MENU API CALL END  ---------

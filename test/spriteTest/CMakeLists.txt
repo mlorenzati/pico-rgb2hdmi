@@ -8,7 +8,6 @@ if (TARGET tinyusb_device)
     
     target_compile_definitions(spriteTest PRIVATE
         DVI_VERTICAL_REPEAT=2
-        DVI_SYMBOLS_PER_WORD=2
     )
 
     target_link_libraries(spriteTest PRIVATE

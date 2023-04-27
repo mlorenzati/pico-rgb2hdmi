@@ -30,17 +30,12 @@
 #include "system.h"
 
 // System config definitions
-#define FRAME_HEIGHT     240
-#if DVI_SYMBOLS_PER_WORD == 2
-    //With 2 repeated symbols per word, we go for 320 pixels width and 16 bits per pixel
-    #define FRAME_WIDTH         320
-    uint16_t            framebuf[FRAME_HEIGHT][FRAME_WIDTH];
-#else
-    //With no repeated symbols per word, we go for 640 pixels width and 8 bits per pixel
-    #define FRAME_WIDTH     640
-    uint8_t            framebuf[FRAME_HEIGHT][FRAME_WIDTH];
-#endif 
-
+#define FRAME_HEIGHT        240
+#define FRAME_WIDTH_8_BITS  640
+#define FRAME_WIDTH_16_BITS 320
+uint8_t genbuf[FRAME_HEIGHT][FRAME_WIDTH_8_BITS];
+uint8_t  *framebuf_8  = GET_RGB8_BUFFER(genbuf);
+uint16_t *framebuf_16 = GET_RGB16_BUFFER(genbuf);
 #define VREG_VSEL       VREG_VOLTAGE_1_20
 #define DVI_TIMING      dvi_timing_640x480p_60hz
 
@@ -78,24 +73,31 @@ void __not_in_flash_func(core1_main)() {
     storage_report_core1_use();
     dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
     dvi_start(&dvi0);
-    #if DVI_SYMBOLS_PER_WORD == 2
-        dvi_scanbuf_main_16bpp(&dvi0);
-    #else
+    if (GET_VIDEO_PROPS().symbols_per_word) {
+        dvi_scanbuf_main_16bpp(&dvi0); 
+    } else {
         dvi_scanbuf_main_8bpp(&dvi0);
-    #endif
+    }
     
     __builtin_unreachable();
 }
 
-static inline void core1_scanline_callback() {
-    #if DVI_SYMBOLS_PER_WORD == 2
-        uint16_t *bufptr = NULL;
-    #else
-        uint8_t *bufptr  = NULL;
-    #endif
+static inline void core1_scanline_callback_8() {
+    void *bufptr = NULL;
     while (queue_try_remove_u32(&dvi0.q_colour_free, &bufptr));
-    
-    bufptr = &framebuf[hdmi_scanline][0];
+    bufptr = &framebuf_8[GET_VIDEO_PROPS().width * hdmi_scanline];
+
+
+    queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
+    if (++hdmi_scanline >= FRAME_HEIGHT) {
+        hdmi_scanline = 0;
+    }
+}
+static inline void core1_scanline_callback_16() {
+    void *bufptr = NULL;
+    while (queue_try_remove_u32(&dvi0.q_colour_free, &bufptr));
+    bufptr = &framebuf_16[GET_VIDEO_PROPS().width * hdmi_scanline];
+
     queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
     if (++hdmi_scanline >= FRAME_HEIGHT) {
         hdmi_scanline = 0;
@@ -104,9 +106,23 @@ static inline void core1_scanline_callback() {
 // ---------  DVI API CALL END  --------- 
 
 // ---------  RGB SCAN API CALL START  --------- 
-static void __not_in_flash_func(scanLineTriggered)(unsigned int render_line_number) {
+static void __not_in_flash_func(scanLineTriggered_8)(unsigned int render_line_number) {
     gpio_put(LED_PIN, true);
-    if (wm8213_afe_capture_run(VIDEO_OVERLAY_GET_COMPUTED_FRONT_PORCH(), (uintptr_t)&framebuf[render_line_number][VIDEO_OVERLAY_GET_COMPUTED_OFFSET()], VIDEO_OVERLAY_GET_COMPUTED_WIDTH())) {
+    void *bufptr = NULL;
+    bufptr = &framebuf_8[GET_VIDEO_PROPS().width * render_line_number + VIDEO_OVERLAY_GET_COMPUTED_OFFSET()];
+
+    if (wm8213_afe_capture_run(VIDEO_OVERLAY_GET_COMPUTED_FRONT_PORCH(), (uintptr_t) bufptr, VIDEO_OVERLAY_GET_COMPUTED_WIDTH())) {
+        //Nothing is done here so far
+    }
+    video_overlay_scanline_prepare(render_line_number);
+    gpio_put(LED_PIN, false);
+}
+static void __not_in_flash_func(scanLineTriggered_16)(unsigned int render_line_number) {
+    gpio_put(LED_PIN, true);
+    void *bufptr = NULL;
+    bufptr = &framebuf_16[GET_VIDEO_PROPS().width * render_line_number + VIDEO_OVERLAY_GET_COMPUTED_OFFSET()];
+   
+    if (wm8213_afe_capture_run(VIDEO_OVERLAY_GET_COMPUTED_FRONT_PORCH(), (uintptr_t) bufptr, VIDEO_OVERLAY_GET_COMPUTED_WIDTH())) {
         //Nothing is done here so far
     }
     video_overlay_scanline_prepare(render_line_number);
@@ -161,15 +177,16 @@ int main() {
 
     // Configure scan video properties
     display_t *current_display = &(settings_get()->displays[settings_get()->flags.default_display]);
-    set_video_props(current_display->v_front_porch, current_display->v_back_porch, current_display->h_front_porch, current_display->h_back_porch, FRAME_WIDTH, FRAME_HEIGHT, current_display->refresh_rate, framebuf);
+    set_video_props(current_display->v_front_porch, current_display->v_back_porch, current_display->h_front_porch, current_display->h_back_porch, settings_get()->flags.symbols_per_word ? FRAME_WIDTH_16_BITS : FRAME_WIDTH_8_BITS, FRAME_HEIGHT, current_display->refresh_rate, settings_get()->flags.symbols_per_word, genbuf);
     
     // Do early init of config and update Gain & offset from stored settings
     wm8213_afe_init(&afec_cfg);
+    wm8213_afe_capture_update_bppx(GET_VIDEO_PROPS().symbols_per_word ? rgb_16_565 : rgb_8_332, false);
     wm8213_afe_update_offset(current_display->offset.red, current_display->offset.green, current_display->offset.blue, false);
     wm8213_afe_update_gain(current_display->gain.red, current_display->gain.green, current_display->gain.blue, false);
 
     // Configure AFE Capture System from afe config local
-    command_info_afe_error = wm8213_afe_setup(NULL, GET_VIDEO_PROPS().sampling_rate);
+    command_info_afe_error = wm8213_afe_start(GET_VIDEO_PROPS().sampling_rate);
     if ( command_info_afe_error > 0) {
          printf("AFE initialize failed with error %d\n", command_info_afe_error);
     } else {
@@ -182,20 +199,17 @@ int main() {
     // Initialize DVI
     dvi0.timing = &DVI_TIMING;
     dvi0.ser_cfg = DVI_DEFAULT_SERIAL_CONFIG;
-    dvi0.scanline_callback = core1_scanline_callback;
+    dvi0.ser_cfg.symbols_per_word = GET_VIDEO_PROPS().symbols_per_word;
+    dvi0.scanline_callback = GET_VIDEO_PROPS().symbols_per_word ? core1_scanline_callback_16 : core1_scanline_callback_8;
     dvi0.scan_line = settings_get()->flags.scan_line;
     dvi_init(&dvi0, next_striped_spin_lock_num(), next_striped_spin_lock_num());
 
     // Prepare DVI for the first time the two initial lines, passing core 1 the framebuffer
     // Start the Core1, dedicated for DVI
-    #if DVI_SYMBOLS_PER_WORD == 2
-        uint16_t *bufptr = GET_RGB16_BUFFER(GET_VIDEO_PROPS().video_buffer);
-    #else
-        uint8_t  *bufptr = GET_RGB8_BUFFER(GET_VIDEO_PROPS().video_buffer);
-    #endif
+    void *bufptr = NULL;
     
     queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
-    bufptr += FRAME_WIDTH;
+    bufptr += GET_VIDEO_PROPS().width;
     queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
     multicore_launch_core1(core1_main);
 
@@ -206,7 +220,7 @@ int main() {
     if (command_info_afe_error == 0) {
         io_rw_16 final_height = GET_VIDEO_PROPS().height;
         command_info_scanner_error = rgbScannerSetup(
-            RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, GET_VIDEO_PROPS().vertical_front_porch, final_height, scanLineTriggered, menu_video_signal_callback, NULL);
+            RGB_SCAN_VSYNC_PIN, RGB_SCAN_HSYNC_PIN, GET_VIDEO_PROPS().vertical_front_porch, final_height, GET_VIDEO_PROPS().symbols_per_word ? scanLineTriggered_16 : scanLineTriggered_8, menu_video_signal_callback, NULL);
         if (command_info_scanner_error > 0) {
             printf("rgbScannerSetup failed with code %d\n", command_info_scanner_error);
         }

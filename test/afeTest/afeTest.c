@@ -18,7 +18,9 @@ uint16_t test_buf[32];
 int main() {
     stdio_init_all();
     printf("AFE initial test \n");
-    if (wm8213_afe_setup(&afec_cfg, 20000000) > 0) {
+    wm8213_afe_init(&afec_cfg);
+    wm8213_afe_capture_update_bppx(rgb_16_565, false);
+    if (wm8213_afe_start(2000000) > 0) {
          printf("AFE initialize failed \n");
     } else {
          printf("AFE initialize succeded \n");

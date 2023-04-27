@@ -142,7 +142,7 @@ bool on_display_selection_event(gui_status_t status, gui_base_t *origin, gui_obj
             // Timing and aligment
             set_video_props(menu_current_display->v_front_porch, menu_current_display->v_back_porch, 
                 menu_current_display->h_front_porch, menu_current_display->h_back_porch, 
-                GET_VIDEO_PROPS().width, GET_VIDEO_PROPS().height, menu_current_display->refresh_rate, GET_VIDEO_PROPS().video_buffer);
+                GET_VIDEO_PROPS().width, GET_VIDEO_PROPS().height, menu_current_display->refresh_rate, settings_get()->flags.symbols_per_word, GET_VIDEO_PROPS().video_buffer);
             rgbScannerUpdateData(GET_VIDEO_PROPS().vertical_front_porch, 0);
             rgbScannerEnable(false);
             wm8213_afe_capture_update_sampling_rate(GET_VIDEO_PROPS().sampling_rate);
@@ -154,7 +154,6 @@ bool on_display_selection_event(gui_status_t status, gui_base_t *origin, gui_obj
             spinbox_offset     = wm8213_afe_get_offset(color_part_all);
             spinbox_gain       = wm8213_afe_get_gain(color_part_all);
         }
-        
     }
     destination->base.status.data_changed = 1;
 
@@ -251,6 +250,31 @@ bool on_scanline_display_event(gui_status_t status, gui_base_t *origin, gui_obje
     return true;
 }
 
+bool on_display_mode_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+    if (!status.activated && origin->status.activated) {
+        if (menu_display_confirmation) {
+            bool symbols_per_word = !settings_get()->flags.symbols_per_word;
+            
+            // Update settings
+            settings_get()->flags.symbols_per_word = symbols_per_word;
+            uint menu_colors_8[] = DEFAULT_MENU_COLORS_8;
+            uint menu_colors_16[] = DEFAULT_MENU_COLORS_16;
+            memcpy(settings_get()->menu_colors, symbols_per_word ? menu_colors_16 : menu_colors_8, sizeof(menu_colors_16));
+
+            // Flash
+            command_save_settings();
+            
+            //Reboot to new display options
+            command_reboot();
+        } else {
+            menu_display_confirmation = true;
+            destination->base.data = (void *) menu_get_display_mode_opt_txt(GET_VIDEO_PROPS().symbols_per_word, menu_display_confirmation);
+            destination->base.status.data_changed = true;
+        }
+    }
+    return true;
+}
+
 // ----------  GUI EVENT SLOTS HANDLERS END  ----------
 
 // ---------  GUI Callbacks START  ---------
@@ -309,5 +333,13 @@ const char *menu_get_shutdown_opt_txt(bool status) {
 
 const char *menu_get_scanline_opt_txt(bool status) {
     return status ? "ScanLine on" : "ScanLine off";
+}
+
+const char *menu_get_display_mode_opt_txt(bool mode, bool confirmation) {
+    if (confirmation) {
+        return mode ? "Reboot to 640x240@8?" : "Reboot to 320x240@16?";
+    } else {
+        return mode ? "  640x240@8 ->320x240@16" : "->640x240@8   320x240@16";
+    }
 }
 // ----------- RELATED UTILS END -----------

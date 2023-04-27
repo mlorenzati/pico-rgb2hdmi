@@ -153,31 +153,24 @@ typedef struct wm8213_afe_config {
     wm8213_afe_setups_t setups;
     char                verify_retries;
     PIO                 pio;
-	uint                sm_afe_cp;
+	uint                sm_afe;
     uint                pin_base_afe_op;
     uint                pin_base_afe_ctrl;
-    color_bppx          bppx;
 } wm8213_afe_config_t;
 
 typedef struct wm8213_afe_capture {
-    PIO  pio;
-    uint sm;
     uint capture_dma;
     uint front_porch_dma;
     uint sampling_rate;
-    color_bppx bppx;
-    uint op_pins, control_pins;
     uint pio_offset;
-    wm8213_afe_config_t config;
+    color_bppx bppx;
+    wm8213_afe_setups_t setups;
+    const wm8213_afe_config_t *config;
 } wm8213_afe_capture_t;
 
 extern wm8213_afe_capture_t wm8213_afe_capture_global;
 void wm8213_afe_init(const wm8213_afe_config_t* config);
-int  wm8213_afe_setup(const wm8213_afe_config_t* config, uint sampling_rate);
-
-static inline void afe_capture_rx_fifo_drain(PIO  pio, uint sm) {
-    for (int i = 0; i < AFE_PIO_FIFO_FORCE_DUMP; i++) pio_sm_get(pio, sm);
-}
+int  wm8213_afe_start(uint sampling_rate);
 
 static inline bool wm8213_afe_capture_run(uint hFrontPorch, uintptr_t buffer, uint size) {
     dma_channel_hw_addr(wm8213_afe_capture_global.front_porch_dma)->al1_transfer_count_trig = hFrontPorch;
@@ -195,13 +188,12 @@ static inline bool wm8213_afe_capture_run(uint hFrontPorch, uintptr_t buffer, ui
 
 void wm8213_afe_capture_stop();
 void wm8213_afe_capture_wait();
-void wm8213_afe_capture_update_sampling_rate(uint sampling_rate);
-void wm8213_afe_capture_update_bppx(color_bppx bppx);
-void wm8213_afe_update_gain(uint16_t red, uint16_t green, uint16_t blue, bool commit);
-uint16_t wm8213_afe_get_gain(color_part part); 
-void wm8213_afe_update_offset(uint8_t red, uint8_t green, uint8_t blue, bool commit);
+uint wm8213_afe_capture_update_sampling_rate(uint sampling_rate);
+uint wm8213_afe_capture_update_bppx(color_bppx bppx, bool commit);
+uint wm8213_afe_update_gain(uint16_t red, uint16_t green, uint16_t blue, bool commit);
+uint wm8213_afe_update_offset(uint8_t red, uint8_t green, uint8_t blue, bool commit);
+uint wm8213_afe_update_negative_offset(uint8_t value, bool commit);
+uint16_t wm8213_afe_get_gain(color_part part);
 uint8_t wm8213_afe_get_offset(color_part part);
-void wm8213_afe_update_negative_offset(uint8_t value, bool commit);
 uint8_t wm8213_afe_get_negative_offset();
-
 #endif

@@ -25,57 +25,55 @@
 // TMDS bit clock 252 MHz
 // DVDD 1.2V (1.1V seems ok too)
 #define FRAME_HEIGHT 240
-#if DVI_SYMBOLS_PER_WORD == 2
-	//With 2 repeated symbols per word, we go for 320 pixels width and 16 bits per pixel
-	#define FRAME_WIDTH 320
-	uint16_t framebuf[FRAME_HEIGHT][FRAME_WIDTH];
-    #define BPPX rgb_16_565
-#else
-	//With no repeated symbols per word, we go for 640 pixels width and 8 bits per pixel
-	#define FRAME_WIDTH 640
-	uint8_t framebuf[FRAME_HEIGHT][FRAME_WIDTH];
-    #define BPPX rgb_8_332
-#endif
+#define FRAME_WIDTH_8_BITS  640
+#define FRAME_WIDTH_16_BITS 320
+uint8_t genbuf[FRAME_HEIGHT][FRAME_WIDTH_8_BITS];
+uint8_t  *framebuf_8  = GET_RGB8_BUFFER(genbuf);
+uint16_t *framebuf_16 = GET_RGB16_BUFFER(genbuf);
 
 #define REFRESH_RATE 50
 #define VREG_VSEL VREG_VOLTAGE_1_20
 #define DVI_TIMING dvi_timing_640x480p_60hz
 
-// --------- Global register start --------- 
+// --------- Global register start ---------
+bool symbols_per_word = 0; //0: 1 symbol (640x240@8), 1: 2 symbols(320x240@16)
 struct dvi_inst dvi0;
 uint gpio_pins[3] = { KEYBOARD_PIN_UP, KEYBOARD_PIN_DOWN, KEYBOARD_PIN_ACTION };
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 bool blink = true;
 static uint hdmi_scanline = 2;
 static graphic_ctx_t graphic_ctx = {
-	.width        = FRAME_WIDTH,
 	.height       = FRAME_HEIGHT,
-	.video_buffer = framebuf,
-	.bppx         = BPPX ,
+	.video_buffer = genbuf,
 	.parent       = NULL
 };
-
+const uint color_8_list[]  = {color_8_red,  color_8_green,  color_8_blue,  color_8_white,  color_8_mid_gray,  color_8_black};
+const uint color_16_list[] = {color_16_red, color_16_green, color_16_blue, color_16_white, color_16_mid_gray, color_16_black};
 // --------- Global register end --------- 
 
 void __not_in_flash_func(core1_main)() {
 	dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
 	dvi_start(&dvi0);
-	#if DVI_SYMBOLS_PER_WORD == 2
-		dvi_scanbuf_main_16bpp(&dvi0);
-	#else
-		dvi_scanbuf_main_8bpp(&dvi0);
-	#endif
+
+    if (symbols_per_word) {
+        dvi_scanbuf_main_16bpp(&dvi0); 
+    } else {
+        dvi_scanbuf_main_8bpp(&dvi0);
+    }
+
 	__builtin_unreachable();
 }
 
 static inline void core1_scanline_callback() {
-	#if DVI_SYMBOLS_PER_WORD == 2
-		uint16_t *bufptr = NULL;
-	#else
-		uint8_t *bufptr  = NULL;
-	#endif
+	void *bufptr  = NULL;
+
 	while (queue_try_remove_u32(&dvi0.q_colour_free, &bufptr));
-	bufptr = &framebuf[hdmi_scanline][0];
+    if (dvi0.ser_cfg.symbols_per_word) {
+        bufptr = &framebuf_16[graphic_ctx.width * hdmi_scanline];
+    } else {
+        bufptr = &framebuf_8[graphic_ctx.width * hdmi_scanline];
+    }
+
 	queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
 	if (++hdmi_scanline >= FRAME_HEIGHT) {
     	hdmi_scanline = 0;
@@ -87,6 +85,14 @@ void on_keyboard_event(keyboard_status_t keys) {
 }
 
 int main() {
+    uint color_red = symbols_per_word ? color_16_red : color_8_red;
+    uint color_blue = symbols_per_word ? color_16_blue : color_8_blue;
+    uint color_mid_gray = symbols_per_word ? color_16_mid_gray : color_8_mid_gray;
+    uint color_white = symbols_per_word ? color_16_white : color_8_white;
+    const uint *color_list = symbols_per_word ? color_16_list : color_8_list;
+    graphic_ctx.bppx  = symbols_per_word ? rgb_16_565 : rgb_8_332;
+    graphic_ctx.width = symbols_per_word ? FRAME_WIDTH_16_BITS : FRAME_WIDTH_8_BITS;
+
 	vreg_set_voltage(VREG_VSEL);
 	sleep_ms(10);
 
@@ -105,19 +111,16 @@ int main() {
 	dvi0.timing = &DVI_TIMING;
 	dvi0.ser_cfg = DVI_DEFAULT_SERIAL_CONFIG;
 	dvi0.scanline_callback = core1_scanline_callback;
+    dvi0.ser_cfg.symbols_per_word = symbols_per_word;
 	dvi_init(&dvi0, next_striped_spin_lock_num(), next_striped_spin_lock_num());
 
 	// Once we've given core 1 the framebuffer, it will just keep on displaying
 	// it without any intervention from core 0
 
 	//Prepare for the first time the two initial lines
-	#if DVI_SYMBOLS_PER_WORD == 2
-		uint16_t *bufptr = NULL;
-	#else
-		uint8_t *bufptr  = NULL;
-	#endif
+	void *bufptr = NULL;
 	queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
-	bufptr += FRAME_WIDTH;
+	bufptr += graphic_ctx.width;
 	queue_add_blocking_u32(&dvi0.q_colour_valid, &bufptr);
 
 	printf("Core 1 start\n");
@@ -127,15 +130,14 @@ int main() {
 
 	printf("Start rendering\n");
 	uint x, y, a;
-	uint sizex = FRAME_WIDTH / 2;
-	uint sizey = FRAME_HEIGHT / 2;
-    uint color_list[] = {color_red, color_green, color_blue, color_white, color_mid_gray, color_black};
+	uint sizex = graphic_ctx.width / 2;
+	uint sizey = graphic_ctx.height / 2;
 
 	//Draw boxes
 	for (int i = 0; i < 6; i++) {
-		int valx = (FRAME_WIDTH * i)  / 30;
-		int valy = (FRAME_HEIGHT * i) / 15;
-		fill_rect(&graphic_ctx, valx, valy, FRAME_WIDTH - (2 * valx), FRAME_HEIGHT - (2 * valy), color_list[i]);
+		int valx = (graphic_ctx.width * i)  / 30;
+		int valy = (graphic_ctx.height * i) / 15;
+		fill_rect(&graphic_ctx, valx, valy, graphic_ctx.width - (2 * valx), graphic_ctx.height - (2 * valy), color_list[i]);
 	}
 
 	//Draw circles
@@ -148,14 +150,14 @@ int main() {
 	}
 	
 	//Draw lines
-	draw_line(&graphic_ctx, 0, 0, FRAME_WIDTH - 1, FRAME_HEIGHT - 1, color_blue);
-	draw_line(&graphic_ctx, FRAME_WIDTH - 1, 0, 0, FRAME_HEIGHT - 1, color_blue);
+	draw_line(&graphic_ctx, 0, 0, graphic_ctx.width - 1, graphic_ctx.height - 1, color_blue);
+	draw_line(&graphic_ctx, graphic_ctx.width - 1, 0, 0, graphic_ctx.height - 1, color_blue);
 
 	//Draw rectangle
-	draw_rect(&graphic_ctx, FRAME_WIDTH / 16, FRAME_HEIGHT / 12, FRAME_WIDTH - FRAME_WIDTH / 8, FRAME_HEIGHT - FRAME_HEIGHT / 8, color_mid_gray);
+	draw_rect(&graphic_ctx, graphic_ctx.width / 16, graphic_ctx.height / 12, graphic_ctx.width - graphic_ctx.width / 8, graphic_ctx.height - graphic_ctx.height / 8, color_mid_gray);
 
 	//Draw text
-	draw_textf(&graphic_ctx, FRAME_WIDTH / 6, (FRAME_HEIGHT *63) / 100, color_mid_gray, color_white, false, "This is a test of RGB%s %d", FRAME_WIDTH == 640 ? "332 " : "565\n", 2022);
+	draw_textf(&graphic_ctx, graphic_ctx.width / 6, (graphic_ctx.height * 63) / 100, color_mid_gray, color_white, false, "This is a test of RGB%s %d", symbols_per_word ? "565" : "332", 2023);
 
 	while (1)
 	{

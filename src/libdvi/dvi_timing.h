@@ -89,11 +89,11 @@ void dvi_timing_state_advance(const struct dvi_timing *t, struct dvi_timing_stat
 void dvi_scanline_dma_list_init(struct dvi_scanline_dma_list *dma_list);
 
 void dvi_setup_scanline_for_vblank(const struct dvi_timing *t, const struct dvi_lane_dma_cfg dma_cfg[],
-		bool vsync_asserted, struct dvi_scanline_dma_list *l);
+		bool vsync_asserted, struct dvi_scanline_dma_list *l, uint8_t symbols_per_word, uint words_per_channel);
 
 void dvi_setup_scanline_for_active(const struct dvi_timing *t, const struct dvi_lane_dma_cfg dma_cfg[],
-		uint32_t *tmdsbuf, struct dvi_scanline_dma_list *l);
+		uint32_t *tmdsbuf, struct dvi_scanline_dma_list *l, uint8_t symbols_per_word, uint words_per_channel);
 
-void dvi_update_scanline_data_dma(const struct dvi_timing *t, const uint32_t *tmdsbuf, struct dvi_scanline_dma_list *l);
+void dvi_update_scanline_data_dma(const struct dvi_timing *t, const uint32_t *tmdsbuf, struct dvi_scanline_dma_list *l, uint words_per_channel);
 
 #endif
