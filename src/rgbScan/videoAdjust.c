@@ -15,8 +15,10 @@ void set_video_props(
     ) {
     video_props.vertical_front_porch = vertical_front_porch;
     video_props.vertical_back_porch = vertical_back_porch;
-    video_props.horizontal_front_porch = horizontal_front_porch >> symbols_per_word;
-    video_props.horizontal_back_porch = horizontal_back_porch >> symbols_per_word;
+    video_props.horizontal_front_porch = (horizontal_front_porch >> symbols_per_word) + 
+        ((symbols_per_word * horizontal_front_porch) >> (symbols_per_word * 3));
+    video_props.horizontal_back_porch =  (horizontal_back_porch  >> symbols_per_word) -
+        ((symbols_per_word * horizontal_back_porch)  >> (symbols_per_word * 4));
     video_props.width = width;
     video_props.height = height;
     video_props.refresh_rate = refresh_rate;
