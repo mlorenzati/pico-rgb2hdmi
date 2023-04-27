@@ -164,7 +164,8 @@ typedef struct wm8213_afe_capture {
     uint sampling_rate;
     uint pio_offset;
     color_bppx bppx;
-    wm8213_afe_config_t config;
+    wm8213_afe_setups_t setups;
+    const wm8213_afe_config_t *config;
 } wm8213_afe_capture_t;
 
 extern wm8213_afe_capture_t wm8213_afe_capture_global;
