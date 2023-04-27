@@ -33,4 +33,6 @@ void set_video_props(
     );
 
 void update_sampling_rate();
+io_rw_16 get_video_prop_horizontal_front_porch();
+io_rw_16 get_video_prop_horizontal_back_porch();
 #endif
