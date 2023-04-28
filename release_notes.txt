@@ -4,6 +4,11 @@ pico rgb2hdmi
 An rpi pico microprocessed rgb 2 hdmi plus rgb 2 usb on the fly converter
 -------------------------------------------------------------------------
 Date: 2023/04/27
+Version: 0.6.1
+- Fix for unique horizontal timing, when doubling the value is adapted from stored value
+- Added fine tune for pixel width, adds or substract in 1Khz steps the sample rate
+-------------------------------------------------------------------------
+Date: 2023/04/27
 Version: 0.6.0
 Major feature update: Unified Display mode (resolution and color depth for capture and display)
 - Remove compile definitions for display mode

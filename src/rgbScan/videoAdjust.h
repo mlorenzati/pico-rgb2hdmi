@@ -3,6 +3,8 @@
 
 #include "hardware/address_mapped.h"
 
+#define VIDEO_FINE_TUNE_MAX 100000
+
 typedef struct video_props {
     io_rw_16    vertical_front_porch;
     io_rw_16    vertical_back_porch;
@@ -14,6 +16,7 @@ typedef struct video_props {
     io_rw_32    sampling_rate;
     void        *video_buffer;
     bool        symbols_per_word;
+    signed int  fine_tune;
 } video_props_t;
 
 extern video_props_t video_props;
@@ -28,6 +31,7 @@ void set_video_props(
     io_rw_16    width,
     io_rw_16    height,
     io_rw_8     refresh_rate,
+    signed int  fine_tune,
     bool        symbols_per_word,
     void        *video_buffer
     );

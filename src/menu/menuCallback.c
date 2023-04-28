@@ -19,9 +19,25 @@ bool on_exit_button_event(gui_status_t status, gui_base_t *origin, gui_object_t 
     return true;
 }
 
-bool on_automatic_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+bool on_fine_tune_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
     if (!status.activated && origin->status.activated) {
-        // Here we use information of HSYNC / VSYNC and HLINES to calculate pix width
+        destination->base.status.navigable = !destination->base.status.navigable;
+    } else {
+        if (status.add) {
+            spinbox_fine_tune += 1;
+        } else if (status.substract) {
+            spinbox_fine_tune -= 1;
+        }
+        if (spinbox_fine_tune != menu_current_display->fine_tune) {
+            update_sampling_rate();
+            rgbScannerEnable(false);
+            wm8213_afe_capture_update_sampling_rate(GET_VIDEO_PROPS().sampling_rate);
+            rgbScannerEnable(true);
+
+            menu_current_display->fine_tune = spinbox_fine_tune;
+            GET_VIDEO_PROPS().fine_tune = 1000 * spinbox_fine_tune;
+        }
+        destination->base.status.data_changed = 1;
     }
     return true;
 }
@@ -73,7 +89,6 @@ bool on_alignment_event(gui_status_t status, gui_base_t *origin, gui_object_t *d
             rgbScannerEnable(false);
             wm8213_afe_capture_update_sampling_rate(GET_VIDEO_PROPS().sampling_rate);
             rgbScannerEnable(true);
-            
         }
         menu_current_display->v_front_porch = GET_VIDEO_PROPS().vertical_front_porch;
         menu_current_display->v_back_porch =  GET_VIDEO_PROPS().vertical_back_porch;
@@ -142,7 +157,7 @@ bool on_display_selection_event(gui_status_t status, gui_base_t *origin, gui_obj
             // Timing and aligment
             set_video_props(menu_current_display->v_front_porch, menu_current_display->v_back_porch, 
                 menu_current_display->h_front_porch, menu_current_display->h_back_porch, 
-                GET_VIDEO_PROPS().width, GET_VIDEO_PROPS().height, menu_current_display->refresh_rate, settings_get()->flags.symbols_per_word, GET_VIDEO_PROPS().video_buffer);
+                GET_VIDEO_PROPS().width, GET_VIDEO_PROPS().height, menu_current_display->refresh_rate, menu_current_display->fine_tune, settings_get()->flags.symbols_per_word, GET_VIDEO_PROPS().video_buffer);
             rgbScannerUpdateData(GET_VIDEO_PROPS().vertical_front_porch, 0);
             rgbScannerEnable(false);
             wm8213_afe_capture_update_sampling_rate(GET_VIDEO_PROPS().sampling_rate);

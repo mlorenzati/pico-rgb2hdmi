@@ -193,25 +193,29 @@
                     .offset = { .red = AFE_OFFSET_DAC, .green = AFE_OFFSET_DAC,   .blue = AFE_OFFSET_DAC}, \
                     .v_front_porch = V_FRONT_PORCH, .v_back_porch = V_BACK_PORCH, \
                     .h_front_porch = HSYNC_FRONT_PORCH, .h_back_porch = HSYNC_BACK_PORCH, \
-                    .refresh_rate = REFRESH_RATE \
+                    .refresh_rate = REFRESH_RATE, \
+                    .fine_tune = 0 \
                 }, { \
                     .gain = { .red = AFE_PGA_GAIN_RGB, .green = AFE_PGA_GAIN_RGB, .blue = AFE_PGA_GAIN_RGB}, \
                     .offset = { .red = AFE_OFFSET_DAC, .green = AFE_OFFSET_DAC,   .blue = AFE_OFFSET_DAC}, \
                     .v_front_porch = V_FRONT_PORCH, .v_back_porch = V_BACK_PORCH, \
                     .h_front_porch = HSYNC_FRONT_PORCH, .h_back_porch = HSYNC_BACK_PORCH, \
-                    .refresh_rate = REFRESH_RATE \
+                    .refresh_rate = REFRESH_RATE, \
+                    .fine_tune = 0 \
                 }, { \
                     .gain = { .red = AFE_PGA_GAIN_RGB, .green = AFE_PGA_GAIN_RGB, .blue = AFE_PGA_GAIN_RGB}, \
                     .offset = { .red = AFE_OFFSET_DAC, .green = AFE_OFFSET_DAC,   .blue = AFE_OFFSET_DAC}, \
                     .v_front_porch = V_FRONT_PORCH, .v_back_porch = V_BACK_PORCH, \
                     .h_front_porch = HSYNC_FRONT_PORCH, .h_back_porch = HSYNC_BACK_PORCH, \
-                    .refresh_rate = REFRESH_RATE \
+                    .refresh_rate = REFRESH_RATE, \
+                    .fine_tune = 0 \
                 }, { \
                     .gain = { .red = AFE_PGA_GAIN_RGB_SOG, .green = AFE_PGA_GAIN_RGB_SOG, .blue = AFE_PGA_GAIN_RGB_SOG}, \
                     .offset = { .red = AFE_OFFSET_DAC_SOG_RED, .green = AFE_OFFSET_DAC_SOG_GREEN, .blue = AFE_OFFSET_DAC_SOG_BLUE}, \
                     .v_front_porch = V_FRONT_PORCH, .v_back_porch = V_BACK_PORCH, \
                     .h_front_porch = HSYNC_FRONT_PORCH, .h_back_porch = HSYNC_BACK_PORCH, \
-                    .refresh_rate = REFRESH_RATE \
+                    .refresh_rate = REFRESH_RATE, \
+                    .fine_tune = 0 \
                 } \
             }, \
             .eof_canary = 0 \
