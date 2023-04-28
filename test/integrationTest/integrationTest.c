@@ -177,7 +177,7 @@ int main() {
 
     // Configure scan video properties
     display_t *current_display = &(settings_get()->displays[settings_get()->flags.default_display]);
-    set_video_props(current_display->v_front_porch, current_display->v_back_porch, current_display->h_front_porch, current_display->h_back_porch, settings_get()->flags.symbols_per_word ? FRAME_WIDTH_16_BITS : FRAME_WIDTH_8_BITS, FRAME_HEIGHT, current_display->refresh_rate, settings_get()->flags.symbols_per_word, genbuf);
+    set_video_props(current_display->v_front_porch, current_display->v_back_porch, current_display->h_front_porch, current_display->h_back_porch, settings_get()->flags.symbols_per_word ? FRAME_WIDTH_16_BITS : FRAME_WIDTH_8_BITS, FRAME_HEIGHT, current_display->refresh_rate, current_display->fine_tune, settings_get()->flags.symbols_per_word, genbuf);
     
     // Do early init of config and update Gain & offset from stored settings
     wm8213_afe_init(&afec_cfg);

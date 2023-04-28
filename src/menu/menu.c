@@ -214,7 +214,7 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
                 gui_create_spinbox(&menu_overlay_ctx, 0, 0, 100, 12, &menu_colors_list, menu_spinbox_props, &spinbox_vertical),
                 gui_create_text(&menu_overlay_ctx, 0, 0, 100, 12, &menu_colors_list, menu_common_label_props, "Pixel width"),
                 gui_create_spinbox(&menu_overlay_ctx, 0, 0, 100, 12, &menu_colors_list, menu_spinbox_props, &spinbox_pix_width),
-                gui_create_button(&menu_overlay_ctx,  0, 0, 100, 12, &menu_colors_list, menu_common_nshared_props, "Automatic"),
+                gui_create_spinbox(&menu_overlay_ctx,  0, 0, 100, 12, &menu_colors_list, menu_spinbox_props, &spinbox_fine_tune),
                 gui_create_button(&menu_overlay_ctx,  0, 0, 100, 12, &menu_colors_list, menu_common_nshared_props, "Back")
             };
             menu_elements_copy(elements, menu_left_buttons_group_elements);
@@ -225,7 +225,7 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_alignment_event);
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[5].base, &menu_left_buttons_group_elements[5], on_alignment_event);
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[5].base, &menu_left_buttons_group_elements[1], NULL); // The pixel with updates the horiz front and back porch
-            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[6].base, &menu_left_buttons_group_elements[6], on_automatic_event);
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[6].base, &menu_left_buttons_group_elements[6], on_fine_tune_event);
             gui_event_subscribe(button_status, &menu_left_buttons_group_elements[7].base, &menu_left_buttons_group_elements[7], on_back_event);
             }
             break;
@@ -484,6 +484,7 @@ int menu_initialize(uint *pins, menu_event_type *events, uint8_t count) {
     spinbox_offset = wm8213_afe_get_offset(color_part_all);
     spinbox_gain = wm8213_afe_get_gain(color_part_all);
     spinbox_display_no = settings_get()->flags.default_display + 1;
+    spinbox_fine_tune = GET_VIDEO_PROPS().fine_tune / 1000;
 
     menu_current_display = &(settings_get()->displays[settings_get()->flags.default_display]);
     

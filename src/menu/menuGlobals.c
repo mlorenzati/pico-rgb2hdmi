@@ -57,6 +57,7 @@ struct repeating_timer menu_vsync_hsync_timer;
 
 uint spinbox_vertical, spinbox_horizontal, spinbox_pix_width;
 uint spinbox_gain, spinbox_offset, spinbox_display_no;
+uint spinbox_fine_tune;
 uint color_slider_option, color_spinbox_red, color_spinbox_green, color_spinbox_blue, *color_slider_selected;
 const char* menu_about_scroll_str;
 const char* menu_about_str = "pico-rgb2hdmi is a micro-\ncontrolled RGB to HDMI\nand RGB to USB converter\nbased on a raspberry pi\npico and a cheap Analog\nFront End (AFE) aimed to\nsupport 80s and 90s comp-\nuters with the precursor\nof the VGA.\n\nSupporter list:\nFernando Bugallo\nEspacio Tec:\n Jose Francisco Manera\n Sebastian Rho\n Juan Pablo Chucair\nGabriel Garcia\nAlejandro Perez\nGaston Martin Ferreiros\nOtto\nAldo Ibanez\nEmiliano Escobar\nFrancisco Maqueira\nJose Gumersindo\nRetro computacion:\n Jorge Castillo\nLeandro Galvano\nErnesto Uriburu\nCarlos Masciarelli\nMarcelo Barbalace\nCarlos Aon\nPCB Design:\n Camilo Gomez\nFirmware and HW Design:\n Marcelo Lorenzati\nArgentina-Cordoba-2022";

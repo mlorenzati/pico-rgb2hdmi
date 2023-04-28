@@ -15,9 +15,10 @@ typedef struct display {
     struct { 
         uint8_t red, green, blue;
     } offset;
-    uint16_t v_front_porch, v_back_porch;
-    uint16_t h_front_porch, h_back_porch;
-    uint8_t refresh_rate;
+    uint16_t   v_front_porch, v_back_porch;
+    uint16_t   h_front_porch, h_back_porch;
+    uint8_t    refresh_rate;
+    signed int fine_tune;
 } display_t;
 
 typedef struct settings {
