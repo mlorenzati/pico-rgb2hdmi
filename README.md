@@ -23,6 +23,13 @@ There is no guarantee as to the suitability of said source code, executable scri
 I.E. If it blows your equipments, trashes your hard disc, wipes your backup, burns your building down or just plain don't work, IT ISN'T MY FAULT
 I will not be held responsible for any damages or costs which might occur as a result of the usage of the beforementioned solution, USE IT AT YOUR OWN RISK
 
+# Donations
+You can allways collaborate to buy me coffees to focus on new cool features, this is my paypal.
+[paypalme mlorenzati](https://www.paypal.com/paypalme/mlorenzati)
+
+# PCB
+You can build yourself the PCB out of the gerber in HW section, if you wan you can buy it in [pbcway pico-rgb2hdmi](https://www.pcbway.com/project/shareproject/pico_RGB_2_HDMI_3b12cb39.html)
+
 # Setup
 - Download the pico-sdk, pico-extras, and pico-playground repositories
 - Define PICO_SDK_PATH in your ~/.bashrc• 
