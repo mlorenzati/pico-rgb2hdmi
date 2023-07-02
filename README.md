@@ -108,3 +108,6 @@ openocd -f interface/picoprobe.cfg -f target/rp2040.cfg -c "program <specific el
 ```
 picotool save -a pico_rgb2hdmi_xyz.uf2
 ```
+
+# Videos
+[![pico RGB2HDMI Unified Firmware](https://img.youtube.com/vi/40rTiWgZHxM/default.jpg)](https://youtu.be/40rTiWgZHxM)
