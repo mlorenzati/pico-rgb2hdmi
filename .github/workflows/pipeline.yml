@@ -46,7 +46,7 @@ jobs:
           mv integrationTest.uf2 pico-rgb2hdmi-$TAG_NAME.uf2
           shopt -s nullglob
           zip pico-rgb2hdmi-$TAG_NAME.zip pico-rgb2hdmi*
-          echo "::set-output name=zip_file::pico-rgb2hdmi-$TAG_NAME.zip"
+          echo "zip_file=pico-rgb2hdmi-$TAG_NAME.zip" >> $GITHUB_ENV
 
       - name: Get Release ID
         id: get_release
@@ -58,7 +58,7 @@ jobs:
       - name: Upload Release Asset
         id: upload-release-asset 
         run: |
-          upload_url="https://uploads.github.com/repos/${{ github.repository }}/releases/${{ env.RELEASE_ID }}/assets?name=$(basename ${{ env.zip_file }})"
+          upload_url="https://uploads.github.com/repos/${{ github.repository }}/releases/${{ env.RELEASE_ID }}/assets?name=$(basename "${{ env.zip_file }}")"
           curl \
             -X POST \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
