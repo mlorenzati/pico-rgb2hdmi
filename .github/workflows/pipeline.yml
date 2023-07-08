@@ -61,7 +61,7 @@ jobs:
           upload_url="https://uploads.github.com/repos/${{ github.repository }}/releases/${{ env.RELEASE_ID }}/assets?name=$(basename "${{ env.zip_file }}")"
           curl \
             -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Authorization: Bearer ${{ secrets.PUBLIC_REPO_ACCESS_TOKEN }}" \
             -H "Content-Type: application/zip" \
             --data-binary @${{ env.zip_file }} \
             "$upload_url"
