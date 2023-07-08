@@ -14,7 +14,7 @@ jobs:
 
       - name: Build binaries using pico-sdk 
         run: |
-          docker run --rm -v ${{ github.workspace }}:/home/dev lukstep/raspberry-pi-pico-sdk:latest /bin/sh -c "cd /home/dev && cmake .. && make -j4"
+          docker run --rm -v ${{ github.workspace }}:/home/dev lukstep/raspberry-pi-pico-sdk:latest /bin/sh -c "cd /home/dev && mkdir build && cd build && cmake .. && make -j4"
 
       - name: Upload binaries
         uses: actions/upload-artifact@v2
