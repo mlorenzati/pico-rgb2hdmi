@@ -1,0 +1,55 @@
+name: Build and Publish binaries
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build binaries using pico-sdk 
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/home/dev lukstep/raspberry-pi-pico-sdk:latest /bin/sh -c "cd /home/dev && cmake .. && make -j4"
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v2
+        with:
+          name: binaries
+          path: |
+            build/test/integrationTest/integrationTest.uf2
+            build/test/integrationTest/integrationTest.elf
+            build/test/integrationTest/integrationTest.bin
+      
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download binaries
+        uses: actions/download-artifact@v2
+        with:
+          name: binaries
+      
+      - name: Install zip
+        run: sudo apt-get install zip
+
+      - name: Rename and Package binaries
+        id: package
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          mv integrationTest.elf pico-rgb2hdmi-$TAG_NAME.elf
+          mv integrationTest.bin pico-rgb2hdmi-$TAG_NAME.bin
+          mv integrationTest.uf2 pico-rgb2hdmi-$TAG_NAME.uf2
+          shopt -s nullglob
+          zip pico-rgb2hdmi-$TAG_NAME.zip pico-rgb2hdmi*
+          echo "::set-output name=zip_file::pico-rgb2hdmi-$TAG_NAME.zip"
+
+      - name: Create GitHub Package
+        uses: actions/upload-artifact@v2
+        with:
+          name: binaries
+          path: ${{ steps.package.outputs.zip_file }}
