@@ -2,6 +2,8 @@ name: Build and Publish binaries
 
 on:
   push:
+    branches:
+      - '**'
     tags:
       - '*'
 
@@ -14,7 +16,11 @@ jobs:
 
       - name: Build binaries using pico-sdk 
         run: |
-          docker run --rm -v ${{ github.workspace }}:/home/dev lukstep/raspberry-pi-pico-sdk:latest /bin/sh -c "cd /home/dev && mkdir build && cd build && cmake .. && make -j4"
+          docker run --rm \
+          -v ${{ github.workspace }}:/home/dev \
+          lukstep/raspberry-pi-pico-sdk:latest \
+          /bin/sh -c \
+          "cd /home/dev && mkdir build && cd build && cmake .. && make -j4"
 
       - name: Upload binaries
         uses: actions/upload-artifact@v2
@@ -27,6 +33,7 @@ jobs:
       
   publish:
     needs: build
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - name: Download binaries
@@ -34,7 +41,7 @@ jobs:
         with:
           name: binaries
       
-      - name: Install zip and jq
+      - name: Install tools
         run: sudo apt-get install zip jq
 
       - name: Rename and Package binaries
@@ -52,7 +59,14 @@ jobs:
         id: get_release
         run: |
           TAG_NAME=${GITHUB_REF#refs/tags/}
-          RELEASE_ID=$(curl --silent --show-error --header "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_NAME" | jq .id)
+          upload_url="https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_NAME"
+          RELEASE_ID=$(\
+          curl \
+          --silent \
+          --show-error \
+          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          "$upload_url" \
+          | jq .id)
           echo "RELEASE_ID=$RELEASE_ID" >> $GITHUB_ENV
 
       - name: Upload Release Asset
