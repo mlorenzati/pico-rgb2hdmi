@@ -1,4 +1,6 @@
 # pico-rgb2hdmi
+[![Build](https://github.com/mlorenzati/pico-rgb2hdmi/actions/workflows/build_and_publish.yml/badge.svg?branch=main&job=build)](https://github.com/mlorenzati/pico-rgb2hdmi/actions/workflows/build_and_publish.yml)
+
 Raspberry Pico as an RGB Scanner to HDMI Converter
 
 ## About the device
