@@ -11,6 +11,7 @@ if (TARGET tinyusb_device)
         
     pico_enable_stdio_usb(keyboardTest 1)
     pico_enable_stdio_uart(keyboardTest 0)
+    pico_add_extra_outputs(keyboardTest)
 elseif(PICO_ON_DEVICE)
     message(WARNING "not building keyboardTest because TinyUSB submodule is not initialized in the SDK")
 endif()

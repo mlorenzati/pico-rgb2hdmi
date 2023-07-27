@@ -27,10 +27,17 @@ jobs:
         with:
           name: binaries
           path: |
+            build/test/rgbScanTest/rgbScanTest.uf2
+            build/test/hdmiTest/hdmiTest.uf2
+            build/test/afeTest/afeTest.uf2
+            build/test/keyboardTest/keyboardTest.uf2
+            build/test/storageTest/storageTest.uf2
+            build/test/securityTest/securityTest.uf2
+            build/test/graphicsTest/graphicsTest.uf2
+            build/test/spriteTest/spriteTest.uf2
+            build/test/guiTest/guiTest.uf2
             build/test/integrationTest/integrationTest.uf2
-            build/test/integrationTest/integrationTest.elf
-            build/test/integrationTest/integrationTest.bin
-      
+            build/test/cmdParserTest/cmdParserTest.uf2    
   publish:
     needs: build
     if: startsWith(github.ref, 'refs/tags/')

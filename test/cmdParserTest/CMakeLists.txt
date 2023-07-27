@@ -11,6 +11,7 @@ if (TARGET tinyusb_device)
         
     pico_enable_stdio_usb(cmdParserTest 1)
     pico_enable_stdio_uart(cmdParserTest 0)
+    pico_add_extra_outputs(cmdParserTest)
 elseif(PICO_ON_DEVICE)
     message(WARNING "not building cmdParserTest because TinyUSB submodule is not initialized in the SDK")
 endif()

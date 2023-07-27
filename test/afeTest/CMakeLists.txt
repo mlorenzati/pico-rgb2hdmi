@@ -11,6 +11,7 @@ if (TARGET tinyusb_device)
 
     pico_enable_stdio_usb(afeTest 1)
     pico_enable_stdio_uart(afeTest 0)
+    pico_add_extra_outputs(afeTest)
 elseif(PICO_ON_DEVICE)
     message(WARNING "not building afeTest because TinyUSB submodule is not initialized in the SDK")
 endif()

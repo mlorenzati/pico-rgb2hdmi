@@ -18,6 +18,7 @@ if (TARGET tinyusb_device)
 
     pico_enable_stdio_usb(hdmiTest 1)
     pico_enable_stdio_uart(hdmiTest 0)
+    pico_add_extra_outputs(hdmiTest)
 elseif(PICO_ON_DEVICE)
     message(WARNING "not building hdmiTest because TinyUSB submodule is not initialized in the SDK")
 endif()

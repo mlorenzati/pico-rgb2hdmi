@@ -1,6 +1,7 @@
 #include "wm8213Afe.h"
 #include "hardware/gpio.h"
 #include "wm8213Afe.pio.h"
+#include "hardware/timer.h"
 #include "hardware/structs/bus_ctrl.h"
 
 //Local registers

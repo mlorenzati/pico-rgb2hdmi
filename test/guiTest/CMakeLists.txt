@@ -22,6 +22,7 @@ if (TARGET tinyusb_device)
 
     pico_enable_stdio_usb(guiTest 1)
     pico_enable_stdio_uart(guiTest 0)
+    pico_add_extra_outputs(guiTest)
 elseif(PICO_ON_DEVICE)
     message(WARNING "not building guiTest because TinyUSB submodule is not initialized in the SDK")
 endif()

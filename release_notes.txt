@@ -3,6 +3,11 @@ pico rgb2hdmi
 
 An rpi pico microprocessed rgb 2 hdmi plus rgb 2 usb on the fly converter
 -------------------------------------------------------------------------
+Date: 2023/06/26
+Version: 0.6.2
+- Fixed integration test compilation/linker dependency to timer 
+- Added all uf2 artifacts to CI Job zip file
+-------------------------------------------------------------------------
 Date: 2023/04/27
 Version: 0.6.1
 - Fix for unique horizontal timing, when doubling the value is adapted from stored value
