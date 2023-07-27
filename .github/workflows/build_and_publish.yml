@@ -55,7 +55,6 @@ jobs:
         id: package
         run: |
           TAG_NAME=${GITHUB_REF#refs/tags/}
-          mv integrationTest.uf2 pico-rgb2hdmi-$TAG_NAME.uf2
           shopt -s nullglob
           zip pico-rgb2hdmi-$TAG_NAME.zip *.uf2
           echo "zip_file=pico-rgb2hdmi-$TAG_NAME.zip" >> $GITHUB_ENV
