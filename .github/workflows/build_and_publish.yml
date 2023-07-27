@@ -56,7 +56,7 @@ jobs:
         run: |
           TAG_NAME=${GITHUB_REF#refs/tags/}
           shopt -s nullglob
-          zip pico-rgb2hdmi-$TAG_NAME.zip *.uf2
+          zip -r -D pico-rgb2hdmi-$TAG_NAME.zip * 
           echo "zip_file=pico-rgb2hdmi-$TAG_NAME.zip" >> $GITHUB_ENV
 
       - name: Get Release ID
