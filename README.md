@@ -12,7 +12,8 @@ One processor is mostly dedicating to generate HDMI TMDS signals and the other t
 PIO + DMA are used to dedicate the capture without requiring CPU intervention and to send the TMDS frames to the HDMI diplay.
 
 # License
-The project is under the MIT license to use, you are encouraged to build it to yourself., You are NOT  allowed to use any part or complete part of the solution for commercial purposes without my written authorisation. 
+The project is under the MIT license to use, you are encouraged to build it to yourself., You are NOT  allowed to use any part or complete part of the solution for commercial purposes without my written authorisation. You will receive the permission, it's a matter of etiquette. 
+Please see additional and optional terms over MIT if doubts arises.
 
 ## No derivatives
 I cannot guarantee there will be no derivatives, but is preferrable to help this project get bigger and better, you can ask to manage the specific changes you need either in a branch or a specific configuration.
