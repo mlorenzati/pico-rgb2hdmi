@@ -3,6 +3,10 @@ pico rgb2hdmi
 
 An rpi pico microprocessed rgb 2 hdmi plus rgb 2 usb on the fly converter
 -------------------------------------------------------------------------
+Date: 2023/09/01
+Version: 0.6.3
+- Option to disable license validation on flash
+-------------------------------------------------------------------------
 Date: 2023/06/26
 Version: 0.6.2
 - Fixed integration test compilation/linker dependency to timer 
