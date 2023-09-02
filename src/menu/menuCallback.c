@@ -304,7 +304,12 @@ void menu_diagnostic_print(print_delegate_t printer) {
 	printer("%s v%s\n\nRes: %dx%d %dbits\nAFE code: %d\nScan code: %d\nId: %s\nLicense: %s",
         PROJECT_NAME, PROJECT_VER, menu_graphic_ctx.width, menu_graphic_ctx.height, bppx_to_int(menu_graphic_ctx.bppx, color_part_all), 
         command_info_afe_error, command_info_scanner_error, security_get_uid(),
-        command_is_license_valid() ? "valid" : "invalid");
+    #ifdef USE_LICENSE
+        command_is_license_valid() ? "valid" : "invalid"
+    #else
+        "not required"
+    #endif
+        );
 }
 
 void menu_about_print(print_delegate_t printer) {

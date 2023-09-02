@@ -10,14 +10,20 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(RBG2HDMI_HASH_SALT tY6!U3@z)
 set(TEST_MODE false)
+set(USE_LICENSE false)
 #set(INITIAL_LICENSE "9a9c3e65cd0065a475a14a44d7253c2e24d2bb23")
 
 add_compile_definitions(FONT_C64_8X8)
-if (TEST_MODE)
+
+if (USE_LICENSE)
+    add_compile_definitions(USE_LICENSE)
+endif()
+
+if (TEST_MODE AND USE_LICENSE)
     add_compile_definitions(TEST_MODE)
 endif()
 
-if (INITIAL_LICENSE)
+if (INITIAL_LICENSE AND USE_LICENSE)
     add_compile_definitions(INITIAL_LICENSE="${INITIAL_LICENSE}")
 endif()
 

@@ -374,7 +374,13 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             gui_object_t elements[] = {
                 gui_create_label(&menu_overlay_ctx, 0, 0, 200, 66, &menu_colors_list, menu_common_text_props, menu_diagnostic_print),
                 gui_create_label(&menu_overlay_ctx, 0, 0, 200, 24, &menu_colors_list, menu_common_text_props, menu_scan_print),
-                gui_create_text(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_label_props, command_is_license_valid() ? "Thanks for collaborating!": "Invalid License, register")
+                gui_create_text(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_label_props, 
+                #ifdef USE_LICENSE
+                    command_is_license_valid() ? "Thanks for collaborating!": "Invalid License, register"
+                #else
+                    "MIT license - check repo"
+                #endif
+                    )
             };
             menu_elements_copy(elements, menu_left_buttons_group_elements);
             gui_list_t group_list = initalizeGuiDynList(menu_left_buttons_group_elements, arraySize(elements));

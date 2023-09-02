@@ -31,7 +31,11 @@ bool command_is_license_valid() {
 
 void command_validate_license(const uint8_t *security_key) {
     int token = -1;
-	command_license_is_valid = security_key_is_valid(security_key, token) <= 0;
+    #ifdef USE_LICENSE
+	    command_license_is_valid = security_key_is_valid(security_key, token) <= 0;
+    #else
+        command_license_is_valid = true;
+    #endif
 }
 
 void command_reboot() {
