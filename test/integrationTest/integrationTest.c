@@ -184,6 +184,7 @@ int main() {
     wm8213_afe_capture_update_bppx(GET_VIDEO_PROPS().symbols_per_word ? rgb_16_565 : rgb_8_332, false);
     wm8213_afe_update_offset(current_display->offset.red, current_display->offset.green, current_display->offset.blue, false);
     wm8213_afe_update_gain(current_display->gain.red, current_display->gain.green, current_display->gain.blue, false);
+    wm8213_afe_update_negative_offset(current_display->offset.negative, false);
 
     // Configure AFE Capture System from afe config local
     command_info_afe_error = wm8213_afe_start(GET_VIDEO_PROPS().sampling_rate);

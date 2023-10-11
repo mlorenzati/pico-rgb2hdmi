@@ -152,6 +152,8 @@ bool on_display_selection_event(gui_status_t status, gui_base_t *origin, gui_obj
             // Update all display related configs one by one
             // Gain does not commit changes
             wm8213_afe_update_gain(menu_current_display->gain.red, menu_current_display->gain.green, menu_current_display->gain.blue, false);
+            // Set Offset does not commits changes
+            wm8213_afe_update_negative_offset(menu_current_display->offset.negative, false);
             // Offset commits all changes
             wm8213_afe_update_offset(menu_current_display->offset.red, menu_current_display->offset.green, menu_current_display->offset.blue, true);
             // Timing and aligment
