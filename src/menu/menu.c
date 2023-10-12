@@ -230,20 +230,6 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             }
             break;
         case menu_button_sub_group_gain_offset: {
-            gui_object_t elements[] = {
-                gui_create_text(&menu_overlay_ctx, 0, 0, 100, 12, &menu_colors_list, menu_common_label_props, "Gain"),
-                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 100, 12, &menu_colors_list, menu_spinbox_props, &spinbox_gain),
-                gui_create_text(&menu_overlay_ctx, 0, 0, 100, 12, &menu_colors_list, menu_common_label_props, "Offset"),
-                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 100, 12, &menu_colors_list, menu_spinbox_props, &spinbox_offset),
-                gui_create_button(&menu_overlay_ctx,  0, 0, 100, 12, &menu_colors_list, menu_common_nshared_props, "Back")
-            };
-            menu_elements_copy(elements, menu_left_buttons_group_elements);
-            gui_list_t group_list = initalizeGuiDynList(menu_left_buttons_group_elements, arraySize(elements));
-            menu_left_buttons_group_list = group_list;
-            
-            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[1].base, &menu_left_buttons_group_elements[1], on_gain_offset_event);
-            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_gain_offset_event);
-            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[4].base, &menu_left_buttons_group_elements[4], on_back_event);
             }
             break;
         case menu_button_sub_group_diagnostic: {
@@ -487,8 +473,9 @@ int menu_initialize(uint *pins, menu_event_type *events, uint8_t count) {
     spinbox_horizontal = GET_VIDEO_PROPS().horizontal_front_porch;
     spinbox_vertical = GET_VIDEO_PROPS().vertical_front_porch;
     spinbox_pix_width = GET_VIDEO_PROPS().horizontal_front_porch + GET_VIDEO_PROPS().horizontal_back_porch;
-    spinbox_offset = wm8213_afe_get_offset(color_part_all);
-    spinbox_gain = wm8213_afe_get_gain(color_part_all);
+    spinbox_gain_offset_red   = wm8213_afe_get_offset(color_part_red);
+    spinbox_gain_offset_green = wm8213_afe_get_offset(color_part_green);
+    spinbox_gain_offset_blue  = wm8213_afe_get_offset(color_part_blue);
     spinbox_display_no = settings_get()->flags.default_display + 1;
     spinbox_fine_tune = GET_VIDEO_PROPS().fine_tune / 1000;
 

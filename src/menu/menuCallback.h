@@ -6,7 +6,6 @@
 bool on_exit_button_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination);
 bool on_fine_tune_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination);
 bool on_alignment_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination);
-bool on_gain_offset_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination);
 bool on_display_selection_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination);
 bool on_palette_option_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination);
 bool on_palette_color_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination);

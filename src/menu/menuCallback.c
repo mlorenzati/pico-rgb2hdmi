@@ -104,38 +104,6 @@ bool on_alignment_event(gui_status_t status, gui_base_t *origin, gui_object_t *d
     return true;
 }
 
-bool on_gain_offset_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
-    uint *o_data = (uint *) origin->data;
-    if (!status.activated && origin->status.activated) {
-        destination->base.status.navigable = !destination->base.status.navigable;
-    } else {
-        if (o_data == &spinbox_offset) {
-            if (status.add && spinbox_offset < WM8213_POS_OFFSET_MAX) {
-                spinbox_offset++;
-            } else if (status.substract && spinbox_offset != 0) {
-                spinbox_offset--;
-            }
-            wm8213_afe_update_offset(spinbox_offset, spinbox_offset, spinbox_offset, true);
-            menu_current_display->offset.red   = wm8213_afe_get_offset(color_part_red);
-            menu_current_display->offset.green = wm8213_afe_get_offset(color_part_green);
-            menu_current_display->offset.blue  = wm8213_afe_get_offset(color_part_blue);
-       } else if (o_data == &spinbox_gain) {
-            if (status.add && spinbox_gain < WM8213_GAIN_MAX) {
-                spinbox_gain++;
-            } else if (status.substract && spinbox_gain != 0) {
-                spinbox_gain--;
-            }
-            wm8213_afe_update_gain(spinbox_gain, spinbox_gain, spinbox_gain, true);
-            menu_current_display->gain.red   = wm8213_afe_get_gain(color_part_red);
-            menu_current_display->gain.green = wm8213_afe_get_gain(color_part_green);
-            menu_current_display->gain.blue  = wm8213_afe_get_gain(color_part_blue);
-       }
-    }
-    destination->base.status.data_changed = 1;
-
-    return true;
-}
-
 bool on_display_selection_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
     if (!status.activated && origin->status.activated) {
         destination->base.status.navigable = !destination->base.status.navigable;
@@ -168,8 +136,12 @@ bool on_display_selection_event(gui_status_t status, gui_base_t *origin, gui_obj
             spinbox_horizontal = menu_current_display->h_front_porch;
             spinbox_vertical   = menu_current_display->v_front_porch;
             spinbox_pix_width  = GET_VIDEO_PROPS().horizontal_front_porch + GET_VIDEO_PROPS().horizontal_back_porch;
-            spinbox_offset     = wm8213_afe_get_offset(color_part_all);
-            spinbox_gain       = wm8213_afe_get_gain(color_part_all);
+            switch (spinbox_gain_offset_selection) {
+                case 0: break;
+            }
+            spinbox_gain_offset_red   = wm8213_afe_get_offset(color_part_red);
+            spinbox_gain_offset_green = wm8213_afe_get_offset(color_part_green);
+            spinbox_gain_offset_blue  = wm8213_afe_get_offset(color_part_blue);
         }
     }
     destination->base.status.data_changed = 1;
