@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         
-            { 
+        {
             "name": "Pico Debug",
             "device": "RP2040",
             "gdbPath": "arm-none-eabi-gdb",
@@ -12,12 +12,12 @@
             "type": "cortex-debug",
             "servertype": "openocd",
             "configFiles": [
-                "/interface/picoprobe.cfg",
-                "/target/rp2040.cfg"
+                "interface/cmsis-dap.cfg",
+                "target/rp2040.cfg"
             ],
             "svdFile": "${env:PICO_SDK_PATH}/src/rp2040/hardware_regs/rp2040.svd",
-            "runToMain": true,
             "searchDir": ["/Program Files (x86)/openocd/tcl/"],
+            "runToEntryPoint": "main",
             "postRestartCommands": [
                 "break main",
                 "continue"

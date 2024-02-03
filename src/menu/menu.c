@@ -230,6 +230,22 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             }
             break;
         case menu_button_sub_group_gain_offset: {
+            gui_object_t elements[] = {
+                gui_create_slider(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_spinbox_props, &gain_offset_slider_option),
+                gui_create_label(&menu_overlay_ctx, 0, 0, 200, 11, &menu_colors_list, menu_common_nshared_props, menu_gain_offset_opt_print),
+                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 120, 12, &menu_colors_list, menu_spinbox_props, &spinbox_gain_offset_red),
+                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 120, 12, &menu_colors_list, menu_spinbox_props, &spinbox_gain_offset_green),
+                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 120, 12, &menu_colors_list, menu_spinbox_props, &spinbox_gain_offset_blue),
+                gui_create_window(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_label_props),
+                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 120, 12, &menu_colors_list, menu_spinbox_props, &spinbox_gain_offset_unified),
+                gui_create_button(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Back")
+                };
+            menu_elements_copy(elements, menu_left_buttons_group_elements);
+            gui_list_t group_list = initalizeGuiDynList(menu_left_buttons_group_elements, arraySize(elements));
+            menu_left_buttons_group_list = group_list;
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[0], on_gain_offset_option_event);
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[1], NULL);
+            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[7].base, &menu_left_buttons_group_elements[7], on_back_event);
             }
             break;
         case menu_button_sub_group_diagnostic: {
@@ -473,9 +489,15 @@ int menu_initialize(uint *pins, menu_event_type *events, uint8_t count) {
     spinbox_horizontal = GET_VIDEO_PROPS().horizontal_front_porch;
     spinbox_vertical = GET_VIDEO_PROPS().vertical_front_porch;
     spinbox_pix_width = GET_VIDEO_PROPS().horizontal_front_porch + GET_VIDEO_PROPS().horizontal_back_porch;
+    
+    // set sliders depending on options
+    switch (gain_offset_slider_option) {
+        case 0: break;
+    }
     spinbox_gain_offset_red   = wm8213_afe_get_offset(color_part_red);
     spinbox_gain_offset_green = wm8213_afe_get_offset(color_part_green);
     spinbox_gain_offset_blue  = wm8213_afe_get_offset(color_part_blue);
+
     spinbox_display_no = settings_get()->flags.default_display + 1;
     spinbox_fine_tune = GET_VIDEO_PROPS().fine_tune / 1000;
 
