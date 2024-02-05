@@ -9,6 +9,9 @@
 #define MENU_TOTAL_NAV_STACK    4
 #define MENU_TOTAL_LEFT_BUTTONS 8
 #define MENU_TOTAL_MAIN_VIEW    4
+#define MENU_GAIN_OFFSET_OPT    5
+#define MENU_GAIN_OFFSET_UNI    2
+
 // ------------ Defines End ------------
 
 // ------------ Enum / Struct Start ------------
@@ -75,5 +78,6 @@ extern bool menu_usb_enabled;
 extern display_t *menu_current_display;
 extern uint color_black, color_white;
 extern bool menu_display_confirmation;
-extern const char *menu_gain_offset_str[5];
+extern const char *menu_gain_offset_rgb_str[MENU_GAIN_OFFSET_OPT];
+extern const char *menu_gain_offset_unified_str[MENU_GAIN_OFFSET_OPT];
 #endif

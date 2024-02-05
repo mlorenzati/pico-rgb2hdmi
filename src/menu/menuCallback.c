@@ -166,17 +166,38 @@ bool on_palette_option_event(gui_status_t status, gui_base_t *origin, gui_object
     return true;
 }
 
+void menu_update_gain_offset_sliders(void) {
+    uint index = gain_offset_slider_option * (MENU_GAIN_OFFSET_OPT - 1) / GUI_BAR_100PERCENT;
+
+    if (index <= MENU_GAIN_OFFSET_UNI) {
+        gui_disable(&menu_left_buttons_group_elements[2]);
+        gui_disable(&menu_left_buttons_group_elements[3]);
+        gui_disable(&menu_left_buttons_group_elements[4]);
+        gui_enable(&menu_left_buttons_group_elements[6]);
+    } else {
+        gui_enable(&menu_left_buttons_group_elements[2]);
+        gui_enable(&menu_left_buttons_group_elements[3]);
+        gui_enable(&menu_left_buttons_group_elements[4]);
+        gui_disable(&menu_left_buttons_group_elements[6]);
+    }
+}
+
 bool on_gain_offset_option_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
     uint *data = (uint *) origin->data;
     if (!status.activated && origin->status.activated) {
         destination->base.status.navigable = !destination->base.status.navigable;
+        destination->base.status.data_changed = 1;
     } else if (status.add && *data < GUI_BAR_100PERCENT) {
-        *data += (GUI_BAR_100PERCENT/(arraySize(menu_gain_offset_str) - 1));
+        *data += (GUI_BAR_100PERCENT/(MENU_GAIN_OFFSET_OPT - 1));
+        destination->base.status.data_changed = 1;
     } else if (status.substract && *data != 0) {
-        *data -= (GUI_BAR_100PERCENT/(arraySize(menu_gain_offset_str) - 1));
+        *data -= (GUI_BAR_100PERCENT/(MENU_GAIN_OFFSET_OPT - 1));
+        destination->base.status.data_changed = 1;
+    } 
+    if (destination->base.status.data_changed) {
+        menu_update_gain_offset_sliders();
     }
-
-    destination->base.status.data_changed = 1;
+    
     return true;
 }
 
@@ -324,9 +345,14 @@ void menu_palette_opt_print(print_delegate_t printer) {
     printer("%s", gui_colors_str[index]);
 }
 
-void menu_gain_offset_opt_print(print_delegate_t printer) {
-    uint index = gain_offset_slider_option * (arraySize(menu_gain_offset_str) - 1) / GUI_BAR_100PERCENT;
-    printer("%s", menu_gain_offset_str[index]);
+void menu_gain_offset_rgb_opt_print(print_delegate_t printer) {
+    uint index = gain_offset_slider_option * (MENU_GAIN_OFFSET_OPT - 1) / GUI_BAR_100PERCENT;
+    printer("%s", menu_gain_offset_rgb_str[index]);
+}
+
+void menu_gain_offset_unified_opt_print(print_delegate_t printer) {
+    uint index = gain_offset_slider_option * (arraySize(menu_gain_offset_unified_str) - 1) / GUI_BAR_100PERCENT;
+    printer("%s", menu_gain_offset_unified_str[index]);
 }
 
 // ---------  GUI Callbacks END  ---------

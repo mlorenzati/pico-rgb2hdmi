@@ -22,8 +22,10 @@ void gui_draw_palette_choice(gui_base_t *base);
 void menu_diagnostic_print(print_delegate_t printer);
 void menu_scan_print(print_delegate_t printer);
 void menu_palette_opt_print(print_delegate_t printer);
-void menu_gain_offset_opt_print(print_delegate_t printer);
+void menu_gain_offset_rgb_opt_print(print_delegate_t printer);
+void menu_gain_offset_unified_opt_print(print_delegate_t printer);
 void menu_about_print(print_delegate_t printer);
+void menu_update_gain_offset_sliders(void);
 
 //Utility
 void menu_setup_selected_color();
@@ -31,4 +33,5 @@ const char *menu_get_usb_button_txt(bool status);
 const char *menu_get_shutdown_opt_txt(bool status);
 const char *menu_get_scanline_opt_txt(bool status);
 const char *menu_get_display_mode_opt_txt(bool mode, bool confirmation);
+
 #endif

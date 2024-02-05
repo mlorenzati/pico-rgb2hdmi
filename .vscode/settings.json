@@ -48,7 +48,8 @@
         "flash.h": "c",
         "vector": "c",
         "initializer_list": "c",
-        "retro_logo_128x128_rgb.h": "c"
+        "retro_logo_128x128_rgb.h": "c",
+        "menuglobals.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": true
 }
