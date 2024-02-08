@@ -247,6 +247,7 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[1], NULL);
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[5], NULL);
             gui_event_subscribe(button_status, &menu_left_buttons_group_elements[7].base, &menu_left_buttons_group_elements[7], on_back_event);
+            gain_offset_slider_option = 0;
             menu_update_gain_offset_sliders();
             }
             break;
@@ -492,13 +493,7 @@ int menu_initialize(uint *pins, menu_event_type *events, uint8_t count) {
     spinbox_vertical = GET_VIDEO_PROPS().vertical_front_porch;
     spinbox_pix_width = GET_VIDEO_PROPS().horizontal_front_porch + GET_VIDEO_PROPS().horizontal_back_porch;
     
-    // set sliders depending on options
-    switch (gain_offset_slider_option) {
-        case 0: break;
-    }
-    spinbox_gain_offset_red   = wm8213_afe_get_offset(color_part_red);
-    spinbox_gain_offset_green = wm8213_afe_get_offset(color_part_green);
-    spinbox_gain_offset_blue  = wm8213_afe_get_offset(color_part_blue);
+    // Gain offset sliders are set when already on the screen, not here
 
     spinbox_display_no = settings_get()->flags.default_display + 1;
     spinbox_fine_tune = GET_VIDEO_PROPS().fine_tune / 1000;

@@ -136,13 +136,7 @@ bool on_display_selection_event(gui_status_t status, gui_base_t *origin, gui_obj
             spinbox_horizontal = menu_current_display->h_front_porch;
             spinbox_vertical   = menu_current_display->v_front_porch;
             spinbox_pix_width  = GET_VIDEO_PROPS().horizontal_front_porch + GET_VIDEO_PROPS().horizontal_back_porch;
-            // set sliders depending on options
-            switch (gain_offset_slider_option) {
-                case 0: break;
-            }
-            spinbox_gain_offset_red   = wm8213_afe_get_offset(color_part_red);
-            spinbox_gain_offset_green = wm8213_afe_get_offset(color_part_green);
-            spinbox_gain_offset_blue  = wm8213_afe_get_offset(color_part_blue);
+            // Gain offset sliders are set when already on the screen, not here
         }
     }
     destination->base.status.data_changed = 1;
@@ -174,11 +168,32 @@ void menu_update_gain_offset_sliders(void) {
         gui_disable(&menu_left_buttons_group_elements[3]);
         gui_disable(&menu_left_buttons_group_elements[4]);
         gui_enable(&menu_left_buttons_group_elements[6]);
+        spinbox_gain_offset_red   = 0;
+        spinbox_gain_offset_green = 0;
+        spinbox_gain_offset_blue  = 0;
+    
+        if (index == MENU_RGB_OFFSET) {
+            spinbox_gain_offset_unified = wm8213_afe_get_offset(color_part_all);
+        } else if (index < MENU_RGB_OFFSET) {
+            spinbox_gain_offset_unified = wm8213_afe_get_gain(color_part_all);
+        } else {
+            spinbox_gain_offset_unified = wm8213_afe_get_negative_offset();
+        }
     } else {
         gui_enable(&menu_left_buttons_group_elements[2]);
         gui_enable(&menu_left_buttons_group_elements[3]);
         gui_enable(&menu_left_buttons_group_elements[4]);
         gui_disable(&menu_left_buttons_group_elements[6]);
+        spinbox_gain_offset_unified = 0;
+        if (index == MENU_RGB_GAIN) {
+            spinbox_gain_offset_red   = wm8213_afe_get_gain(color_part_red);
+            spinbox_gain_offset_green = wm8213_afe_get_gain(color_part_green);
+            spinbox_gain_offset_blue  = wm8213_afe_get_gain(color_part_blue);
+        } else {
+            spinbox_gain_offset_red   = wm8213_afe_get_offset(color_part_red);
+            spinbox_gain_offset_green = wm8213_afe_get_offset(color_part_green);
+            spinbox_gain_offset_blue  = wm8213_afe_get_offset(color_part_blue);
+        }
     }
 }
 

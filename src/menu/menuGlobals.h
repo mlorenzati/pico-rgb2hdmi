@@ -11,6 +11,8 @@
 #define MENU_TOTAL_MAIN_VIEW    4
 #define MENU_GAIN_OFFSET_OPT    5
 #define MENU_GAIN_OFFSET_UNI    2
+#define MENU_RGB_GAIN           3
+#define MENU_RGB_OFFSET         1
 
 // ------------ Defines End ------------
 
