@@ -66,7 +66,7 @@ bool menu_usb_enabled = false;
 bool menu_display_confirmation=false;
 display_t *menu_current_display;
 uint color_black, color_white;
-const char *menu_gain_offset_rgb_str[MENU_GAIN_OFFSET_OPT] = { "", "", "", "RGB gain", "RGB offset"};
-const char *menu_gain_offset_unified_str[MENU_GAIN_OFFSET_OPT] = { "Unified gain", "Unified offset", "Negative offset", "", ""};
+const char *menu_gain_offset_rgb_str[MENU_GAIN_OFFSET_OPTS] = { "", "", "", "RGB gain", "RGB offset"};
+const char *menu_gain_offset_unified_str[MENU_GAIN_OFFSET_OPTS] = { "Unified gain", "Unified offset", "Negative offset", "", ""};
 
 // --------- Global register end --------- 

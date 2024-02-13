@@ -97,10 +97,9 @@ bool on_alignment_event(gui_status_t status, gui_base_t *origin, gui_object_t *d
         spinbox_horizontal = GET_VIDEO_PROPS().horizontal_front_porch;
         spinbox_vertical = GET_VIDEO_PROPS().vertical_front_porch;
         spinbox_pix_width = GET_VIDEO_PROPS().horizontal_front_porch + GET_VIDEO_PROPS().horizontal_back_porch;
+        destination->base.status.data_changed = 1;
     }
 
-    destination->base.status.data_changed = 1;
-    
     return true;
 }
 
@@ -109,7 +108,7 @@ bool on_display_selection_event(gui_status_t status, gui_base_t *origin, gui_obj
         destination->base.status.navigable = !destination->base.status.navigable;
     } else {
         if (status.add && spinbox_display_no < SETTINGS_DISPLAY_MAX) {
-                spinbox_display_no++;
+            spinbox_display_no++;
         } else if (status.substract && spinbox_display_no > 1) {
             spinbox_display_no--;
         }
@@ -138,9 +137,9 @@ bool on_display_selection_event(gui_status_t status, gui_base_t *origin, gui_obj
             spinbox_pix_width  = GET_VIDEO_PROPS().horizontal_front_porch + GET_VIDEO_PROPS().horizontal_back_porch;
             // Gain offset sliders are set when already on the screen, not here
         }
+        destination->base.status.data_changed = 1;
     }
-    destination->base.status.data_changed = 1;
-
+    
     return true;
 }
 
@@ -161,9 +160,9 @@ bool on_palette_option_event(gui_status_t status, gui_base_t *origin, gui_object
 }
 
 void menu_update_gain_offset_sliders(void) {
-    uint index = gain_offset_slider_option * (MENU_GAIN_OFFSET_OPT - 1) / GUI_BAR_100PERCENT;
+    uint index = gain_offset_slider_option * (MENU_GAIN_OFFSET_OPTS - 1) / GUI_BAR_100PERCENT;
 
-    if (index <= MENU_GAIN_OFFSET_UNI) {
+    if (index <= MENU_G_OFF_OPT_UNI_NOFFSET) {
         gui_disable(&menu_left_buttons_group_elements[2]);
         gui_disable(&menu_left_buttons_group_elements[3]);
         gui_disable(&menu_left_buttons_group_elements[4]);
@@ -172,9 +171,9 @@ void menu_update_gain_offset_sliders(void) {
         spinbox_gain_offset_green = 0;
         spinbox_gain_offset_blue  = 0;
     
-        if (index == MENU_RGB_OFFSET) {
+        if (index == MENU_G_OFF_OPT_UNI_OFFSET) {
             spinbox_gain_offset_unified = wm8213_afe_get_offset(color_part_all);
-        } else if (index < MENU_RGB_OFFSET) {
+        } else if (index < MENU_G_OFF_OPT_UNI_OFFSET) {
             spinbox_gain_offset_unified = wm8213_afe_get_gain(color_part_all);
         } else {
             spinbox_gain_offset_unified = wm8213_afe_get_negative_offset();
@@ -185,7 +184,7 @@ void menu_update_gain_offset_sliders(void) {
         gui_enable(&menu_left_buttons_group_elements[4]);
         gui_disable(&menu_left_buttons_group_elements[6]);
         spinbox_gain_offset_unified = 0;
-        if (index == MENU_RGB_GAIN) {
+        if (index == MENU_G_OFF_OPT_RGB_GAIN) {
             spinbox_gain_offset_red   = wm8213_afe_get_gain(color_part_red);
             spinbox_gain_offset_green = wm8213_afe_get_gain(color_part_green);
             spinbox_gain_offset_blue  = wm8213_afe_get_gain(color_part_blue);
@@ -197,16 +196,88 @@ void menu_update_gain_offset_sliders(void) {
     }
 }
 
+bool on_gain_offset_rgb_spinbox_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+    uint *data = (uint *) origin->data;
+    if (!status.activated && origin->status.activated) {
+        destination->base.status.navigable = !destination->base.status.navigable;  
+    } else {
+        uint sliderOpt = gain_offset_slider_option * (MENU_GAIN_OFFSET_OPTS - 1) / GUI_BAR_100PERCENT;
+        if (data != &spinbox_gain_offset_red && data != &spinbox_gain_offset_green && data != &spinbox_gain_offset_blue) {
+            // Current slider is not RGB options
+            return false;
+        }
+        
+        if (sliderOpt == MENU_G_OFF_OPT_RGB_GAIN) {
+            if (status.add && (*data) < WM8213_GAIN_MAX) {
+                (*data)++;
+            } else if (status.substract && (*data) != 0) {
+                (*data)--;
+            }
+            wm8213_afe_update_gain(spinbox_gain_offset_red, spinbox_gain_offset_green, spinbox_gain_offset_blue, true);
+        } else if (sliderOpt == MENU_G_OFF_OPT_RGB_OFFSET) {
+            if (status.add && (*data) < WM8213_POS_OFFSET_MAX) {
+                (*data)++;
+            } else if (status.substract && (*data) != 0) {
+                (*data)--;
+            }
+            wm8213_afe_update_offset(spinbox_gain_offset_red, spinbox_gain_offset_green, spinbox_gain_offset_blue, true);
+        } else {
+            // Fail condition
+            return true;
+        }
+        destination->base.status.data_changed = 1;
+    }
+    return true;
+}
+
+bool on_gain_offset_unified_spinbox_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
+    uint *data = (uint *) origin->data;
+    if (!status.activated && origin->status.activated) {
+        destination->base.status.navigable = !destination->base.status.navigable;  
+    } else {
+        uint sliderOpt = gain_offset_slider_option * (MENU_GAIN_OFFSET_OPTS - 1) / GUI_BAR_100PERCENT;
+        if (data != &spinbox_gain_offset_unified ) {
+            // Current slider is not an unified option
+            return false;
+        }
+        if (sliderOpt == MENU_G_OFF_OPT_UNI_GAIN) {
+            if (status.add && (*data) < WM8213_GAIN_MAX) {
+                (*data)++;
+            } else if (status.substract && (*data) != 0) {
+                (*data)--;
+            }
+            wm8213_afe_update_gain(spinbox_gain_offset_unified, spinbox_gain_offset_unified, spinbox_gain_offset_unified, true);
+        } else if (sliderOpt == MENU_G_OFF_OPT_UNI_OFFSET) {
+            if (status.add && (*data) < WM8213_POS_OFFSET_MAX) {
+                (*data)++;
+            } else if (status.substract && (*data) != 0) {
+                (*data)--;
+            }
+            wm8213_afe_update_offset(spinbox_gain_offset_unified, spinbox_gain_offset_unified, spinbox_gain_offset_unified, true);
+        } else if (sliderOpt == MENU_G_OFF_OPT_UNI_NOFFSET) {
+            if (status.add && (*data) < WM8213_NEG_OFFSET_MAX) {
+                (*data)++;
+            } else if (status.substract && (*data) != 0) {
+                (*data)--;
+            }
+            wm8213_afe_update_negative_offset(spinbox_gain_offset_unified, true);
+        } else {
+            return false;
+        }
+        destination->base.status.data_changed = 1;
+    }
+    return true;
+}
+
 bool on_gain_offset_option_event(gui_status_t status, gui_base_t *origin, gui_object_t *destination) {
     uint *data = (uint *) origin->data;
     if (!status.activated && origin->status.activated) {
         destination->base.status.navigable = !destination->base.status.navigable;
-        destination->base.status.data_changed = 1;
     } else if (status.add && *data < GUI_BAR_100PERCENT) {
-        *data += (GUI_BAR_100PERCENT/(MENU_GAIN_OFFSET_OPT - 1));
+        *data += (GUI_BAR_100PERCENT/(MENU_GAIN_OFFSET_OPTS - 1));
         destination->base.status.data_changed = 1;
     } else if (status.substract && *data != 0) {
-        *data -= (GUI_BAR_100PERCENT/(MENU_GAIN_OFFSET_OPT - 1));
+        *data -= (GUI_BAR_100PERCENT/(MENU_GAIN_OFFSET_OPTS - 1));
         destination->base.status.data_changed = 1;
     } 
     if (destination->base.status.data_changed) {
@@ -361,7 +432,7 @@ void menu_palette_opt_print(print_delegate_t printer) {
 }
 
 void menu_gain_offset_rgb_opt_print(print_delegate_t printer) {
-    uint index = gain_offset_slider_option * (MENU_GAIN_OFFSET_OPT - 1) / GUI_BAR_100PERCENT;
+    uint index = gain_offset_slider_option * (MENU_GAIN_OFFSET_OPTS - 1) / GUI_BAR_100PERCENT;
     printer("%s", menu_gain_offset_rgb_str[index]);
 }
 

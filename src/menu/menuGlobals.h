@@ -9,10 +9,13 @@
 #define MENU_TOTAL_NAV_STACK    4
 #define MENU_TOTAL_LEFT_BUTTONS 8
 #define MENU_TOTAL_MAIN_VIEW    4
-#define MENU_GAIN_OFFSET_OPT    5
-#define MENU_GAIN_OFFSET_UNI    2
-#define MENU_RGB_GAIN           3
-#define MENU_RGB_OFFSET         1
+
+#define MENU_GAIN_OFFSET_OPTS         5
+#define MENU_G_OFF_OPT_UNI_GAIN       0
+#define MENU_G_OFF_OPT_UNI_OFFSET     1
+#define MENU_G_OFF_OPT_UNI_NOFFSET    2
+#define MENU_G_OFF_OPT_RGB_GAIN       3
+#define MENU_G_OFF_OPT_RGB_OFFSET     4
 
 // ------------ Defines End ------------
 
@@ -80,6 +83,6 @@ extern bool menu_usb_enabled;
 extern display_t *menu_current_display;
 extern uint color_black, color_white;
 extern bool menu_display_confirmation;
-extern const char *menu_gain_offset_rgb_str[MENU_GAIN_OFFSET_OPT];
-extern const char *menu_gain_offset_unified_str[MENU_GAIN_OFFSET_OPT];
+extern const char *menu_gain_offset_rgb_str[MENU_GAIN_OFFSET_OPTS];
+extern const char *menu_gain_offset_unified_str[MENU_GAIN_OFFSET_OPTS];
 #endif
