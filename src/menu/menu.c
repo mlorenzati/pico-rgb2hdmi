@@ -112,15 +112,16 @@ void menu_video_signal_callback(rgbscan_signal_event_type type) {
 }
 // ----------- TIMER CALLBACK  END -----------
 
-bool menu_change_view(gui_status_t status, gui_base_t *origin, menu_button_group_type type){
+bool menu_change_view(gui_status_t status, gui_base_t *origin, menu_button_group_type new_type){
     if (!status.activated && origin->status.activated) {
-        menu_left_buttons_group = menu_create_left_button_group(menu_nav_stack[menu_button_index - 1], type);
+        menu_left_buttons_group = menu_create_left_button_group(menu_nav_stack[menu_button_index - 1], new_type);
         gui_obj_draw(menu_window);
         gui_obj_draw(menu_left_buttons_group);
         if (menu_main_view_group.base.status.visible) {
             gui_obj_draw(menu_main_view_group);
         }
         menu_focused_object = gui_focused(&menu_left_buttons_group_elements[0]);
+        
         //Once we consume this event, we dispose it due to new changes
         return false;
     }
@@ -169,14 +170,14 @@ bool on_back_event(gui_status_t status, gui_base_t *origin, gui_object_t *destin
         if (menu_button_index >= 2) {
             cancel_repeating_timer(&menu_vsync_hsync_timer); //blindly stopping the timer for all back events for now
             menu_button_group_type previous = menu_nav_stack[menu_button_index - 1];
-            menu_button_group_type new = menu_nav_stack[menu_button_index - 2];
+            menu_button_group_type new_type = menu_nav_stack[menu_button_index - 2];
             menu_button_index -= 2;
-            menu_left_buttons_group = menu_create_left_button_group(previous, new);
+            menu_left_buttons_group = menu_create_left_button_group(previous, new_type);
             gui_obj_draw(menu_window);
             gui_obj_draw(menu_left_buttons_group);
             menu_focused_object = gui_focused(&menu_left_buttons_group_elements[0]);
 
-             //Once we consume this event, we reequest no more propagations
+            //Once we consume this event, we reequest no more propagations
             return false;
         }
     }
@@ -256,7 +257,9 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[6].base, &menu_left_buttons_group_elements[6], on_gain_offset_unified_spinbox_event);
             gui_event_subscribe(button_status, &menu_left_buttons_group_elements[7].base, &menu_left_buttons_group_elements[7], on_back_event);
             gain_offset_slider_option = 0;
-            menu_update_gain_offset_sliders();
+            
+            // We enable the slider option selector, since the reconfiguration of options is propagating an unwanted event
+            gui_activate(&menu_left_buttons_group_elements[0]); gui_deactivate(&menu_left_buttons_group_elements[0]);
             }
             break;
         case menu_button_sub_group_diagnostic: {

@@ -273,6 +273,7 @@ bool on_gain_offset_option_event(gui_status_t status, gui_base_t *origin, gui_ob
     uint *data = (uint *) origin->data;
     if (!status.activated && origin->status.activated) {
         destination->base.status.navigable = !destination->base.status.navigable;
+        destination->base.status.data_changed = 1;
     } else if (status.add && *data < GUI_BAR_100PERCENT) {
         *data += (GUI_BAR_100PERCENT/(MENU_GAIN_OFFSET_OPTS - 1));
         destination->base.status.data_changed = 1;

@@ -3,6 +3,10 @@ pico rgb2hdmi
 
 An rpi pico microprocessed rgb 2 hdmi plus rgb 2 usb on the fly converter
 -------------------------------------------------------------------------
+Date: 2024/02/22
+Version: 0.6.4
+- Menu system for total control of gain, positive and negative offset, with RGB and unified options
+-------------------------------------------------------------------------
 Date: 2023/09/01
 Version: 0.6.3
 - Option to disable license validation on flash
