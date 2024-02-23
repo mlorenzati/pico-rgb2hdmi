@@ -31,7 +31,7 @@ inline io_rw_16 video_overlay_get_starty() {
 
 void set_video_overlay(volatile signed int width, volatile signed int height, bool enabled);
 
-inline void video_overlay_scanline_prepare(unsigned int render_line_number) {
+static inline void video_overlay_scanline_prepare(unsigned int render_line_number) {
     unsigned int next_scanlineNumber = (render_line_number + 1);
     if (next_scanlineNumber >= GET_VIDEO_PROPS().height) {
         next_scanlineNumber = 0; 

@@ -493,9 +493,9 @@ gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
         gui_event(update_status.bits, update_dest);
     }
 
-    // Check if it was a focus request and it's not focusable
-    // WARNING: Request focus over a list of chained elements with at least one focusable
-    if (status.focused && !origin->base.properties.focusable && !status.go_next & !status.go_previous) {
+    // Check if it was a focus request and it's not focusable/enabled
+    // WARNING: Request focus over a list of chained elements with at least one focusable/enabled
+    if (status.focused && (!origin->base.properties.focusable || !origin->base.status.enabled) && !status.go_next & !status.go_previous) {
         status.go_next = 1;
     }
 
@@ -513,7 +513,7 @@ gui_object_t *gui_event(gui_status_t status, gui_object_t *origin) {
                 test_focused = test_focused->previous;
             }
 
-            if (test_focused->base.properties.focusable) {
+            if (test_focused->base.properties.focusable && test_focused->base.status.enabled) {
                 status.go_next = 0;
                 status.go_previous = 0;
                 next_focused = test_focused;

@@ -112,15 +112,16 @@ void menu_video_signal_callback(rgbscan_signal_event_type type) {
 }
 // ----------- TIMER CALLBACK  END -----------
 
-bool menu_change_view(gui_status_t status, gui_base_t *origin, menu_button_group_type type){
+bool menu_change_view(gui_status_t status, gui_base_t *origin, menu_button_group_type new_type){
     if (!status.activated && origin->status.activated) {
-        menu_left_buttons_group = menu_create_left_button_group(menu_nav_stack[menu_button_index - 1], type);
+        menu_left_buttons_group = menu_create_left_button_group(menu_nav_stack[menu_button_index - 1], new_type);
         gui_obj_draw(menu_window);
         gui_obj_draw(menu_left_buttons_group);
         if (menu_main_view_group.base.status.visible) {
             gui_obj_draw(menu_main_view_group);
         }
         menu_focused_object = gui_focused(&menu_left_buttons_group_elements[0]);
+        
         //Once we consume this event, we dispose it due to new changes
         return false;
     }
@@ -169,14 +170,14 @@ bool on_back_event(gui_status_t status, gui_base_t *origin, gui_object_t *destin
         if (menu_button_index >= 2) {
             cancel_repeating_timer(&menu_vsync_hsync_timer); //blindly stopping the timer for all back events for now
             menu_button_group_type previous = menu_nav_stack[menu_button_index - 1];
-            menu_button_group_type new = menu_nav_stack[menu_button_index - 2];
+            menu_button_group_type new_type = menu_nav_stack[menu_button_index - 2];
             menu_button_index -= 2;
-            menu_left_buttons_group = menu_create_left_button_group(previous, new);
+            menu_left_buttons_group = menu_create_left_button_group(previous, new_type);
             gui_obj_draw(menu_window);
             gui_obj_draw(menu_left_buttons_group);
             menu_focused_object = gui_focused(&menu_left_buttons_group_elements[0]);
 
-             //Once we consume this event, we reequest no more propagations
+            //Once we consume this event, we reequest no more propagations
             return false;
         }
     }
@@ -231,19 +232,34 @@ gui_object_t menu_create_left_button_group(menu_button_group_type previous, menu
             break;
         case menu_button_sub_group_gain_offset: {
             gui_object_t elements[] = {
-                gui_create_text(&menu_overlay_ctx, 0, 0, 100, 12, &menu_colors_list, menu_common_label_props, "Gain"),
-                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 100, 12, &menu_colors_list, menu_spinbox_props, &spinbox_gain),
-                gui_create_text(&menu_overlay_ctx, 0, 0, 100, 12, &menu_colors_list, menu_common_label_props, "Offset"),
-                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 100, 12, &menu_colors_list, menu_spinbox_props, &spinbox_offset),
-                gui_create_button(&menu_overlay_ctx,  0, 0, 100, 12, &menu_colors_list, menu_common_nshared_props, "Back")
-            };
+                gui_create_slider(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_spinbox_props, &gain_offset_slider_option),
+                gui_create_label(&menu_overlay_ctx, 0, 0, 200, 11, &menu_colors_list, menu_common_label_props, menu_gain_offset_rgb_opt_print),
+                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_spinbox_props, &spinbox_gain_offset_red),
+                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_spinbox_props, &spinbox_gain_offset_green),
+                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_spinbox_props, &spinbox_gain_offset_blue),
+                gui_create_label(&menu_overlay_ctx, 0, 0, 200, 11, &menu_colors_list, menu_common_label_props, menu_gain_offset_unified_opt_print),
+                gui_create_spinbox(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_spinbox_props, &spinbox_gain_offset_unified),
+                gui_create_button(&menu_overlay_ctx, 0, 0, 200, 12, &menu_colors_list, menu_common_nshared_props, "Back")
+                };
             menu_elements_copy(elements, menu_left_buttons_group_elements);
             gui_list_t group_list = initalizeGuiDynList(menu_left_buttons_group_elements, arraySize(elements));
             menu_left_buttons_group_list = group_list;
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[0], on_gain_offset_option_event);
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[1], NULL);
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[2], NULL);
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[3], NULL);
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[4], NULL);
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[5], NULL);
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[0].base, &menu_left_buttons_group_elements[6], NULL);
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[2].base, &menu_left_buttons_group_elements[2], on_gain_offset_rgb_spinbox_event);
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_gain_offset_rgb_spinbox_event);
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[4].base, &menu_left_buttons_group_elements[4], on_gain_offset_rgb_spinbox_event);
+            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[6].base, &menu_left_buttons_group_elements[6], on_gain_offset_unified_spinbox_event);
+            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[7].base, &menu_left_buttons_group_elements[7], on_back_event);
+            gain_offset_slider_option = 0;
             
-            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[1].base, &menu_left_buttons_group_elements[1], on_gain_offset_event);
-            gui_event_subscribe(spinbox_status, &menu_left_buttons_group_elements[3].base, &menu_left_buttons_group_elements[3], on_gain_offset_event);
-            gui_event_subscribe(button_status, &menu_left_buttons_group_elements[4].base, &menu_left_buttons_group_elements[4], on_back_event);
+            // We enable the slider option selector, since the reconfiguration of options is propagating an unwanted event
+            gui_activate(&menu_left_buttons_group_elements[0]); gui_deactivate(&menu_left_buttons_group_elements[0]);
             }
             break;
         case menu_button_sub_group_diagnostic: {
@@ -487,8 +503,9 @@ int menu_initialize(uint *pins, menu_event_type *events, uint8_t count) {
     spinbox_horizontal = GET_VIDEO_PROPS().horizontal_front_porch;
     spinbox_vertical = GET_VIDEO_PROPS().vertical_front_porch;
     spinbox_pix_width = GET_VIDEO_PROPS().horizontal_front_porch + GET_VIDEO_PROPS().horizontal_back_porch;
-    spinbox_offset = wm8213_afe_get_offset(color_part_all);
-    spinbox_gain = wm8213_afe_get_gain(color_part_all);
+    
+    // Gain offset sliders are set when already on the screen, not here
+
     spinbox_display_no = settings_get()->flags.default_display + 1;
     spinbox_fine_tune = GET_VIDEO_PROPS().fine_tune / 1000;
 

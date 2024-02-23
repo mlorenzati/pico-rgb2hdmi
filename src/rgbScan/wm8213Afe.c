@@ -303,5 +303,5 @@ uint wm8213_afe_update_negative_offset(uint8_t value, bool commit) {
 }
 
 uint8_t wm8213_afe_get_negative_offset() {
-    return wm8213_afe_capture_global.setups.setup3.rlc_dac & WM8213_NEG_OFFSET_BITS;
+    return wm8213_afe_capture_global.setups.setup3.rlc_dac & WM8213_NEG_OFFSET_MAX;
 }
