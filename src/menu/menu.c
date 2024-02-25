@@ -8,6 +8,7 @@
 #include "commands.h"
 #include "wm8213Afe.h"
 #include "dvi.h"
+#include "timer.h"
 
 //System configuration includes
 #include "common_configs.h"

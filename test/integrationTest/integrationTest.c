@@ -11,6 +11,7 @@
 #include "hardware/vreg.h"
 
 //Library related includes
+#include "timer.h"
 #include "dvi.h"
 #include "dvi_serialiser.h"
 #include "rgbScan.h"
@@ -162,6 +163,7 @@ void command_line_loop() {
 int main() {
     vreg_set_voltage(VREG_VSEL);
     sleep_ms(10);
+    timer_alarm_pool_init_default();
 
     // Run system at TMDS bit clock
     set_sys_clock_khz(DVI_TIMING.bit_clk_khz, true);
