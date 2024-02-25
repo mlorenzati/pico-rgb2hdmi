@@ -1,4 +1,5 @@
 #include "keyboard.h"
+#include "timer.h"
 #include "pico/stdlib.h"
 
 struct  repeating_timer keyboard_timer;

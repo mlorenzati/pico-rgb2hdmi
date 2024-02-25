@@ -14,6 +14,7 @@ target_include_directories(menu INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(menu INTERFACE
     pico_base_headers
     graphics
+    timer
     keyboard
     gui
     commands

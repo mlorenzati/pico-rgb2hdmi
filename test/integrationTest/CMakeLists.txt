@@ -8,6 +8,7 @@ if (TARGET tinyusb_device)
 
     target_compile_definitions(integrationTest PRIVATE
         DVI_VERTICAL_REPEAT=2
+        PICO_TIME_DEFAULT_ALARM_POOL_DISABLED=1
     )
 
     target_link_libraries(integrationTest PRIVATE
@@ -24,7 +25,7 @@ if (TARGET tinyusb_device)
         menu
         )
 
-    pico_enable_stdio_usb(integrationTest 1)
+    pico_enable_stdio_usb(integrationTest 0)
     pico_enable_stdio_uart(integrationTest 0)
 
     pico_add_extra_outputs(integrationTest)

@@ -19,7 +19,7 @@ target_link_libraries(rgbScan INTERFACE
     hardware_spi
     hardware_dma
     hardware_pio
-    hardware_timer
+    timer
     color
 )
 

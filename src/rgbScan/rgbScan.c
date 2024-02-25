@@ -7,9 +7,8 @@
 #include "hardware/irq.h"
 #include "hardware/structs/iobank0.h"
 #include "hardware/sync.h"
-#include "hardware/timer.h"
 #include "nanoSystick.h"
-
+#include "timer.h"
 
 uint32_t onEventTick, lastEventTick, lastVsyncTick;
 float         nanoSecPerTick;
