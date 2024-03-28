@@ -127,9 +127,10 @@
         },
         .verify_retries = 3,
         .pio = pio1,
-        .sm_afe = 0,
+        .sm = {0, 1}, 
         .pin_base_afe_op = AFE_OP,
-        .pin_base_afe_ctrl = AFE_VSMP
+        .pin_base_afe_ctrl = AFE_VSMP,
+        .pin_hsync = RGB_SCAN_HSYNC_PIN
     };
 #endif
 

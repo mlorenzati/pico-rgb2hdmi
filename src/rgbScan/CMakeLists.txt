@@ -24,3 +24,4 @@ target_link_libraries(rgbScan INTERFACE
 )
 
 pico_generate_pio_header(rgbScan ${CMAKE_CURRENT_LIST_DIR}/wm8213Afe.pio)
+pico_generate_pio_header(rgbScan ${CMAKE_CURRENT_LIST_DIR}/hsync.pio)
